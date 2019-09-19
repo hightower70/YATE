@@ -1,0 +1,85 @@
+﻿; row 0
+D4      | None | 0 | 7 | None ; 4
+D1      | None | 0 | 6 | None ; 1
+Oem102  | None | 0 | 5 | None ; Í
+D6      | None | 0 | 4 | None ; 6
+D0      | None | 0 | 3 | None ; 0
+D2      | None | 0 | 2 | None ; 2
+D3      | None | 0 | 1 | None ; 3
+D5      | None | 0 | 0 | None ; 5
+
+; row 1
+D7      | None        | 1 | 7 | AcceptShift ; 7
+Oem3    | None        | 1 | 6 | None ; Ö
+OemPlus | None        | 1 | 5 | None ; Ó
+Multiply| None        | 1 | 4 | None ; *
+Oem2    | None        | 1 | 3 | None ; Ü
+D9      | None        | 1 | 2 | None ; 9
+D8      | None        | 1 | 1 | None ; 8
+D3      | Alt,Control | 1 | 0 | None; ^
+
+; row 2
+R       | None | 2 | 7 | None ; R
+Q       | None | 2 | 6 | None ; Q
+V       | Alt,Control | 2 | 5 | None ; @
+Z       | None | 2 | 4 | None ; Z
+OemComma| Alt , Control | 2 | 3 | None ; ;
+W       | None | 2 | 2 | None ; W
+E       | None | 2 | 1 | None ; E
+T       | None | 2 | 0 | None ; T
+
+; row 3
+U| None| 3| 7| None ;
+P| None| 3| 6| None ;
+Oem6| None| 3| 5| None ;
+F| Alt , Control| 3| 4| None ;
+OemOpenBrackets| None| 3| 3| None ;
+O| None| 3| 2| None ;
+I| None| 3| 1| None ;
+G| Alt , Control| 3| 0| None ;
+
+; row 4
+F| None| 4| 7| None ;
+A| None| 4| 6| None ;
+OemBackslash| Alt , Control| 4| 5| None ;
+H| None| 4| 4| None ;
+Q| Alt , Control| 4| 3| None ;
+S| None| 4| 2| None ;
+D| None| 4| 1| None ;
+G| None| 4| 0| None ;
+
+; row 5
+J| None| 5| 7| None ;
+Oem1| None| 5| 6| None ;
+Oem5| None| 5| 5| None ;
+Return| None| 5| 4| None ;
+OemQuotes| None| 5| 3| None ;
+L| None| 5| 2| None ;
+K| None| 5| 1| None ;
+Back| None| 5| 0| None ;
+
+; row 6
+V| None| 6| 7| None ;
+Y| None| 6| 6| None ;
+Capital| None| 6| 5| None ;
+N| None| 6| 4| None ;
+RightShift|Shift|6|3|None ;
+LeftShift|Shift|6|3|None ;
+X| None| 6| 2| None ;
+C| None| 6| 1| None ;
+B| None| 6| 0| None ;
+
+; row 7
+M| None| 7| 7| None ;
+OemMinus| None| 7| 6| None ;
+Space| None| 7| 5| None ;
+End| None| 7| 3| None ;
+OemPeriod| None| 7| 2| None ;
+OemComma| None| 7| 1| None ;
+
+; row 8
+Left| None| 8| 6| None ;
+Right| None| 8| 5| None ;
+Down| None| 8| 2| None ;
+Up| None| 8| 1| None ;
+

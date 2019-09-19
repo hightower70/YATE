@@ -1,0 +1,333 @@
+﻿<Window x:Class="TVCEmu.Forms.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TVCEmu.Forms"
+				xmlns:effects="clr-namespace:TVCEmu.Effects"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="800" Width="1250"
+				Style="{DynamicResource WindowStyle}" Closing="Window_Closing" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
+	<Window.Resources>
+		<Style TargetType="TextBlock" x:Key="LabelStyle">
+			<Setter Property="Foreground" Value="OrangeRed"/>
+		</Style>
+
+		<Style TargetType="TextBlock" x:Key="ValueStyle">
+			<Setter Property="HorizontalAlignment" Value="Right"/>
+			<Setter Property="Foreground" Value="DeepSkyBlue"/>
+		</Style>
+
+		<Style TargetType="TextBlock" x:Key="UnitStyle">
+			<Setter Property="Foreground" Value="DarkGray"/>
+		</Style>
+
+		<Style TargetType="Separator">
+			<Setter Property="Foreground" Value="LightGray"/>
+		</Style>
+
+		<Style TargetType="TextBlock" x:Key="MainTitleStyle">
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="Background" Value="DeepSkyBlue"/>
+			<Setter Property="Padding" Value="5,0,0,0"/>
+		</Style>
+
+		<Style TargetType="TextBlock" x:Key="TitleStyle">
+			<Setter Property="HorizontalAlignment" Value="Center" />
+			<Setter Property="Foreground" Value="LightGray"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+		</Style>
+		
+	</Window.Resources>
+	<Window.InputBindings>
+		<KeyBinding Key="F10" Command="{Binding ExecutionControl.DebugStepCommand}" />
+	</Window.InputBindings>
+
+	<Grid Background="{DynamicResource Background}">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="220"/>
+			<ColumnDefinition Width="220"/>
+		</Grid.ColumnDefinitions>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="22"/>
+			<RowDefinition Height="40"/>
+			<RowDefinition Height="*"/>
+		</Grid.RowDefinitions>
+
+		<Menu IsMainMenu="True" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3">
+			<Menu.ItemsPanel>
+				<ItemsPanelTemplate>
+					<DockPanel HorizontalAlignment="Stretch"/>
+				</ItemsPanelTemplate>
+			</Menu.ItemsPanel>
+			<MenuItem Header="_File" Height="22" VerticalAlignment="Top">
+				<MenuItem x:Name="miOpenMapFile" Header="Memory _Load..." Click="MiOpenMapFile_Click" />
+				<MenuItem x:Name="miSaveAsMapFile" Header="Memory _Save..." Click="MiSaveAsMapFile_Click"  />
+				<Separator />
+				<MenuItem Header="_Exit" />
+			</MenuItem>
+			<!--
+			<MenuItem Header="_Tools">
+				<MenuItem Header="Options" />
+				<MenuItem Header="Device Settings"  />
+			</MenuItem>-->
+			<MenuItem Header="_Help" HorizontalAlignment="Right">
+				<MenuItem Header="_About" />
+			</MenuItem>
+		</Menu>
+
+
+		<Border Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" BorderBrush="DarkGray" BorderThickness="1" UseLayoutRounding="True">
+			<Image x:Name="iDisplay" Width="640" Height="576" Stretch="Fill" UseLayoutRounding="True">
+				<Image.Effect>
+					<effects:CRTFilter Width="{Binding Width, ElementName=iDisplay}" Height="{Binding Height, ElementName=iDisplay}" EvenParam="3,10,3,16" OddParam="2,10,2,16" />
+				</Image.Effect>
+			</Image>
+		</Border>
+
+		<StackPanel Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2"  Orientation="Horizontal">
+			<Button Width="36" Height="36" Margin="2" ToolTip="Run">
+				<Image Margin="2">
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<DrawingGroup>
+									<DrawingGroup >
+										<GeometryDrawing Brush="#FFEFF0F1">
+											<GeometryDrawing.Geometry>
+												<PathGeometry FillRule="Nonzero" Figures="M2,2L2,14 14,14 14,2 2,2z M3,3L13,3 13,13 3,13 3,3z M6,5L6,11 10,8 6,5z" />
+											</GeometryDrawing.Geometry>
+										</GeometryDrawing>
+									</DrawingGroup>
+								</DrawingGroup>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>
+
+			<Button Width="36" Height="36" Margin="2" ToolTip="Stop">
+				<Image Margin="2">
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<DrawingGroup xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:svg="http://sharpvectors.codeplex.com/runtime/">
+									<DrawingGroup >
+										<GeometryDrawing Brush="#FFEFF0F1" >
+											<GeometryDrawing.Geometry>
+												<PathGeometry FillRule="Nonzero" Figures="M2,2L2,14 14,14 14,2 2,2z M3,3L13,3 13,13 3,13 3,3z M5,5L5,11 11,11 11,5 5,5z" />
+											</GeometryDrawing.Geometry>
+										</GeometryDrawing>
+									</DrawingGroup>
+								</DrawingGroup>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>
+			
+			<Button Width="36" Height="36" Margin="2" ToolTip="Pause">
+				<Image Margin="2">
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<DrawingGroup>
+									<GeometryDrawing Brush="#FFEFF0F1" >
+										<GeometryDrawing.Geometry>
+											<PathGeometry FillRule="Nonzero" Figures="M2,2L2,14 14,14 14,2 2,2z M3,3L13,3 13,13 3,13 3,3z M5,5L5,11 7,11 7,5 5,5z M9,5L9,11 11,11 11,5 9,5z" />
+										</GeometryDrawing.Geometry>
+									</GeometryDrawing>
+								</DrawingGroup>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>
+
+			<Button Width="36" Height="36" Margin="2" ToolTip="Animated">
+				<Image Margin="2">
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<DrawingGroup xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:svg="http://sharpvectors.codeplex.com/runtime/">
+									<DrawingGroup >
+										<DrawingGroup.ClipGeometry>
+											<RectangleGeometry Rect="0,0,16,16" />
+										</DrawingGroup.ClipGeometry>
+										<GeometryDrawing Brush="#FFEFF0F1">
+											<GeometryDrawing.Geometry>
+												<PathGeometry FillRule="Nonzero" Figures="M2,2L2,5 2,14 3,14 8,14 8,13 3,13 3,5 13,5 13,8 14,8 14,2 3,2 2,2z M11,8L11,10 8,10 8,12 11,12 11,14 14,11 11,8z" />
+											</GeometryDrawing.Geometry>
+										</GeometryDrawing>
+									</DrawingGroup>
+								</DrawingGroup>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>		
+			
+			<Button Width="36" Height="36" Margin="2" ToolTip="Step Into">
+				<Image Margin="2">
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<DrawingGroup>
+									<GeometryDrawing Brush="#FFEFF0F1">
+										<GeometryDrawing.Geometry>
+											<PathGeometry FillRule="Nonzero" Figures="M2,2L2,14 14,14 14,2 11,2 11,5 13,5 13,13 3,13 3,5 5,5 5,2 3,2 2,2z M6.4296875,6C5.3636875,6 4.9160156,6.3519062 4.9160156,7.2539062 4.9160156,7.2539062 4.8917656,7.841 4.8847656,8 4.8387656,8.369 4.7096406,8.6777344 4.3066406,8.6777344L4.0019531,8.6777344 4.0019531,9.3222656 4.3066406,9.3222656C4.8956406,9.3222656 4.9160156,9.966437 4.9160156,10.523438 4.9110156,10.697437 4.9295938,10.892953 4.9335938,11.001953 5.0165938,11.713953 5.4716875,12.001953 6.4296875,12.001953L6.4296875,11.408203C5.9796875,11.408203 5.8237656,11.291953 5.7597656,11.001953 5.7257656,10.885953 5.7229844,10.487875 5.7089844,10.296875 5.7089844,9.881875 5.5853281,9.2618594 4.9863281,9.0058594 5.4593281,8.8028594 5.6305937,8.3778594 5.6835938,8.0058594 5.7075938,7.9018594 5.7010312,7.7821719 5.7070312,7.7011719 5.7070312,6.8351719 5.7186875,6.5976564 6.4296875,6.5976562L6.4296875,6z M7.5,6L7.5,7 8.5,7 8.5,6 7.5,6z M9.5800781,6L9.5800781,6.5976562C10.291078,6.5976562 10.302734,6.8351719 10.302734,7.7011719 10.308734,7.7821719 10.302172,7.9018594 10.326172,8.0058594 10.379172,8.3778594 10.550435,8.8028594 11.023438,9.0058594 10.424435,9.2618594 10.300781,9.881875 10.300781,10.296875 10.286781,10.487875 10.284,10.885953 10.25,11.001953 10.186,11.291953 10.030078,11.408203 9.5800781,11.408203L9.5800781,12.001953C10.538078,12.001953 10.993172,11.713953 11.076172,11.001953 11.080172,10.892953 11.09875,10.697437 11.09375,10.523438 11.09375,9.966436 11.114125,9.3222656 11.703125,9.3222656L12.007812,9.3222656 12.007812,8.6777344 11.703125,8.6777344C11.300125,8.6777344 11.171,8.369 11.125,8 11.118,7.841 11.09375,7.2539062 11.09375,7.2539062 11.09375,6.3519062 10.646078,6 9.5800781,6z M7.5,8L7.5,12 8.5,12 8.5,8 7.5,8z" />
+										</GeometryDrawing.Geometry>
+									</GeometryDrawing>
+									<GeometryDrawing Brush="#FFF67400">
+										<GeometryDrawing.Geometry>
+											<PathGeometry FillRule="Nonzero" Figures="M10,2L8,5 6,2z" />
+										</GeometryDrawing.Geometry>
+									</GeometryDrawing>
+								</DrawingGroup>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>
+
+			<Button Width="36" Height="36" Margin="2" ToolTip="Step Over">
+				<Image Margin="2">
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<DrawingGroup>
+									<GeometryDrawing Brush="#FFEFF0F1">
+										<GeometryDrawing.Geometry>
+											<PathGeometry FillRule="Nonzero" Figures="M2,2L2,14 14,14 14,5 13,5 13,13 3,13 3,5 9,5 9,2 3,2 2,2z M7,6C5.934,6 5.4863281,6.3519062 5.4863281,7.2539062 5.4863281,7.2539062 5.4620781,7.841 5.4550781,8 5.4090781,8.369 5.2799531,8.6777344 4.8769531,8.6777344L4.5722656,8.6777344 4.5722656,9.3222656 4.8769531,9.3222656C5.4659531,9.3222656 5.4863281,9.9664375 5.4863281,10.523438 5.4813281,10.697437 5.4999063,10.892953 5.5039062,11.001953 5.5869063,11.713953 6.042,12.001953 7,12.001953L7,11.408203C6.55,11.408203 6.3940781,11.291953 6.3300781,11.001953 6.2960781,10.885953 6.2932969,10.487875 6.2792969,10.296875 6.2792969,9.881875 6.1556406,9.2618594 5.5566406,9.0058594 6.0296406,8.8028594 6.2009063,8.3778594 6.2539062,8.0058594 6.2779063,7.9018594 6.2713438,7.7821719 6.2773438,7.7011719 6.2773438,6.8351719 6.2870469,6.5976562 6.9980469,6.5976562L7,6z M9,6L9.0019531,6.5976562C9.7129531,6.5976563 9.7226562,6.8351719 9.7226562,7.7011719 9.7286564,7.7821719 9.7220937,7.9018594 9.7460938,8.0058594 9.7990936,8.3778594 9.9703598,8.8028594 10.443359,9.0058594 9.8443598,9.2618594 9.7207031,9.881875 9.7207031,10.296875 9.7067031,10.487875 9.7039219,10.885953 9.6699219,11.001953 9.6059219,11.291953 9.45,11.408203 9,11.408203L9,12.001953C9.958,12.001953 10.413094,11.713953 10.496094,11.001953 10.500094,10.892953 10.518672,10.697437 10.513672,10.523438 10.513672,9.966437 10.534047,9.3222656 11.123047,9.3222656L11.427734,9.3222656 11.427734,8.6777344 11.123047,8.6777344C10.720047,8.6777344 10.590922,8.369 10.544922,8 10.537922,7.841 10.513672,7.2539062 10.513672,7.2539062 10.513672,6.3519062 10.066,6 9,6z" />
+										</GeometryDrawing.Geometry>
+									</GeometryDrawing>
+
+									<GeometryDrawing Brush="#FFF67400" >
+										<GeometryDrawing.Geometry>
+											<PathGeometry FillRule="Nonzero" Figures="M10,2L12,5 14,2z" />
+										</GeometryDrawing.Geometry>
+									</GeometryDrawing>
+
+								</DrawingGroup>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>
+
+			<Button Width="36" Height="36" Margin="2" ToolTip="Step Out">
+				<Image Margin="2">
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<DrawingGroup xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:svg="http://sharpvectors.codeplex.com/runtime/">
+									<DrawingGroup x:Name="DrawingLayer">
+										<DrawingGroup.ClipGeometry>
+											<RectangleGeometry Rect="0,0,16,16" />
+										</DrawingGroup.ClipGeometry>
+										<GeometryDrawing Brush="#FFEFF0F1" >
+											<GeometryDrawing.Geometry>
+												<PathGeometry FillRule="Nonzero" Figures="M2,2L2,14 14,14 14,5 13,5 13,13 3,13 3,5 10,5 10,2 3,2 2,2z M7,6C5.934,6 5.4863281,6.3519062 5.4863281,7.2539062 5.4863281,7.2539062 5.4620781,7.841 5.4550781,8 5.4090781,8.369 5.2799531,8.6777344 4.8769531,8.6777344L4.5722656,8.6777344 4.5722656,9.3222656 4.8769531,9.3222656C5.4659531,9.3222656 5.4863281,9.9664375 5.4863281,10.523438 5.4813281,10.697437 5.4999063,10.892953 5.5039062,11.001953 5.5869063,11.713953 6.042,12.001953 7,12.001953L7,11.408203C6.55,11.408203 6.3940781,11.291953 6.3300781,11.001953 6.2960781,10.885953 6.2932969,10.487875 6.2792969,10.296875 6.2792969,9.881875 6.1556406,9.2618594 5.5566406,9.0058594 6.0296406,8.8028594 6.2009063,8.3778594 6.2539062,8.0058594 6.2779063,7.9018594 6.2713438,7.7821719 6.2773438,7.7011719 6.2773438,6.8351719 6.2870469,6.5976562 6.9980469,6.5976562L7,6z M9,6L9.0019531,6.5976562C9.7129531,6.5976563 9.7226562,6.8351719 9.7226562,7.7011719 9.7286564,7.7821719 9.7220937,7.9018594 9.7460938,8.0058594 9.7990936,8.3778594 9.9703598,8.8028594 10.443359,9.0058594 9.8443598,9.2618594 9.7207031,9.881875 9.7207031,10.296875 9.7067031,10.487875 9.7039219,10.885953 9.6699219,11.001953 9.6059219,11.291953 9.45,11.408203 9,11.408203L9,12.001953C9.958,12.001953 10.413094,11.713953 10.496094,11.001953 10.500094,10.892953 10.518672,10.697437 10.513672,10.523438 10.513672,9.966437 10.534047,9.3222656 11.123047,9.3222656L11.427734,9.3222656 11.427734,8.6777344 11.123047,8.6777344C10.720047,8.6777344 10.590922,8.369 10.544922,8 10.537922,7.841 10.513672,7.2539062 10.513672,7.2539062 10.513672,6.3519062 10.066,6 9,6z" />
+											</GeometryDrawing.Geometry>
+										</GeometryDrawing>
+										<GeometryDrawing Brush="#FFF67400">
+											<GeometryDrawing.Geometry>
+												<PathGeometry FillRule="Nonzero" Figures="M11,5L14,3.5 11,2z" />
+											</GeometryDrawing.Geometry>
+										</GeometryDrawing>
+									</DrawingGroup>
+								</DrawingGroup>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>
+
+			<Button Width="36" Height="36" Margin="2" ToolTip="Reset">
+				<Image Margin="4" >
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<GeometryDrawing Brush="#FFEFF0F1">
+												<GeometryDrawing.Geometry>
+													<PathGeometry FillRule="Nonzero" Figures="M942.8,500.1L946,27.4 821.3,98.3C739.8,42.1 643.4,10 544,10 273.8,10 54,229.9 54,500 54,770.1 273.8,990 544,990 699.5,990 842.5,918.6 936,794.1L790.1,684.6C731.4,762.9 641.8,807.7 544,807.7 374.3,807.7 236.3,669.7 236.3,500 236.3,330.3 374.3,192.3 544,192.3 574.3,192.3 603.7,197.5 631.9,205.8L535,261 942.8,500.1z" />
+												</GeometryDrawing.Geometry>
+											</GeometryDrawing>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>
+
+		</StackPanel>
+		
+		<StackPanel Grid.Column="1" Grid.Row="2" Margin="5,0,0,0">
+	
+		<TextBlock Style="{StaticResource MainTitleStyle}" Text="CPU Status"/>
+
+			<TextBlock Style="{StaticResource TitleStyle}" Text="Flags"/>
+			<Grid Margin="5">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="30"/>
+					<ColumnDefinition Width="20"/>
+					<ColumnDefinition Width="20"/>
+					<ColumnDefinition Width="20"/>
+					<ColumnDefinition Width="20"/>
+					<ColumnDefinition Width="20"/>
+					<ColumnDefinition Width="20"/>
+					<ColumnDefinition Width="20"/>
+					<ColumnDefinition Width="20"/>
+				</Grid.ColumnDefinitions>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="18"/>
+					<RowDefinition Height="18"/>
+				</Grid.RowDefinitions>
+				<TextBlock Grid.Column="0" Grid.RowSpan="2" Text="F" Style="{StaticResource LabelStyle}" FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+				<TextBlock Grid.Column="1" Text="S" Style="{StaticResource LabelStyle}"/>
+				<TextBlock Grid.Column="2" Text="Z" Style="{StaticResource LabelStyle}" />
+				<TextBlock Grid.Column="3" Text="5" Style="{StaticResource LabelStyle}" />
+				<TextBlock Grid.Column="4" Text="H" Style="{StaticResource LabelStyle}" />
+				<TextBlock Grid.Column="5" Text="3" Style="{StaticResource LabelStyle}" />
+				<TextBlock Grid.Column="6" Text="PV" Style="{StaticResource LabelStyle}" />
+				<TextBlock Grid.Column="7" Text="N" Style="{StaticResource LabelStyle}" />
+				<TextBlock Grid.Column="8" Text="C" Style="{StaticResource LabelStyle}" />
+
+				<TextBlock Grid.Column="1" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
+				<TextBlock Grid.Column="2" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
+				<TextBlock Grid.Column="3" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
+				<TextBlock Grid.Column="4" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
+				<TextBlock Grid.Column="5" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
+				<TextBlock Grid.Column="6" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
+				<TextBlock Grid.Column="7" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
+				<TextBlock Grid.Column="8" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
+			</Grid>
+
+			<Separator />
+			<TextBlock Style="{StaticResource TitleStyle}" Text="Registers"/>
+			<local:RegisterPage ExecutionControl="{Binding ExecutionControl}"/>
+
+			<Separator/>
+			<TextBlock Style="{StaticResource MainTitleStyle}" Text="Timing"/>
+			<local:TimingPage x:Name="tpTiming" ExecutionControl="{Binding ExecutionControl}" />
+
+			<TextBlock Style="{StaticResource MainTitleStyle}"  Text="Execution History"/>
+			<local:ExecutionHistoryPage ExecutionControl="{Binding ExecutionControl}"/>
+
+			<TextBlock Style="{StaticResource MainTitleStyle}" Text="Memory Status"/>
+			<local:MemoryStatusPage x:Name="mspMemoryStatus" ExecutionControl="{Binding ExecutionControl}" />
+
+		</StackPanel>
+	
+		<StackPanel Grid.Column="2" Grid.Row="2" Margin="5,0,0,0">
+			<TextBlock Style="{StaticResource MainTitleStyle}"  Text="Video Status"/>
+
+			<TextBlock Style="{StaticResource TitleStyle}" Text="CRT Registers"/>
+
+			<local:M6845Page ExecutionControl="{Binding ExecutionControl}"/>
+			<Separator/>
+		</StackPanel>
+		
+
+	</Grid>
+</Window>

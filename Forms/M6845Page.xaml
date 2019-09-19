@@ -1,0 +1,144 @@
+﻿<UserControl x:Class="TVCEmu.Forms.M6845Page"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:TVCEmu.Forms"
+      mc:Ignorable="d" 
+      d:DesignHeight="350" d:DesignWidth="220">
+	<UserControl.Resources>
+		<Style x:Key="RegisterNameStyle" TargetType="{x:Type TextBlock}">
+			<Setter Property="Foreground" Value="OrangeRed"/>
+		</Style>
+		<Style x:Key="DataStyle" TargetType="{x:Type TextBlock}">
+			<Setter Property="HorizontalAlignment" Value="Left" />
+			<Setter Property="Foreground" Value="DeepSkyBlue" />
+		</Style>
+		<Style x:Key="DescriptionStyle" TargetType="{x:Type TextBlock}">
+			<Setter Property="Foreground" Value="DarkGray"/>
+		</Style>
+	</UserControl.Resources>
+	<Grid Background="{DynamicResource Background}">
+			<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="25"/>
+			<ColumnDefinition Width="20"/>
+			<ColumnDefinition />
+		</Grid.ColumnDefinitions>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+			<RowDefinition Height="18"/>
+		</Grid.RowDefinitions>
+		<!-- R0 -->
+		<TextBlock Grid.Row="0" Grid.Column="0" Text="R0" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Registers[0], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="0" Grid.Column="2" Text="Horizontal total" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R1 -->
+		<TextBlock Grid.Row="1" Grid.Column="0" Text="R1" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Registers[1], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="1" Grid.Column="2" Text="Horizontal displayed" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R2 -->
+		<TextBlock Grid.Row="2" Grid.Column="0" Text="R2" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Registers[2], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="2" Grid.Column="2" Text="H. Sync position" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R3 -->
+		<TextBlock Grid.Row="3" Grid.Column="0" Text="R3" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Registers[3], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="3" Grid.Column="2" Text="Sync width" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R4 -->
+		<TextBlock Grid.Row="4" Grid.Column="0" Text="R4" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Registers[4], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="4" Grid.Column="2" Text="Vertical total" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R5 -->
+		<TextBlock Grid.Row="5" Grid.Column="0" Text="R5" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Registers[5], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="5" Grid.Column="2" Text="V. Total Adjust" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R6 -->
+		<TextBlock Grid.Row="6" Grid.Column="0" Text="R6" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Registers[6], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="6" Grid.Column="2" Text="Vertical Displayed" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R7 -->
+		<TextBlock Grid.Row="7" Grid.Column="0" Text="R7" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Registers[7], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="7" Grid.Column="2" Text="V. Sync Position" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R8 -->
+		<TextBlock Grid.Row="8" Grid.Column="0" Text="R8" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Registers[8], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="8" Grid.Column="2" Text="Interlace Mode and Skew" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R9 -->
+		<TextBlock Grid.Row="9" Grid.Column="0" Text="R9" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding Registers[9], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="9" Grid.Column="2" Text="Max Scan  Line Address" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R10 -->
+		<TextBlock Grid.Row="10" Grid.Column="0" Text="R10" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding Registers[10], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="10" Grid.Column="2" Text="Cursor Start" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R11 -->
+		<TextBlock Grid.Row="11" Grid.Column="0" Text="R11" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding Registers[11], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="11" Grid.Column="2" Text="Cursor End" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R12 -->
+		<TextBlock Grid.Row="12" Grid.Column="0" Text="R12" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding Registers[12], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="12" Grid.Column="2" Text="Start Address (H)" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R13 -->
+		<TextBlock Grid.Row="13" Grid.Column="0" Text="R13" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="13" Grid.Column="1" Text="{Binding Registers[13], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="13" Grid.Column="2" Text="Start Address (L)" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R14 -->
+		<TextBlock Grid.Row="14" Grid.Column="0" Text="R14" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="14" Grid.Column="1" Text="{Binding Registers[14], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="14" Grid.Column="2" Text="Cursor (H)" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R15 -->
+		<TextBlock Grid.Row="15" Grid.Column="0" Text="R15" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="15" Grid.Column="1" Text="{Binding Registers[15], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="15" Grid.Column="2" Text="Cursor (L)" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R16 -->
+		<TextBlock Grid.Row="16" Grid.Column="0" Text="R16" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="16" Grid.Column="1" Text="{Binding Registers[16], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="16" Grid.Column="2" Text="Light Pen (H)" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- R17 -->
+		<TextBlock Grid.Row="17" Grid.Column="0" Text="R17" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="17" Grid.Column="1" Text="{Binding Registers[17], StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="17" Grid.Column="2" Text="Light Pen (L)" Style="{StaticResource DescriptionStyle}"/>
+
+		<!-- RA -->
+		<TextBlock Grid.Row="18" Grid.Column="0" Text="RA" Style="{StaticResource RegisterNameStyle}"/>
+		<TextBlock Grid.Row="18" Grid.Column="1" Text="{Binding RegisterAddress, StringFormat={}{0:x2}}" Style="{StaticResource DataStyle}"/>
+		<TextBlock Grid.Row="18" Grid.Column="2" Text="Register Address" Style="{StaticResource DescriptionStyle}"/>
+	</Grid>
+</UserControl>
