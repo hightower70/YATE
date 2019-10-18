@@ -7,7 +7,7 @@
 				xmlns:effects="clr-namespace:TVCEmu.Effects"
         mc:Ignorable="d"
         Title="MainWindow" Height="800" Width="1250"
-				Style="{DynamicResource WindowStyle}" Closing="Window_Closing" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
+				Style="{DynamicResource WindowStyle}" Closing="Window_Closing" PreviewKeyDown="Window_KeyDown" PreviewKeyUp="Window_KeyUp">
 	<Window.Resources>
 		<Style TargetType="TextBlock" x:Key="LabelStyle">
 			<Setter Property="Foreground" Value="OrangeRed"/>
@@ -62,8 +62,8 @@
 				</ItemsPanelTemplate>
 			</Menu.ItemsPanel>
 			<MenuItem Header="_File" Height="22" VerticalAlignment="Top">
-				<MenuItem x:Name="miOpenMapFile" Header="Memory _Load..." Click="MiOpenMapFile_Click" />
-				<MenuItem x:Name="miSaveAsMapFile" Header="Memory _Save..." Click="MiSaveAsMapFile_Click"  />
+				<MenuItem x:Name="miOpenCASFile" Header="Memory _Load..." Click="MiOpenCASFile_Click" />
+				<MenuItem x:Name="miSaveAsCASFile" Header="Memory _Save..." Click="MiSaveAsCASFile_Click"  />
 				<Separator />
 				<MenuItem Header="_Exit" />
 			</MenuItem>

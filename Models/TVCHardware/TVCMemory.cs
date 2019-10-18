@@ -511,7 +511,7 @@ namespace TVCHardware
 
 		public int VideoMemAccessCount { get; set; } = 0;
 
-		private static readonly string[] m_page0_mapping_names = { "SYS", "CART", "U0" };
+		private static readonly string[] m_page0_mapping_names = { "SYS", "CART", "U0", "U3" };
 		private static readonly string[] m_page1_mapping_names = { "U1" };
 		private static readonly string[] m_page2_mapping_names = { "VID", "U2" };
 		private static readonly string[] m_page3_mapping_names = { "CART", "SYS", "U3", "EXT" };

@@ -80,7 +80,9 @@
     <Compile Include="Forms\M6845Page.xaml.cs">
       <DependentUpon>M6845Page.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\CRC16.cs" />
     <Compile Include="Helpers\HashCodeHelper.cs" />
+    <Compile Include="Helpers\KeyboardHook.cs" />
     <Compile Include="Models\TVCFiles\BASFile.cs" />
     <Compile Include="Models\TVCFiles\BinaryFileStructHelper.cs" />
     <Compile Include="Models\TVCFiles\CASFile.cs" />
@@ -95,10 +97,9 @@
     <Compile Include="Models\TVCFiles\TVCCharacterCodePage.cs" />
     <Compile Include="Models\TVCFiles\TVCFileCRC.cs" />
     <Compile Include="Models\TVCFiles\TVCFiles.cs" />
-    <Compile Include="Models\TVCHardware\HBFCard.cs" />
     <Compile Include="Models\TVCHardware\DiskDrive.cs" />
-    <Compile Include="Models\TVCHardware\ITVCCard.cs" />
-    <Compile Include="Models\TVCHardware\TVCComputer.cs" />
+    <Compile Include="Models\TVCHardware\HBFCard.cs" />
+    <Compile Include="Models\TVCHardware\TVComputer.cs" />
     <Compile Include="Models\TVCHardware\TVCInterrupt.cs" />
     <Compile Include="Models\TVCHardware\TVCKeyboard.cs" />
     <Compile Include="Models\TVCHardware\TVCMemory.cs" />
@@ -185,6 +186,10 @@
     <Folder Include="Views\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="D:\Projects\Retro\YATE\TVCEmuCommon\TVCEmuCommon.csproj">
+      <Project>{980e3f3e-48c7-4ead-a731-6a2e1856366e}</Project>
+      <Name>TVCEmuCommon</Name>
+    </ProjectReference>
     <ProjectReference Include="Skins\DarkSkin\DarkSkin.csproj">
       <Project>{d18c8da5-f4ed-4774-a9eb-294cbe8ac340}</Project>
       <Name>DarkSkin</Name>

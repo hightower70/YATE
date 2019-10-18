@@ -99,11 +99,20 @@ namespace TVCEmu.Models.TVCFiles
 
 		public static void SaveCAS(Stream in_stream, ProgramStorage in_storage)
 		{
-
+			CASFile.CASSave(in_stream, in_storage);
 		}
 
 		public static void SaveProgramFile(string in_file_name, TVCMemory in_memory)
 		{
+			using (FileStream cas_stream = new FileStream(in_file_name, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 4096))
+			{
+				ProgramStorage storage = new ProgramStorage();
+
+				// get memory content
+				in_memory.SaveToProgramStorage(storage);
+
+				SaveCAS(cas_stream, storage);
+			}
 		}
 
 		public static void SaveProgramFile(string in_file_name, TVCMemory in_memory, BASFile.EncodingType in_encoding)

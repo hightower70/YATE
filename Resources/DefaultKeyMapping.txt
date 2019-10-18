@@ -70,12 +70,12 @@ C| None| 6| 1| None ;
 B| None| 6| 0| None ;
 
 ; row 7
-M| None| 7| 7| None ;
-OemMinus| None| 7| 6| None ;
-Space| None| 7| 5| None ;
-End| None| 7| 3| None ;
-OemPeriod| None| 7| 2| None ;
-OemComma| None| 7| 1| None ;
+M        | None | 7 | 7 | None ;  M
+OemMinus | None | 7 | 6 | None ;  -
+Space    | None | 7 | 5 | None ; ' '
+Escape      | None | 7 | 3 | None ; 
+OemPeriod| None | 7 | 2 | None ;
+OemComma | None | 7 | 1 | None ;
 
 ; row 8
 Left| None| 8| 6| None ;

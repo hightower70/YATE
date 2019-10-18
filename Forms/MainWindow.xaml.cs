@@ -63,7 +63,7 @@ namespace TVCEmu.Forms
 			ExecutionControl.TVC.Keyboard.KeyUp(e);
 		}
 
-		private void MiOpenMapFile_Click(object sender, RoutedEventArgs e)
+		private void MiOpenCASFile_Click(object sender, RoutedEventArgs e)
 		{
 			// Configure open file dialog box
 			Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog
@@ -86,7 +86,7 @@ namespace TVCEmu.Forms
 			}
 		}
 
-		private void MiSaveAsMapFile_Click(object sender, RoutedEventArgs e)
+		private void MiSaveAsCASFile_Click(object sender, RoutedEventArgs e)
 		{
 			// Configure open file dialog box
 			Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
@@ -108,6 +108,7 @@ namespace TVCEmu.Forms
 				switch(dlg.FilterIndex)
 				{
 					case 1:
+						TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory);
 						break;
 
 					case 2:

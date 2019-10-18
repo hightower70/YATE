@@ -176,8 +176,6 @@ namespace TVCEmu.Controls
 
 		}
 
-
-
 		#region · Thread control functions ·
 
 		/// <summary>
@@ -283,6 +281,8 @@ namespace TVCEmu.Controls
 					{
 						m_cpu_cycle += (uint)(TVC.Memory.VideoMemAccessCount + 1);
 					}
+
+					TVC.PeriodicCallback();
 				}
 
 				// generate debug event

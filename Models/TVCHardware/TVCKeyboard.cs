@@ -141,8 +141,7 @@ namespace TVCHardware
 
 		public void KeyDown(KeyEventArgs in_eventargs)
 		{
-			Debug.WriteLine(in_eventargs.Key.ToString() + " " + Keyboard.Modifiers.ToString());
-
+			Debug.WriteLine("D: " + in_eventargs.Key.ToString() + " " + Keyboard.Modifiers.ToString());
 
 			if (in_eventargs.IsDown && !in_eventargs.IsRepeat)
 			{
@@ -164,7 +163,9 @@ namespace TVCHardware
 
 		public void KeyUp(KeyEventArgs in_eventargs)
 		{
-			if(!in_eventargs.IsDown)
+			Debug.WriteLine("U: " + in_eventargs.Key.ToString() + " " + Keyboard.Modifiers.ToString());
+
+			if (!in_eventargs.IsDown)
 			{
 				KeyMappingEntry windows_key = new KeyMappingEntry(in_eventargs.Key, Keyboard.Modifiers, 0, 0, KeyModifiers.None);
 				if (m_key_mapping.Contains(windows_key))

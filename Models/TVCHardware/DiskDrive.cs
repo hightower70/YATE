@@ -17,16 +17,17 @@ namespace TVCHardware
 		}
 
 		private FileStream m_disk_image = null;
-		private int m_current_track = 0;
+		private byte m_current_track = 0;
 		private int m_current_sector = 0;
 		private DiskGeometry m_disk_geometry = new DiskGeometry();
 
 		/// <summary>
 		/// Gets current track
 		/// </summary>
-		public int Track
+		public byte Track
 		{
 			get { return m_current_track; }
+			set { m_current_track = value; }
 		}
 
 		/// <summary>
@@ -43,18 +44,18 @@ namespace TVCHardware
 		/// <param name="in_track">Track number 0..DiskGeometry.NumberOfTracks</param>
 		/// <param name="in_sector">Sector number 0..DiskGeometry.SectorPerTrack</param>
 		/// <param name="in_head">Side (head) number: 0..NumberOfSides</param>
-		public void Seek(int in_track, int in_sector, int in_head)
+		public void SeekSector(int in_sector, int in_head)
 		{
 			if (m_disk_image == null)
 				return;
 
-			if (in_track < 0 || in_track >= m_disk_geometry.NumberOfTracks || in_sector < 1 || in_sector > m_disk_geometry.SectorPerTrack || in_head < 0 || in_head >= m_disk_geometry.NumberOfSides)
+			if (Track < 0 || Track >= m_disk_geometry.NumberOfTracks || in_sector < 1 || in_sector > m_disk_geometry.SectorPerTrack || in_head < 0 || in_head >= m_disk_geometry.NumberOfSides)
 				return;
 
-			m_current_track = in_track;
+			m_current_track = Track;
 			m_current_sector = in_sector;
 
-			int lba = m_current_track * (m_disk_geometry.NumberOfSides * m_disk_geometry.SectorPerTrack) + in_head * m_disk_geometry.SectorPerTrack + in_sector - 1;
+			int lba = (m_current_track * (m_disk_geometry.NumberOfSides * m_disk_geometry.SectorPerTrack) + in_head * m_disk_geometry.SectorPerTrack + in_sector - 1) * Geometry.SectorLength;
 			m_disk_image.Seek(lba, SeekOrigin.Begin);
 		}
 
@@ -81,7 +82,12 @@ namespace TVCHardware
 			{
 				int length = GetDiskSizeInBytes();
 				while (length > 0)
+				{
 					m_disk_image.WriteByte(0);
+					length--;
+				}
+
+				m_disk_image.Flush();
 
 				m_disk_image.Seek(0, SeekOrigin.Begin);
 			}

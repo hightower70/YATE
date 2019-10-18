@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TVCEmu", "TVCEmu.csproj", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkSkin", "Skins\DarkSkin\DarkSkin.csproj", "{D18C8DA5-F4ED-4774-A9EB-294CBE8AC340}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TVCEmuCommon", "D:\Projects\Retro\YATE\TVCEmuCommon\TVCEmuCommon.csproj", "{980E3F3E-48C7-4EAD-A731-6A2E1856366E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,14 @@ Global
 		{D18C8DA5-F4ED-4774-A9EB-294CBE8AC340}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D18C8DA5-F4ED-4774-A9EB-294CBE8AC340}.Release|x86.ActiveCfg = Release|x86
 		{D18C8DA5-F4ED-4774-A9EB-294CBE8AC340}.Release|x86.Build.0 = Release|x86
+		{980E3F3E-48C7-4EAD-A731-6A2E1856366E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{980E3F3E-48C7-4EAD-A731-6A2E1856366E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{980E3F3E-48C7-4EAD-A731-6A2E1856366E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{980E3F3E-48C7-4EAD-A731-6A2E1856366E}.Debug|x86.Build.0 = Debug|Any CPU
+		{980E3F3E-48C7-4EAD-A731-6A2E1856366E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{980E3F3E-48C7-4EAD-A731-6A2E1856366E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{980E3F3E-48C7-4EAD-A731-6A2E1856366E}.Release|x86.ActiveCfg = Release|Any CPU
+		{980E3F3E-48C7-4EAD-A731-6A2E1856366E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
