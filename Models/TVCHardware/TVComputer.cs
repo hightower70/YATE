@@ -3,7 +3,7 @@ using Z80CPU;
 
 namespace TVCHardware
 {
-	public class TVComputer	: ITVComputer
+	public class TVComputer : ITVComputer
 	{
 		public const int ExpansionCardCount = 4;
 		public const int ExpansionCardPortRange = 16;
@@ -14,7 +14,7 @@ namespace TVCHardware
 		public TVCPorts Ports { get; private set; }
 		public TVCMemory Memory { get; private set; }
 		public TVCVideo Video { get; private set; }
-		public TVCKeyboard Keyboard {get;private set;}
+		public TVCKeyboard Keyboard { get; private set; }
 		public TVCInterrupt Interrupt { get; private set; }
 		public ITVCCard[] Cards { get; private set; }
 
@@ -45,11 +45,21 @@ namespace TVCHardware
 			Reset();
 		}
 
+		/// <summary>
+		/// Resets computer
+		/// </summary>
 		public void Reset()
 		{
 			CPU.Reset();
 			Video.Reset();
 			Ports.Reset();
+
+			// reset cards
+			for (int i = 0; i < ExpansionCardCount; i++)
+			{
+				if (Cards[i] != null)
+					Cards[i].CardReset();
+			}
 		}
 
 		public void InsertCard(int in_slot_index, ITVCCard in_card)
@@ -111,7 +121,7 @@ namespace TVCHardware
 				if (Cards[i] != null)
 				{
 					data |= (byte)(Cards[i].CardGetID() << (i * 2));
-				}	
+				}
 				else
 				{
 					data |= (byte)(0x03 << (i * 2));
@@ -129,6 +139,8 @@ namespace TVCHardware
 					Cards[i].CardPeriodicCallback(CPU.TotalTState);
 			}
 		}
+
+
 
 		/// <summary>
 		/// Converts milliseconds to CPU clock cycle count

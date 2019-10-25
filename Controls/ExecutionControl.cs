@@ -11,85 +11,14 @@ namespace TVCEmu.Controls
 	{
 		#region · Types · 
 
-		private const int HistoryEntryByteBufferLength = 6;
-
-		public class ExecutionHistoryEntry
+		public enum ExecutionState
 		{
-			public ushort PC { get; set; }
-			public uint TCycle { get; set; }
-			public byte[] Bytes { get; private set; }
-
-			public ExecutionHistoryEntry()
-			{
-				Bytes = new byte[HistoryEntryByteBufferLength];
-			}
-
-			public byte ReadMemory(ushort in_address)
-			{
-				int address = in_address - PC;
-
-				if (address < 0 || address >= Bytes.Length)
-					return 0;
-				else
-					return Bytes[address];
-			}
-
-			public void CopyTo(ExecutionHistoryEntry in_entry)
-			{
-				in_entry.PC = PC;
-				in_entry.TCycle = TCycle;
-				Bytes.CopyTo(in_entry.Bytes,0);
-			}
+			Paused,
+			Running,
+			ResetAndRun,
+			ResetAndPause
 		}
 
-		public class ExecutionHistoryColection
-		{
-			private ExecutionHistoryEntry[] m_write_history;
-			private ExecutionHistoryEntry[] m_read_history;
-			private int m_write_index;
-			private int m_read_index;
-
-			public ExecutionHistoryColection(int in_element_count)
-			{
-				m_read_history = new ExecutionHistoryEntry[in_element_count];
-				m_write_history = new ExecutionHistoryEntry[in_element_count];
-
-				for (int i =0;i<m_write_history.Length;i++)
-				{
-					m_read_history[i] = new ExecutionHistoryEntry();
-					m_write_history[i] = new ExecutionHistoryEntry();
-				}
-			}
-
-			public ExecutionHistoryEntry GetNextEmptySlot()
-			{
-				m_write_index--;
-
-				if (m_write_index < 0)
-					m_write_index = m_write_history.Length - 1;
-
-				return m_write_history[m_write_index];
-			}
-
-			public void UpdateHistory()
-			{
-				m_read_index = m_write_index;
-				for (int i = 0; i < m_write_history.Length; i++)
-					m_write_history[i].CopyTo(m_read_history[i]);
-			}
-
-
-			public ExecutionHistoryEntry this[int in_index]
-			{
-				get
-				{
-					int index = (m_read_index + in_index) % m_write_history.Length;
-
-					return m_write_history[index];
-				}
-			}
-
-		}
 
 		public delegate void DebuggerBreakEventDelegate(TVComputer in_sender);
 
@@ -103,6 +32,7 @@ namespace TVCEmu.Controls
 		private SynchronizationContext m_context;
 		private bool m_thread_running;
 		private uint m_cpu_cycle;
+		private ExecutionState m_execution_state;
 		#endregion
 
 		#region · Constructor ·
@@ -113,7 +43,7 @@ namespace TVCEmu.Controls
 		public ExecutionControl()
 		{
 			TVC = new TVComputer();
-			ExecutionHistory = new ExecutionHistoryColection(2);
+			ExecutionHistory = new ExecutionHistoryCollection(2);
 
 			m_stream_thread = null;
 			m_thread_event = new AutoResetEvent(false);
@@ -121,25 +51,70 @@ namespace TVCEmu.Controls
 			m_thread_running = false;
 			m_context = SynchronizationContext.Current;
 
-			DebugStepCommand = new ExecutionControlCommand(DebugStepExecute);
+			m_execution_state = ExecutionState.Running;
+
+			DebugStepIntoCommand = new ExecutionControlCommand(DebugStepExecute);
+			DebugPauseCommand = new ExecutionControlCommand(DebugPauseExecute);
+			DebugRunCommand = new ExecutionControlCommand(DebugRunExecute);
+			DebugResetCommand = new ExecutionControlCommand(DebugResetExecute);
 		}
 		#endregion
 
 		#region · Commands ·
-		public ExecutionControlCommand DebugStepCommand { get; private set; }
+
+		// Reset command
+		public ExecutionControlCommand DebugResetCommand { get; private set; }
+
+		public void DebugResetExecute(object parameter)
+		{
+			if (m_execution_state == ExecutionState.Running)
+				m_execution_state = ExecutionState.ResetAndRun;
+			else
+				m_execution_state = ExecutionState.ResetAndPause;
+
+			m_thread_event.Set();
+		}
+
+
+
+		// Step into
+		public ExecutionControlCommand DebugStepIntoCommand { get; private set; }
 
 		public void DebugStepExecute(object parameter)
 		{
 			StepInto();
 		}
 
+		// Pause
+		public ExecutionControlCommand DebugPauseCommand { get; private set; }
+
+		public void DebugPauseExecute(object parameter)
+		{
+			if (m_execution_state != ExecutionState.Paused)
+			{
+				m_execution_state = ExecutionState.Paused;
+				m_thread_event.Set();
+			}
+		}
+
+		// Run
+		public ExecutionControlCommand DebugRunCommand { get; private set; }
+
+		public void DebugRunExecute(object parameter)
+		{
+			if (m_execution_state != ExecutionState.Running)
+			{
+				m_execution_state = ExecutionState.Running;
+				m_thread_event.Set();
+			}
+		}
 
 		#endregion
 
 		#region · Properties · 
 
 		public TVComputer TVC { get; private set; }
-		public ExecutionHistoryColection ExecutionHistory { get; private set; }
+		public ExecutionHistoryCollection ExecutionHistory { get; private set; }
 
 		public CommandBinding StepCommand
 		{
@@ -166,7 +141,7 @@ namespace TVCEmu.Controls
 				TCycle += TVC.CPU.Step();
 			} while (!TVC.CPU.InstructionDone || instruction_start_pc == TVC.CPU.Registers.PC);
 
-			//ExecutionHistory.Add(instruction_start_pc, TCycle);
+			AddInstructionToExecutionHistory(instruction_start_pc, TCycle);
 
 			DebuggerBreakEvent?.Invoke(TVC);
 		}
@@ -246,83 +221,116 @@ namespace TVCEmu.Controls
 
 			while (m_thread_running)
 			{
-				while (!TVC.Video.RenderScanline() && m_thread_running)
+				if (m_execution_state == ExecutionState.Running)
 				{
-					target_cycle += 178;
-					TVC.Memory.VideoMemAccessCount = 0;
-
-					do
+					while (!TVC.Video.RenderScanline() && m_thread_running)
 					{
-						current_instruction_t_cycle = TVC.CPU.Step();
-						m_cpu_cycle += current_instruction_t_cycle;
-						instruction_t_cycle += current_instruction_t_cycle;
+						target_cycle += 178;
+						TVC.Memory.VideoMemAccessCount = 0;
 
-						if (TVC.CPU.InstructionDone)
+						do
 						{
-							ExecutionHistoryEntry history_entry = ExecutionHistory.GetNextEmptySlot();
-							history_entry.PC = instruction_start_pc;
-							history_entry.TCycle = instruction_t_cycle;
+							current_instruction_t_cycle = TVC.CPU.Step();
+							m_cpu_cycle += current_instruction_t_cycle;
+							instruction_t_cycle += current_instruction_t_cycle;
 
-							for (int i = 0; i < HistoryEntryByteBufferLength; i++)
+							if (TVC.CPU.InstructionDone)
 							{
-								history_entry.Bytes[i] = TVC.Memory.Read((ushort)(instruction_start_pc + i));
+								AddInstructionToExecutionHistory(instruction_start_pc, instruction_t_cycle);
+
+								instruction_start_pc = TVC.CPU.Registers.PC;
+								instruction_t_cycle = 0;
 							}
 
-							instruction_start_pc = TVC.CPU.Registers.PC;
-							instruction_t_cycle = 0;
+							if (TVC.Interrupt.IsIntActive())
+								m_cpu_cycle += (uint)TVC.CPU.Int();
+
+						} while (((long)target_cycle - m_cpu_cycle) > 0 && m_thread_running);
+
+						if (TVC.Memory.VideoMemAccessCount > 0)
+						{
+							m_cpu_cycle += (uint)(TVC.Memory.VideoMemAccessCount + 1);
 						}
 
-						if (TVC.Interrupt.IsIntActive())
-							m_cpu_cycle += (uint)TVC.CPU.Int();
-
-					} while (((long)target_cycle - m_cpu_cycle) > 0 && m_thread_running);
-
-					if (TVC.Memory.VideoMemAccessCount > 0)
-					{
-						m_cpu_cycle += (uint)(TVC.Memory.VideoMemAccessCount + 1);
+						TVC.PeriodicCallback();
 					}
 
-					TVC.PeriodicCallback();
-				}
-
-				// generate debug event
-				if (m_thread_running)
-				{
-					frame_count++;
-
-					if (frame_count > 5)
+					// generate debug event
+					if (m_thread_running)
 					{
-						frame_count = 0;
+						frame_count++;
 
-						ExecutionHistory.UpdateHistory();
-
-						m_context.Post(delegate
+						if (frame_count > 5)
 						{
-							DebuggerBreakEvent?.Invoke(TVC);
-						}, null);
+							frame_count = 0;
+
+							ExecutionHistory.UpdateHistory();
+
+							m_context.Post(delegate
+							{
+								DebuggerBreakEvent?.Invoke(TVC);
+							}, null);
+						}
+					}
+
+					// restart stopwatch
+					m_stopwatch.Stop();
+					current_time += (uint)m_stopwatch.ElapsedMilliseconds;
+					m_stopwatch.Restart();
+
+					if (m_thread_running)
+					{
+						target_time += 19;
+
+						delay_time = (int)((long)target_time - current_time);
+
+						if (delay_time < 0)
+							delay_time = 0;
+
+						m_thread_event.WaitOne(delay_time);
+
 					}
 				}
-
-				// restart stopwatch
-				m_stopwatch.Stop();
-				current_time += (uint)m_stopwatch.ElapsedMilliseconds;
-				m_stopwatch.Restart();
-
-				if (m_thread_running)
+				else
 				{
-					target_time += 19;
+					switch (m_execution_state)
+					{
+						case ExecutionState.ResetAndPause:
+							TVC.Reset();
+							m_execution_state = ExecutionState.Paused;
+							break;
 
-					delay_time = (int)((long)target_time - current_time);
+						case ExecutionState.ResetAndRun:
+							TVC.Reset();
+							m_execution_state = ExecutionState.Running;
+							break;
 
-					if (delay_time < 0)
-						delay_time = 0;
-
-					m_thread_event.WaitOne(delay_time);
-
+						case ExecutionState.Paused:
+							m_thread_event.WaitOne(1000);
+							break;
+					}
 				}
 			}
 		}
 	
+
+		/// <summary>
+		/// Adds last instruction to the execution history 
+		/// </summary>
+		/// <param name="in_instruction_start_pc">PC where the instruction begins</param>
+		/// <param name="in_instruction_t_cycle">T cycle used for execution</param>
+		private void AddInstructionToExecutionHistory(ushort in_instruction_start_pc, uint in_instruction_t_cycle)
+		{
+			ExecutionHistoryEntry history_entry = ExecutionHistory.GetNextEmptySlot();
+			history_entry.PC = in_instruction_start_pc;
+			history_entry.TCycle = in_instruction_t_cycle;
+
+			for (int i = 0; i < ExecutionHistoryEntry.HistoryEntryByteBufferLength; i++)
+			{
+				history_entry.Bytes[i] = TVC.Memory.Read((ushort)(in_instruction_start_pc + i));
+			}
+		}
+
 		#endregion
 
 

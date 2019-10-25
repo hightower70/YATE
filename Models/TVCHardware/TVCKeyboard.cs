@@ -30,36 +30,69 @@ using TVCEmu.Helpers;
 
 namespace TVCHardware
 {
+	/// <summary>
+	/// TVC keyboard hardware emulation
+	/// </summary>
 	public class TVCKeyboard
 	{
 		#region · Constants ·
 
-		public const int KeyboardRowCount = 16;
+		public const int KeyboardRowCount = 16;		// Number of keyboard row in hardware
+		private const int PressedKeyCount = 16;   // Number of simulataniously pressed keys handled by the system
 
 		#endregion
 
 		#region · Types ·
 
+		/// <summary>
+		/// Requested modifiers for the given key combination on the TVC keyboard hardware
+		/// </summary>
 		[Flags]
 		private enum KeyModifiers
 		{
-			None,
-			Shift,
-			NoShift,
-			AcceptShift
+			None				= 0,
+
+			RemoveShift	= 0x0001,
+			AddShift		= 0x0002,
+			KeepShift		= 0x0004,
+
+			RemoveCtrl	= 0x0010,
+			AddCtrl			= 0x0020,
+			KeepCtrl		= 0x0040,
+
+			RemoveAlt		= 0x0100,
+			AddAlt			= 0x0200,
+			KeepAlt			= 0x0400,
+
+			RemoveAll   = RemoveShift | RemoveCtrl | RemoveAlt,
+			KeepAll			= KeepShift | KeepCtrl | KeepAlt
 		};
 
-
+		/// <summary>
+		/// Storage of one mapped (Windows->TVC) key
+		/// </summary>
 		private class KeyMappingEntry
 		{
+			/// <summary>Windows key code</summary>
 			public Key WindowsKey;
+			/// <summary> Windows modifier code</summary>
 			public ModifierKeys WindowsModifiers;
 
-
+			/// <summary>TVC key row</summary>
 			public int Row;
+			/// <summary> TVC key column</summary>
 			public int Column;
+			/// <summary> TVC required modifiers</summary>
 			public KeyModifiers Modifiers;
 
+			/// <summary>
+			/// Construct key mapping entry
+			/// </summary>
+			/// <param name="in_windows_key">Windows key code</param>
+			/// <param name="in_windows_modifiers">Windows modifier</param>
+			/// <param name="in_row">TVC key row</param>
+			/// <param name="in_column">TVC key column</param>
+			/// <param name="in_modifiers">TVC modifiers</param>
 			public KeyMappingEntry(Key in_windows_key, ModifierKeys in_windows_modifiers, int in_row, int in_column, KeyModifiers in_modifiers)
 			{
 				WindowsKey = in_windows_key;
@@ -70,11 +103,35 @@ namespace TVCHardware
 				Modifiers = in_modifiers;
 			}
 
+			/// <summary>
+			/// Construct entry for storing windows key information only (used for lookup)
+			/// </summary>
+			/// <param name="in_windows_key">Windows key code</param>
+			/// <param name="in_windows_modifiers">Windows key modifier</param>
+			public KeyMappingEntry(Key in_windows_key, ModifierKeys in_windows_modifiers)
+			{
+				WindowsKey = in_windows_key;
+				WindowsModifiers = in_windows_modifiers;
+
+				Row = 0;
+				Column = 0;
+				Modifiers = KeyModifiers.None;
+			}
+
+			/// <summary>
+			/// gets has code for lookup
+			/// </summary>
+			/// <returns></returns>
 			public override int GetHashCode()
 			{
 				return HashCodeHelper.Hash(WindowsKey.GetHashCode(), WindowsModifiers.GetHashCode());
 			}
 
+			/// <summary>
+			/// Checks for equiality of windows keys
+			/// </summary>
+			/// <param name="obj"></param>
+			/// <returns></returns>
 			public override bool Equals(object obj)
 			{
 				if (obj is KeyMappingEntry)
@@ -89,9 +146,17 @@ namespace TVCHardware
 				}
 			}
 		}
-
+														 
+		/// <summary>
+		/// Collection of key mappings (Windows->TVC)
+		/// </summary>
 		private class KeyMappingCollection : KeyedCollection<int, KeyMappingEntry>
 		{
+			/// <summary>
+			/// Gets has code of the given key
+			/// </summary>
+			/// <param name="item"></param>
+			/// <returns></returns>
 			protected override int GetKeyForItem(KeyMappingEntry item)
 			{
 				return item.GetHashCode();
@@ -102,129 +167,288 @@ namespace TVCHardware
 
 		#region · Data members ·
 
+		// TVC hardware class
 		private TVComputer m_tvc;
 
+		// Current TVC matrix state
 		private byte[] m_keyboard_matrix;
 
+		// currently pressed key on windows
+		private Key[] m_pressed_keys;
+
+		// TVC hardware selected rows
 		private int m_selected_row = 0;
 
+		// Key mapping table (Windows->TVC)
 		private KeyMappingCollection m_key_mapping;
+
+		// Cached modifier keys from the key mapping table
+		private KeyMappingEntry m_shift_key = null;
+		private KeyMappingEntry m_ctrl_key = null;
+		private KeyMappingEntry m_alt_key = null;
 
 		#endregion
 
+		/// <summary>
+		/// Creates TVC keyboard emulation 
+		/// </summary>
+		/// <param name="in_tvc">TVC hardware which owns this keyboard</param>
 		public TVCKeyboard(TVComputer in_tvc)
 		{
 			m_tvc = in_tvc;
 
+			// init matrx
 			m_keyboard_matrix = new byte[KeyboardRowCount];
 			for (int i = 0; i < m_keyboard_matrix.Length; i++)
 			{
 				m_keyboard_matrix[i] = 0xff;
 			}
 
-			CreateKeyMappingTable();
+			// create key mapping table
+			LoadKeyMappingTableFromResource("TVCEmu.Resources.DefaultKeyMapping.txt");
 
+			// clear pressed key table
+			m_pressed_keys = new Key[PressedKeyCount];
+			for (int i = 0; i < PressedKeyCount; i++)
+			{
+				m_pressed_keys[i] = Key.None;
+			}
+
+			// add port access handlers
 			m_tvc.Ports.AddPortWriter(0x03, PortWrite03H);
 			m_tvc.Ports.AddPortReader(0x58, PortRead58H);
-
 		}
 
+		/// <summary>
+		/// TVC hardware keyboard data port reader function
+		/// </summary>
+		/// <param name="in_address">Address of the port</param>
+		/// <param name="inout_data">Data from the port</param>
 		private void PortRead58H(ushort in_address, ref byte inout_data)
 		{
 			inout_data = m_keyboard_matrix[m_selected_row];
 		}
 
+		/// <summary>
+		/// TVC hardware keyboard row select register
+		/// </summary>
+		/// <param name="in_address">Address of the register</param>
+		/// <param name="in_data">Row selection data</param>
 		private void PortWrite03H(ushort in_address, byte in_data)
 		{
 			m_selected_row = in_data & 0x0f;
 		}
 
+		/// <summary>
+		/// Windows key down event handler
+		/// </summary>
+		/// <param name="in_eventargs">Key down event argument</param>
 		public void KeyDown(KeyEventArgs in_eventargs)
 		{
-			Debug.WriteLine("D: " + in_eventargs.Key.ToString() + " " + Keyboard.Modifiers.ToString());
+			in_eventargs.Handled = true;
 
-			if (in_eventargs.IsDown && !in_eventargs.IsRepeat)
+			if (in_eventargs.RoutedEvent == Keyboard.PreviewKeyDownEvent && !in_eventargs.IsRepeat)
 			{
-				KeyMappingEntry windows_key;
+				// determine key
+				Key key = in_eventargs.Key;
+				if (key == Key.DeadCharProcessed)
+					key = in_eventargs.DeadCharProcessedKey;
 
-				if (in_eventargs.Key == Key.DeadCharProcessed)
-					windows_key = new KeyMappingEntry(in_eventargs.DeadCharProcessedKey, Keyboard.Modifiers, 0, 0, KeyModifiers.None);
-				else
-					windows_key = new KeyMappingEntry(in_eventargs.Key, Keyboard.Modifiers, 0, 0, KeyModifiers.None);
+				if (key == Key.System)
+					key = in_eventargs.SystemKey;
 
-				if (m_key_mapping.Contains(windows_key))
+				// check if this key is already in the list
+				bool found = false;
+				for (int i = 0; i < PressedKeyCount; i++)
 				{
-					KeyMappingEntry entry = m_key_mapping[windows_key.GetHashCode()];
+					if (m_pressed_keys[i] == key)
+					{
+						found = true;
+					}
+				}
 
-					m_keyboard_matrix[entry.Row] &= (byte)(~(1 << entry.Column));
+				// not found in the pressed list -> add to it
+				if (!found)
+				{
+					int j = -1;
+
+					// find empty slot in the pressed key array and store the pressed key
+					for (int i = 0; i < PressedKeyCount; i++)
+					{
+						if (m_pressed_keys[i] == Key.None)
+						{
+							m_pressed_keys[i] = key;
+							j = i;
+							break;
+						}
+					}
+
+#if DEBUG_TVC_KEYBOARD
+					Debug.Write("D: " + key.ToString() + " " + Keyboard.Modifiers.ToString() + " [" + j.ToString() + "] M:");
+#endif
+					// update TVC keyboard
+					UpdateKeyboardMatrix();
 				}
 			}
 		}
 
+		/// <summary>
+		/// Windows key up event handler
+		/// </summary>
+		/// <param name="in_eventargs">Key up event handler</param>
 		public void KeyUp(KeyEventArgs in_eventargs)
 		{
-			Debug.WriteLine("U: " + in_eventargs.Key.ToString() + " " + Keyboard.Modifiers.ToString());
+			in_eventargs.Handled = true;
 
 			if (!in_eventargs.IsDown)
 			{
-				KeyMappingEntry windows_key = new KeyMappingEntry(in_eventargs.Key, Keyboard.Modifiers, 0, 0, KeyModifiers.None);
-				if (m_key_mapping.Contains(windows_key))
-				{
-					KeyMappingEntry entry = m_key_mapping[windows_key.GetHashCode()];
+				// determine key
+				Key key = in_eventargs.Key;
+				if (key == Key.DeadCharProcessed)
+					key = in_eventargs.DeadCharProcessedKey;
 
-					m_keyboard_matrix[entry.Row] |= (byte)(1 << entry.Column);
+				if (key == Key.System)
+					key = in_eventargs.SystemKey;
+
+#if DEBUG_TVC_KEYBOARD
+				Debug.Write("U: " + key.ToString() + " " + Keyboard.Modifiers.ToString() + " M:");
+#endif
+				// delete this key from the store of the pressed key
+				int i;
+				for (i = 0; i < PressedKeyCount; i++)
+				{
+					if (m_pressed_keys[i] == key)
+					{
+						m_pressed_keys[i] = Key.None;
+					}
 				}
+
+				// update TVC keyboard
+				UpdateKeyboardMatrix();
 			}
 		}
 
-		/****************************************************************************
-		* Keyboard matrix:
-		*      b7 b6 b5 b4 b3 b2 b1 b0
-		*      !  '     /  &  "  +  %
-		* 0.   4  1  Í  6  0  2  3  5
-		*      =        #     )  (  ~
-		* 1.   7  Ö  Ó  *  ü  9  8  ^
-		*            `		 $
-		* 2.   R  Q  @  Z  ;  W  E  T
-		*								{						}
-		* 3.   U  P  Ú  [  Ő  O  I  ]
-		* 					 >		 |
-		* 4.   F  A  <  H  \  S  D  G
-		*			
-		* 5.   J  É  Ű  Re Á  L  K  De
-		* 
-		* 6.   V  Y  Lo N  Sh X  C  B
-		* 
-		* 7.   Al ,  .  Es Ct Sp _  M
-		* 8.   In Up Do       Ri Le 
-		* 9.   -  -  -  -  -  -  -  sh
-		*
-		****************************************************************************/
-
-		private void CreateKeyMappingTable()
+		/// <summary>
+		/// Update TVC hardware keyboard matrix content
+		/// </summary>
+		private void UpdateKeyboardMatrix()
 		{
-			m_key_mapping = new KeyMappingCollection();
-
-			// load deafult key mapping
-			var assembly = Assembly.GetExecutingAssembly();
-			var resourceName = "TVCEmu.Resources.DefaultKeyMapping.txt";
-
-			using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-			using (StreamReader reader = new StreamReader(stream))
+			////////////////////////
+			// init keyboard matrix
+			byte[] keyboard_matrix = new byte[KeyboardRowCount];
+			for (int i = 0; i < keyboard_matrix.Length; i++)
 			{
-				while(!reader.EndOfStream)
+				keyboard_matrix[i] = 0xff;
+			}
+
+			/////////////////////////////////
+			// Add pressed keys to the matrix
+			KeyModifiers modifiers = KeyModifiers.KeepAll;
+
+			for (int i = 0; i < PressedKeyCount; i++)
+			{
+				if (m_pressed_keys[i] != Key.None)
+				{
+					KeyMappingEntry windows_key = new KeyMappingEntry(m_pressed_keys[i], Keyboard.Modifiers, 0, 0, KeyModifiers.None);
+
+					if (m_key_mapping.Contains(windows_key))
+					{
+						KeyMappingEntry entry = m_key_mapping[windows_key.GetHashCode()];
+
+						keyboard_matrix[entry.Row] &= (byte)(~(1 << entry.Column));
+						modifiers = entry.Modifiers;
+					}
+				}
+			}
+
+			////////////////////
+			// Handle modifiers
+
+			// shift key
+			if (m_shift_key != null)
+			{
+				if ((modifiers & KeyModifiers.AddShift) != 0)
+						keyboard_matrix[m_shift_key.Row] &= (byte)(~(1 << m_shift_key.Column));
+
+				if ((modifiers & KeyModifiers.RemoveShift) != 0)
+						keyboard_matrix[m_shift_key.Row] |= (byte)(1 << m_shift_key.Column);
+			}
+
+			// Ctrl shift key
+			if (m_ctrl_key != null)
+			{
+				if ((modifiers & KeyModifiers.AddCtrl) != 0)
+					keyboard_matrix[m_ctrl_key.Row] &= (byte)(~(1 << m_ctrl_key.Column));
+
+				if ((modifiers & KeyModifiers.RemoveCtrl) != 0)
+					keyboard_matrix[m_ctrl_key.Row] |= (byte)(1 << m_ctrl_key.Column);
+			}
+
+			// Alt shift key
+			if (m_alt_key != null)
+			{
+				if ((modifiers & KeyModifiers.AddAlt) != 0)
+					keyboard_matrix[m_alt_key.Row] &=(byte)(~(1 << m_alt_key.Column));
+
+				if ((modifiers & KeyModifiers.RemoveAlt) != 0)
+						keyboard_matrix[m_alt_key.Row] |= (byte)(1 << m_alt_key.Column);
+			}
+
+			////////////////////////
+			// store keyboard matrix					 
+			for (int i = 0; i < KeyboardRowCount; i++)
+			{
+				m_keyboard_matrix[i] = keyboard_matrix[i];
+#if DEBUG_TVC_KEYBOARD
+				Debug.Write(m_keyboard_matrix[i].ToString("x2")+" ");
+#endif
+			}
+#if DEBUG_TVC_KEYBOARD
+			Debug.WriteLine("");
+#endif
+		}
+
+		/// <summary>
+		/// Loads key mapping from the resource text file
+		/// </summary>
+		/// <param name="in_resource_name">Name of the resource</param>
+		public void LoadKeyMappingTableFromResource(string in_resource_name)
+		{
+			// load default key mapping
+			var assembly = Assembly.GetExecutingAssembly();
+
+			using (Stream stream = assembly.GetManifestResourceStream(in_resource_name))
+			{
+				LoadKeyMappingTable(stream);
+			}
+		}
+
+
+		/// <summary>
+		/// Loads key mappting table from text file from the specified stream
+		/// </summary>
+		/// <param name="in_stream">Stream conatining the key mapping text file</param>
+		public void LoadKeyMappingTable(Stream in_stream)
+		{
+			KeyMappingCollection key_mapping = new KeyMappingCollection();
+
+			using (StreamReader reader = new StreamReader(in_stream))
+			{
+				while (!reader.EndOfStream)
 				{
 					int pos;
 					string line = reader.ReadLine();
 
 					// remove spaces
 					line = line.Replace(" ", "");
+					line = line.Replace("\t", "");
 
 					// remove comment
 					pos = line.IndexOf(';');
 					if (pos >= 0)
 						line = line.Substring(0, pos);
 
+					// create keyboard entry
 					string[] fields = line.Split('|');
 
 					if (fields.Length == 5)
@@ -235,107 +459,34 @@ namespace TVCHardware
 						int col = int.Parse(fields[3]);
 						KeyModifiers key_modifiers = (KeyModifiers)Enum.Parse(typeof(KeyModifiers), fields[4], true);
 
-						m_key_mapping.Add(new KeyMappingEntry(windows_key, modifier_keys, row, col, key_modifiers));
+						key_mapping.Add(new KeyMappingEntry(windows_key, modifier_keys, row, col, key_modifiers));
 
-						if (key_modifiers.HasFlag(KeyModifiers.AcceptShift))
+						if (key_modifiers.HasFlag(KeyModifiers.KeepShift))
 						{
-							m_key_mapping.Add(new KeyMappingEntry(windows_key, modifier_keys | ModifierKeys.Shift, row, col, key_modifiers));
+							key_mapping.Add(new KeyMappingEntry(windows_key, modifier_keys | ModifierKeys.Shift, row, col, key_modifiers));
 						}
 					}
 				}
 			}
 
+			// cache control keys
+			m_shift_key = null;
+			m_ctrl_key = null;
+			m_alt_key = null;
 
-			/*
+			KeyMappingEntry shift_key = new KeyMappingEntry(Key.LeftShift, ModifierKeys.Shift);
+			if (key_mapping.Contains(shift_key))
+				m_shift_key = key_mapping[shift_key.GetHashCode()];
 
-			// row 0
-			m_key_mapping.Add(new KeyMappingEntry(Key.D4, ModifierKeys.None, 0, 7, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D1, ModifierKeys.None, 0, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Oem102, ModifierKeys.None, 0, 5, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D6, ModifierKeys.None, 0, 4, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D0, ModifierKeys.None, 0, 3, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D2, ModifierKeys.None, 0, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D3, ModifierKeys.None, 0, 1, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D5, ModifierKeys.None, 0, 0, KeyModifiers.None));
+			KeyMappingEntry ctrl_key = new KeyMappingEntry(Key.LeftCtrl, ModifierKeys.Control);
+			if (key_mapping.Contains(ctrl_key))
+				m_ctrl_key = key_mapping[ctrl_key.GetHashCode()];
 
-			// row 1
-			m_key_mapping.Add(new KeyMappingEntry(Key.D7, ModifierKeys.None, 1, 7, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Oem3, ModifierKeys.None, 1, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.OemPlus, ModifierKeys.None, 1, 5, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Multiply, ModifierKeys.None, 1, 4, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Oem2, ModifierKeys.None, 1, 3, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D9, ModifierKeys.None, 1, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D8, ModifierKeys.None, 1, 1, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D3, ModifierKeys.Alt | ModifierKeys.Control, 1, 0, KeyModifiers.None));
+			KeyMappingEntry alt_key = new KeyMappingEntry(Key.LeftAlt, ModifierKeys.Alt);
+			if (key_mapping.Contains(alt_key))
+				m_ctrl_key = key_mapping[alt_key.GetHashCode()];
 
-			// row 2
-			m_key_mapping.Add(new KeyMappingEntry(Key.R, ModifierKeys.None, 2, 7, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Q, ModifierKeys.None, 2, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.V, ModifierKeys.Alt | ModifierKeys.Control, 2, 5, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Z, ModifierKeys.None, 2, 4, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.OemComma, ModifierKeys.Alt | ModifierKeys.Control, 2, 3, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.W, ModifierKeys.None, 2, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.E, ModifierKeys.None, 2, 1, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.T, ModifierKeys.None, 2, 0, KeyModifiers.None));
-
-			// row 3
-			m_key_mapping.Add(new KeyMappingEntry(Key.U, ModifierKeys.None, 3, 7, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.P, ModifierKeys.None, 3, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Oem6, ModifierKeys.None, 3, 5, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.F, ModifierKeys.Alt | ModifierKeys.Control, 3, 4, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.OemOpenBrackets, ModifierKeys.None, 3, 3, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.O, ModifierKeys.None, 3, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.I, ModifierKeys.None, 3, 1, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.G, ModifierKeys.Alt | ModifierKeys.Control, 3, 0, KeyModifiers.None));
-
-			// row 4
-			m_key_mapping.Add(new KeyMappingEntry(Key.F, ModifierKeys.None, 4, 7, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.A, ModifierKeys.None, 4, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.OemBackslash, ModifierKeys.Alt | ModifierKeys.Control, 4, 5, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.H, ModifierKeys.None, 4, 4, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Q, ModifierKeys.Alt | ModifierKeys.Control, 4, 3, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.S, ModifierKeys.None, 4, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.D, ModifierKeys.None, 4, 1, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.G, ModifierKeys.None, 4, 0, KeyModifiers.None));
-
-			// row 5
-			m_key_mapping.Add(new KeyMappingEntry(Key.J, ModifierKeys.None, 5, 7, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Oem1, ModifierKeys.None, 5, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Oem5, ModifierKeys.None, 5, 5, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Return, ModifierKeys.None, 5, 4, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.OemQuotes, ModifierKeys.None, 5, 3, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.L, ModifierKeys.None, 5, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.K, ModifierKeys.None, 5, 1, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Back, ModifierKeys.None, 5, 0, KeyModifiers.None));
-
-			// row 6
-			m_key_mapping.Add(new KeyMappingEntry(Key.V, ModifierKeys.None, 6, 7, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Y, ModifierKeys.None, 6, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Capital, ModifierKeys.None, 6, 5, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.N, ModifierKeys.None, 6, 4, KeyModifiers.None));
-			//m_key_mapping.Add(new KeyMappingEntry(Key.OemQuotes, ModifierKeys.None, 6, 3, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.X, ModifierKeys.None, 6, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.C, ModifierKeys.None, 6, 1, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.B, ModifierKeys.None, 6, 0, KeyModifiers.None));
-
-			// row 7
-			m_key_mapping.Add(new KeyMappingEntry(Key.M, ModifierKeys.None, 7, 7, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.OemMinus, ModifierKeys.None, 7, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Space, ModifierKeys.None, 7, 5, KeyModifiers.None));
-			//m_key_mapping.Add(new KeyMappingEntry(Key.N, ModifierKeys.None, 7, 4, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.End, ModifierKeys.None, 7, 3, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.OemPeriod, ModifierKeys.None, 7, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.OemComma, ModifierKeys.None, 7, 1, KeyModifiers.None));
-			//m_key_mapping.Add(new KeyMappingEntry(Key.B, ModifierKeys.None, 7, 0, KeyModifiers.None));
-
-			// row 8
-			m_key_mapping.Add(new KeyMappingEntry(Key.Left, ModifierKeys.None, 8, 6, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Right, ModifierKeys.None, 8, 5, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Down, ModifierKeys.None, 8, 2, KeyModifiers.None));
-			m_key_mapping.Add(new KeyMappingEntry(Key.Up, ModifierKeys.None, 8, 1, KeyModifiers.None));
-			//m_key_mapping.Add(new KeyMappingEntry(Key.B, ModifierKeys.None, 7, 0, KeyModifiers.None));
-			*/
+			m_key_mapping = key_mapping;
 		}
-
 	}
 }

@@ -1,85 +1,143 @@
-﻿; row 0
-D4      | None | 0 | 7 | None ; 4
-D1      | None | 0 | 6 | None ; 1
-Oem102  | None | 0 | 5 | None ; Í
-D6      | None | 0 | 4 | None ; 6
-D0      | None | 0 | 3 | None ; 0
-D2      | None | 0 | 2 | None ; 2
-D3      | None | 0 | 1 | None ; 3
-D5      | None | 0 | 0 | None ; 5
+﻿; TVC Keyboard matrix:
+;
+; Row  b7 b6 b5 b4 b3 b2 b1 b0
+;      !  '     /  &  "  +  %
+; 0.   4  1  Í  6  0  2  3  5
+;      =        #     )  (  ~
+; 1.   7  Ö  Ó  *  ü  9  8  ^
+;            `		 $
+; 2.   R  Q  @  Z  ;  W  E  T
+;								{						}
+; 3.   U  P  Ú  [  Ő  O  I  ]
+; 					 >		 |
+; 4.   F  A  <  H  \  S  D  G
+;			
+; 5.   J  É  Ű  Re Á  L  K  De
+; 
+; 6.   V  Y  Lo N  Sh X  C  B
+; 
+; 7.   Al ,  .  Es Ct Sp _  M
+; 8.   In Up Do       Ri Le    (Built in joy)
+;      In Up Do Fi Ac Ri Le    (Right external joy)
+; 9.   In Up Do Fi Ac Ri Le    (Left external joy)
+
+; row 0
+D4      | None        | 0 | 7 | KeepShift    ; 4 !
+NumPad4 | None        | 0 | 7 | RemoveAll    ; 4
+D1      | None        | 0 | 6 | KeepShift    ; 1 '
+Numpad1 | None        | 0 | 6 | RemoveAll    ; 1
+Oem102  | None        | 0 | 5 | KeepShift    ; í Í
+D6      | None        | 0 | 4 | KeepShift    ; 6 /
+Divide  | None        | 0 | 4 | AddShift     ; /
+NumPad6 | None        | 0 | 4 | None         ; 6
+D0      | None        | 0 | 3 | None         ; 0
+NumPad0 | None        | 0 | 3 | None         ; 0
+C       | Alt,Control | 0 | 3 | AddShift     ; &
+D2      | None        | 0 | 2 | KeepShift		; 2 "
+NumPad2 | None        | 0 | 2 | None         ; 2
+D3      | None        | 0 | 1 | KeepShift    ; 3 +
+NumPad3 | None        | 0 | 1 | None         ; 3
+Add     | None        | 0 | 1 | AddShift     ; +
+D5      | None        | 0 | 0 | KeepShift    ; 5 %
+NumPad5 | None        | 0 | 0 | None         ; 5
 
 ; row 1
-D7      | None        | 1 | 7 | AcceptShift ; 7
-Oem3    | None        | 1 | 6 | None ; Ö
-OemPlus | None        | 1 | 5 | None ; Ó
-Multiply| None        | 1 | 4 | None ; *
-Oem2    | None        | 1 | 3 | None ; Ü
-D9      | None        | 1 | 2 | None ; 9
-D8      | None        | 1 | 1 | None ; 8
-D3      | Alt,Control | 1 | 0 | None; ^
+D7      | None        | 1 | 7 | KeepShift   ; 7 =
+NumPad7 | None        | 1 | 7 | None        ; 7
+Oem3    | None        | 1 | 6 | KeepShift   ; ö Ö
+OemPlus | None        | 1 | 5 | KeepShift   ; ó Ó
+Multiply| None        | 1 | 4 | None        ; *
+OemMinus| Alt,Control | 1 | 4 | None        ; *
+X       | Alt,Control | 1 | 4 | AddShift    ; #
+Oem2    | None        | 1 | 3 | KeepShift   ; Ü
+D9      | None        | 1 | 2 | KeepShift   ; 9 )
+NumPad9 | None        | 1 | 2 | None        ; 9
+D8      | None        | 1 | 1 | KeepShift ; 8 )
+NumPad8 | None        | 1 | 1 | None        ; 8 
+D3      | Alt,Control | 1 | 0 | None        ; ^
+D1      | Alt,Control | 1 | 0 | AddShift    ; ~
 
 ; row 2
-R       | None | 2 | 7 | None ; R
-Q       | None | 2 | 6 | None ; Q
-V       | Alt,Control | 2 | 5 | None ; @
-Z       | None | 2 | 4 | None ; Z
-OemComma| Alt , Control | 2 | 3 | None ; ;
-W       | None | 2 | 2 | None ; W
-E       | None | 2 | 1 | None ; E
-T       | None | 2 | 0 | None ; T
+R       | None        | 2 | 7 | KeepShift  ; R
+Q       | None        | 2 | 6 | KeepShift  ; Q
+V       | Alt,Control | 2 | 5 | None       ; @
+D7      | Alt,Control | 2 | 5 | AddShift   ; `
+Z       | None        | 2 | 4 | KeepShift  ; Z
+OemComma| Alt,Control | 2 | 3 | None       ; ';'
+Oem1    | Alt,Control | 2 | 3 | AddShift   ; $
+W       | None        | 2 | 2 | KeepShift  ; W
+E       | None        | 2 | 1 | KeepShift  ; E
+T       | None        | 2 | 0 | KeepShift  ; T
 
 ; row 3
-U| None| 3| 7| None ;
-P| None| 3| 6| None ;
-Oem6| None| 3| 5| None ;
-F| Alt , Control| 3| 4| None ;
-OemOpenBrackets| None| 3| 3| None ;
-O| None| 3| 2| None ;
-I| None| 3| 1| None ;
-G| Alt , Control| 3| 0| None ;
+U              | None        | 3 | 7 | KeepShift   ; U
+P              | None        | 3 | 6 | KeepShift   ; P
+Oem6           | None        | 3 | 5 | KeepShift   ; ú Ú
+F              | Alt,Control | 3 | 4 | None        ; [
+B              | Alt,Control | 3 | 4 | AddShift    ; {
+OemOpenBrackets| None        | 3 | 3 | KeepShift   ; ő Ő
+O              | None        | 3 | 2 | KeepShift   ; o O
+I              | None        | 3 | 1 | KeepShift   ; i I
+G              | Alt,Control | 3 | 0 | None        ; ]
+N              | Alt,Control | 3 | 0 | AddShift    ; }
 
 ; row 4
-F| None| 4| 7| None ;
-A| None| 4| 6| None ;
-OemBackslash| Alt , Control| 4| 5| None ;
-H| None| 4| 4| None ;
-Q| Alt , Control| 4| 3| None ;
-S| None| 4| 2| None ;
-D| None| 4| 1| None ;
-G| None| 4| 0| None ;
-
+F           | None        | 4| 7| KeepShift ; f F
+A           | None        | 4| 6| KeepShift ; a A
+OemBackslash| Alt,Control | 4| 5| None      ; <
+Y           | Alt,Control | 4| 5| AddShift  ; >
+H           | None        | 4| 4| KeepShift ; h H
+Q           | Alt,Control | 4| 3| KeepShift ; \
+W           | Alt,Control | 4| 3| AddShift  ; |
+S           | None        | 4| 2| KeepShift ; s S
+D           | None        | 4| 1| KeepShift ; d D
+G           | None        | 4| 0| KeepShift ; g G
+ 
 ; row 5
-J| None| 5| 7| None ;
-Oem1| None| 5| 6| None ;
-Oem5| None| 5| 5| None ;
-Return| None| 5| 4| None ;
-OemQuotes| None| 5| 3| None ;
-L| None| 5| 2| None ;
-K| None| 5| 1| None ;
-Back| None| 5| 0| None ;
+J           | None | 5 | 7 | KeepShift ; j J
+Oem1        | None | 5 | 6 | KeepShift ; é É
+Oem5        | None | 5 | 5 | KeepShift ; ű Ű
+Return      | None | 5 | 4 | None      ; Return
+OemQuotes   | None | 5 | 3 | KeepShift ; á Á
+L           | None | 5 | 2 | KeepShift ; l L
+K           | None | 5 | 1 | KeepShift ; k K
+Back        | None | 5 | 0 | None      ; Backspace
 
 ; row 6
-V| None| 6| 7| None ;
-Y| None| 6| 6| None ;
-Capital| None| 6| 5| None ;
-N| None| 6| 4| None ;
-RightShift|Shift|6|3|None ;
-LeftShift|Shift|6|3|None ;
-X| None| 6| 2| None ;
-C| None| 6| 1| None ;
-B| None| 6| 0| None ;
+V           | None    | 6 | 7 | KeepShift  ; v V
+Y           | None    | 6 | 6 | KeepShift  ; y Y
+Capital     | None    | 6 | 5 | None       ; Lock
+Capital     | Shift   | 6 | 5 | AddShift   ; Shift+Lock
+Capital     | Control | 6 | 5 | AddCtrl    ; Control+Lock
+Capital     | Alt     | 6 | 5 | AddAlt     ; Alt+Lock
+N           | None    | 6 | 4 | KeepShift  ; n N
+RightShift  | Shift   | 6 | 3 | None       ; Shift
+LeftShift   | Shift   | 6 | 3 | None       ; Shift
+X           | None    | 6 | 2 | KeepShift  ; x X
+C           | None    | 6 | 1 | KeepShift  ; c C
+B           | None    | 6 | 0 | KeepShift  ; b B
 
 ; row 7
-M        | None | 7 | 7 | None ;  M
-OemMinus | None | 7 | 6 | None ;  -
-Space    | None | 7 | 5 | None ; ' '
-Escape      | None | 7 | 3 | None ; 
-OemPeriod| None | 7 | 2 | None ;
-OemComma | None | 7 | 1 | None ;
+M         | None    | 7 | 7 | KeepShift   ; m M
+OemMinus  | None    | 7 | 6 | KeepShift   ; - _
+Subtract  | None    | 7 | 6 | None        ; -
+Space     | None    | 7 | 5 | None        ; ' '
+LeftCtrl  | Control | 7 | 4 | None        ; Ctrl
+RightCtrl | Control | 7 | 4 | None        ; Ctrl 
+Escape    | None    | 7 | 3 | None        ; ESC 
+Escape    | Control | 7 | 3 | KeepCtrl    ; Ctrl+ESC 
+Home      | None    | 7 | 3 | None        ; ESC 
+Home      | Control | 7 | 3 | AddCtrl     ; Ctrl+ESC 
+OemPeriod | None    | 7 | 2 | KeepShift   ; . :
+OemComma  | None    | 7 | 1 | KeepShift   ; ,
+Decimal   | None    | 7 | 1 | RemoveAll   ; ,
+LeftAlt   | Alt     | 7 | 0 | None        ; Alt
 
 ; row 8
-Left| None| 8| 6| None ;
-Right| None| 8| 5| None ;
-Down| None| 8| 2| None ;
-Up| None| 8| 1| None ;
+Left  | None | 8 | 6 | KeepAll ; JoyLeft
+Right | None | 8 | 5 | KeepAll ; JoyRight
+Tab   | None | 8 | 2 | KeepAll ; JoyFire
+Down  | None | 8 | 2 | KeepAll ; JoyDown
+Up    | None | 8 | 1 | KeepAll ; JoyUp
+Insert| None | 8 | 0 | KeepAll ; Insert
 

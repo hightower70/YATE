@@ -2,6 +2,7 @@
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using TVCEmu.Controls;
+using TVCEmu.Helpers;
 using TVCEmu.Models.TVCFiles;
 using TVCHardware;
 
@@ -17,8 +18,12 @@ namespace TVCEmu.Forms
 
 		public ExecutionControl ExecutionControl { get; }
 
+		private KeyboardHook m_keyboard_hook = new KeyboardHook();
+
 		public MainWindow()
 		{
+			m_keyboard_hook.EnableHook(Window_KeyDown);
+
 			ExecutionControl = new ExecutionControl();
 
 			ExecutionControl.Initialize();
@@ -51,6 +56,7 @@ namespace TVCEmu.Forms
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
 			ExecutionControl.Stop();
+			m_keyboard_hook.ReleaseHook();
 		}
 
 		private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)

@@ -51,7 +51,7 @@ namespace TVCEmu.Forms
 
 			for (int i = 0; i < 2; i++)
 			{
-				ExecutionControl.ExecutionHistoryEntry history = m_execution_control.ExecutionHistory[i];
+				ExecutionHistoryEntry history = m_execution_control.ExecutionHistory[i];
 
 				if (history.TCycle > 0)
 				{

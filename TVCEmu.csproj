@@ -22,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>true</Prefer32Bit>
@@ -64,6 +64,8 @@
     </ApplicationDefinition>
     <Compile Include="Controls\ExecutionControl.cs" />
     <Compile Include="Controls\ExecutionControlCommand.cs" />
+    <Compile Include="Controls\ExecutionHistoryCollection.cs" />
+    <Compile Include="Controls\ExecutionHistoryEntry.cs" />
     <Compile Include="Effects\CRTFilter.cs" />
     <Compile Include="Forms\ExecutionHistoryPage.xaml.cs">
       <DependentUpon>ExecutionHistoryPage.xaml</DependentUpon>
