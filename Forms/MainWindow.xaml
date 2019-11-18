@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TVCEmu.Forms"
+        xmlns:c="clr-namespace:CustomControls;assembly=CustomControls"
 				xmlns:effects="clr-namespace:TVCEmu.Effects"
         mc:Ignorable="d"
         Title="MainWindow" Height="800" Width="1250"
@@ -66,7 +67,25 @@
 				<MenuItem x:Name="miOpenCASFile" Header="Memory _Load..." Click="MiOpenCASFile_Click" />
 				<MenuItem x:Name="miSaveAsCASFile" Header="Memory _Save..." Click="MiSaveAsCASFile_Click"  />
 				<Separator />
+				<MenuItem x:Name="miLoadGameBase" Header="Load from GameBase..." Click="MiLoadFromGameBase_Click"  />
+				<Separator />
 				<MenuItem Header="_Exit" />
+			</MenuItem>
+
+			<MenuItem Header="_Debug">
+				<MenuItem Header="Run" />
+				<MenuItem Header="Pause"  />
+				<Separator/>
+				<MenuItem Header="Source List Target"  >
+					<c:RadioMenuItem Header="User RAM" GroupName="SourceListTarget" />
+					<c:RadioMenuItem Header="Cartridge ROM"  GroupName="SourceListTarget"/>
+					<c:RadioMenuItem Header="Expansion Card #0 ROM" GroupName="SourceListTarget"/>
+					<c:RadioMenuItem Header="Expansion Card #1 ROM" GroupName="SourceListTarget"/>
+					<c:RadioMenuItem Header="Expansion Card #2 ROM" GroupName="SourceListTarget"/>
+					<c:RadioMenuItem Header="Expansion Card #3 ROM" GroupName="SourceListTarget"/>
+				</MenuItem>
+				<MenuItem Header="Source List Load"  />
+
 			</MenuItem>
 			<!--
 			<MenuItem Header="_Tools">
@@ -89,6 +108,7 @@
 
 		<StackPanel Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2"  Orientation="Horizontal">
 			
+			<!-- Run button -->
 			<Button Width="36" Height="36" Margin="2" ToolTip="Run" Command="{Binding ExecutionControl.DebugRunCommand}">
 				<Image Margin="2">
 					<Image.Source>
@@ -109,6 +129,28 @@
 				</Image>
 			</Button>
 
+			<!-- Full speed button -->
+			<Button Width="36" Height="36" Margin="2" ToolTip="Full speed" Command="{Binding ExecutionControl.DebugRunFullSpeedCommand}">
+				<Image Margin="2">
+					<Image.Source>
+						<DrawingImage>
+							<DrawingImage.Drawing>
+								<DrawingGroup>
+									<DrawingGroup >
+										<GeometryDrawing Brush="#FFEFF0F1">
+											<GeometryDrawing.Geometry>
+												<PathGeometry FillRule="Nonzero" Figures="M2,2L2,14 14,14 14,2 2,2z M3,3L13,3 13,13 3,13 3,3z M4,5 L4,11 8,8 4,5z M8,5 L8,11 12,8 8,5z" />
+											</GeometryDrawing.Geometry>
+										</GeometryDrawing>
+									</DrawingGroup>
+								</DrawingGroup>
+							</DrawingImage.Drawing>
+						</DrawingImage>
+					</Image.Source>
+				</Image>
+			</Button>
+			
+			<!-- Stop button -->
 			<Button Width="36" Height="36" Margin="2" ToolTip="Stop" Visibility="Collapsed">
 				<Image Margin="2">
 					<Image.Source>
@@ -129,6 +171,7 @@
 				</Image>
 			</Button>
 
+			<!-- Pause button -->
 			<Button Width="36" Height="36" Margin="2" ToolTip="Pause" Command="{Binding ExecutionControl.DebugPauseCommand}">
 				<Image Margin="2">
 					<Image.Source>
@@ -147,6 +190,7 @@
 				</Image>
 			</Button>
 
+			<!-- Animated button -->
 			<Button Width="36" Height="36" Margin="2" ToolTip="Animated">
 				<Image Margin="2">
 					<Image.Source>
@@ -170,6 +214,7 @@
 				</Image>
 			</Button>		
 			
+			<!-- Step into -->
 			<Button Width="36" Height="36" Margin="2" ToolTip="Step Into" Command="{Binding ExecutionControl.DebugStepIntoCommand}">
 				<Image Margin="2">
 					<Image.Source>
@@ -193,6 +238,7 @@
 				</Image>
 			</Button>
 
+			<!-- Step over -->
 			<Button Width="36" Height="36" Margin="2" ToolTip="Step Over">
 				<Image Margin="2">
 					<Image.Source>
@@ -218,6 +264,7 @@
 				</Image>
 			</Button>
 
+			<!-- Step out button -->
 			<Button Width="36" Height="36" Margin="2" ToolTip="Step Out">
 				<Image Margin="2">
 					<Image.Source>
@@ -246,6 +293,7 @@
 				</Image>
 			</Button>
 
+			<!-- Debug reset -->
 			<Button Width="36" Height="36" Margin="15,2,2,2" ToolTip="Reset" Command="{Binding ExecutionControl.DebugResetCommand}">
 				<Image Margin="4" >
 					<Image.Source>

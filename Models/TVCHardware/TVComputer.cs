@@ -162,6 +162,16 @@ namespace TVCHardware
 			return (ulong)in_us * (ulong)CPUClock / 1000000ul;
 		}
 
+		/// <summary>
+		/// Converts CPU tick into millisec including fractional millisec
+		/// </summary>
+		/// <param name="in_cpu_tick">CPU ticks</param>
+		/// <returns>Time in millisec</returns>
+		public double CPUTickToMillisec(long in_cpu_tick)
+		{
+			return (double)in_cpu_tick / CPUClock * 1000.0;
+		}
+
 		public ulong GetCPUTicks()
 		{
 			return CPU.TotalTState;

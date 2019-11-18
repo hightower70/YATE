@@ -9,16 +9,20 @@ namespace TVCEmu.Controls
 {
 	public class ExecutionControl : IDisposable
 	{
+		#region · Constants · 
+		private int DebugEventPeriod = 200; // Debug event preiod in ms
+		#endregion
+
 		#region · Types · 
 
 		public enum ExecutionState
 		{
 			Paused,
 			Running,
+			RunningFullSpeed,
 			ResetAndRun,
 			ResetAndPause
 		}
-
 
 		public delegate void DebuggerBreakEventDelegate(TVComputer in_sender);
 
@@ -31,8 +35,14 @@ namespace TVCEmu.Controls
 		private AutoResetEvent m_thread_event;
 		private SynchronizationContext m_context;
 		private bool m_thread_running;
-		private uint m_cpu_cycle;
+		private uint m_cpu_t_cycle;						// current CPU cycle
+		private uint m_target_cycle;					// desired CPU cycle
+		private uint m_instruction_t_cycle;
+		private ushort m_instruction_start_pc; // address of the current instruction's first byte
+
 		private ExecutionState m_execution_state;
+
+		private DateTime m_debug_event_timestamp;
 		#endregion
 
 		#region · Constructor ·
@@ -57,10 +67,35 @@ namespace TVCEmu.Controls
 			DebugPauseCommand = new ExecutionControlCommand(DebugPauseExecute);
 			DebugRunCommand = new ExecutionControlCommand(DebugRunExecute);
 			DebugResetCommand = new ExecutionControlCommand(DebugResetExecute);
+			DebugRunFullSpeedCommand = new ExecutionControlCommand(DebugRunFullSpeedExecute);
 		}
 		#endregion
 
 		#region · Commands ·
+
+		// Run
+		public ExecutionControlCommand DebugRunCommand { get; private set; }
+
+		public void DebugRunExecute(object parameter)
+		{
+			if (m_execution_state != ExecutionState.Running)
+			{
+				m_execution_state = ExecutionState.Running;
+				m_thread_event.Set();
+			}
+		}
+
+		// Run full speed
+		public ExecutionControlCommand DebugRunFullSpeedCommand { get; private set; }
+
+		public void DebugRunFullSpeedExecute(object parameter)
+		{
+			if (m_execution_state != ExecutionState.RunningFullSpeed)
+			{
+				m_execution_state = ExecutionState.RunningFullSpeed;
+				m_thread_event.Set();
+			}
+		}
 
 		// Reset command
 		public ExecutionControlCommand DebugResetCommand { get; private set; }
@@ -74,8 +109,6 @@ namespace TVCEmu.Controls
 
 			m_thread_event.Set();
 		}
-
-
 
 		// Step into
 		public ExecutionControlCommand DebugStepIntoCommand { get; private set; }
@@ -93,18 +126,6 @@ namespace TVCEmu.Controls
 			if (m_execution_state != ExecutionState.Paused)
 			{
 				m_execution_state = ExecutionState.Paused;
-				m_thread_event.Set();
-			}
-		}
-
-		// Run
-		public ExecutionControlCommand DebugRunCommand { get; private set; }
-
-		public void DebugRunExecute(object parameter)
-		{
-			if (m_execution_state != ExecutionState.Running)
-			{
-				m_execution_state = ExecutionState.Running;
 				m_thread_event.Set();
 			}
 		}
@@ -195,124 +216,145 @@ namespace TVCEmu.Controls
 
 		private void SimulationThread()
 		{
-			int delay_time = 0;
-			int frame_count = 0;
-			ushort instruction_start_pc;
-			uint instruction_t_cycle;
-			uint current_instruction_t_cycle;
-			uint target_cycle = 0;
-			uint target_time;
-			uint current_time;
+			double delay_time;
 
 			m_disassembler = new Z80Disassembler();
 			m_disassembler.ReadByte = ReadMemory;
 
 			m_stopwatch = new Stopwatch();
 
-			instruction_start_pc = TVC.CPU.Registers.PC;
-			instruction_t_cycle = 0;
+			m_instruction_start_pc = TVC.CPU.Registers.PC;
+			m_instruction_t_cycle = 0;
 
-			DateTime speed_timer = DateTime.Now;
+			m_debug_event_timestamp = DateTime.Now;
 
-			m_stopwatch.Reset();
-			m_stopwatch.Start();
-			target_time = 0;
-			current_time = 0;
+			delay_time = 0;
 
 			while (m_thread_running)
 			{
-				if (m_execution_state == ExecutionState.Running)
+				switch (m_execution_state)
 				{
-					while (!TVC.Video.RenderScanline() && m_thread_running)
-					{
-						target_cycle += 178;
-						TVC.Memory.VideoMemAccessCount = 0;
-
-						do
+					case ExecutionState.Running:
 						{
-							current_instruction_t_cycle = TVC.CPU.Step();
-							m_cpu_cycle += current_instruction_t_cycle;
-							instruction_t_cycle += current_instruction_t_cycle;
+							uint ellapsed_tick;
 
-							if (TVC.CPU.InstructionDone)
+							m_stopwatch.Restart();
+							ellapsed_tick = RunOneFrame();
+							GenerateDebugEvent();
+							m_stopwatch.Stop();
+
+							delay_time += TVC.CPUTickToMillisec(ellapsed_tick) - m_stopwatch.Elapsed.TotalMilliseconds;
+
+							if (delay_time > 0)
 							{
-								AddInstructionToExecutionHistory(instruction_start_pc, instruction_t_cycle);
+								int delay = (int)Math.Truncate(delay_time);
 
-								instruction_start_pc = TVC.CPU.Registers.PC;
-								instruction_t_cycle = 0;
+								m_stopwatch.Restart();
+								m_thread_event.WaitOne(delay);
+								m_stopwatch.Stop();
+								delay_time -= m_stopwatch.Elapsed.TotalMilliseconds;
 							}
-
-							if (TVC.Interrupt.IsIntActive())
-								m_cpu_cycle += (uint)TVC.CPU.Int();
-
-						} while (((long)target_cycle - m_cpu_cycle) > 0 && m_thread_running);
-
-						if (TVC.Memory.VideoMemAccessCount > 0)
-						{
-							m_cpu_cycle += (uint)(TVC.Memory.VideoMemAccessCount + 1);
-						}
-
-						TVC.PeriodicCallback();
-					}
-
-					// generate debug event
-					if (m_thread_running)
-					{
-						frame_count++;
-
-						if (frame_count > 5)
-						{
-							frame_count = 0;
-
-							ExecutionHistory.UpdateHistory();
-
-							m_context.Post(delegate
+							else
 							{
-								DebuggerBreakEvent?.Invoke(TVC);
-							}, null);
+								// execution is behind the schedule -> no delay
+								m_thread_event.WaitOne(0);
+
+								delay_time = 0;
+							}
 						}
-					}
+						break;
 
-					// restart stopwatch
-					m_stopwatch.Stop();
-					current_time += (uint)m_stopwatch.ElapsedMilliseconds;
-					m_stopwatch.Restart();
+					case ExecutionState.RunningFullSpeed:
+						RunOneFrame();
+						GenerateDebugEvent();
+						m_thread_event.WaitOne(0);
+						break;
+	
+					case ExecutionState.ResetAndPause:
+						TVC.Reset();
+						m_execution_state = ExecutionState.Paused;
+						break;
 
-					if (m_thread_running)
-					{
-						target_time += 19;
+					case ExecutionState.ResetAndRun:
+						TVC.Reset();
+						m_execution_state = ExecutionState.Running;
+						break;
 
-						delay_time = (int)((long)target_time - current_time);
-
-						if (delay_time < 0)
-							delay_time = 0;
-
-						m_thread_event.WaitOne(delay_time);
-
-					}
-				}
-				else
-				{
-					switch (m_execution_state)
-					{
-						case ExecutionState.ResetAndPause:
-							TVC.Reset();
-							m_execution_state = ExecutionState.Paused;
-							break;
-
-						case ExecutionState.ResetAndRun:
-							TVC.Reset();
-							m_execution_state = ExecutionState.Running;
-							break;
-
-						case ExecutionState.Paused:
-							m_thread_event.WaitOne(1000);
-							break;
-					}
+					case ExecutionState.Paused:
+						m_thread_event.WaitOne(1000);
+						break;
 				}
 			}
 		}
-	
+
+		/// <summary>
+		/// Runs simulation for one video frame
+		/// </summary>
+		private uint RunOneFrame()
+		{
+			uint current_instruction_t_cycle;
+			uint frame_start_cycle = m_cpu_t_cycle;
+
+			while (!TVC.Video.RenderScanline() && m_thread_running)
+			{
+				m_target_cycle += 200;	 //TODO: calculate from video timing
+				TVC.Memory.VideoMemAccessCount = 0;
+
+				do
+				{
+					current_instruction_t_cycle = TVC.CPU.Step();
+					m_cpu_t_cycle += current_instruction_t_cycle;
+					m_instruction_t_cycle += current_instruction_t_cycle;
+
+					if (TVC.CPU.InstructionDone)
+					{
+						AddInstructionToExecutionHistory(m_instruction_start_pc, m_instruction_t_cycle);
+
+						m_instruction_start_pc = TVC.CPU.Registers.PC;
+						m_instruction_t_cycle = 0;
+					}
+
+					if (TVC.Interrupt.IsIntActive())
+						m_cpu_t_cycle += (uint)TVC.CPU.Int();
+
+				} while (((long)m_target_cycle - m_cpu_t_cycle) > 0 && m_thread_running);
+
+				if (TVC.Memory.VideoMemAccessCount > 0)
+				{
+					m_cpu_t_cycle += (uint)(TVC.Memory.VideoMemAccessCount + 1);
+				}
+
+				TVC.PeriodicCallback();
+			}
+
+			// return frame total cycle
+			return m_cpu_t_cycle - frame_start_cycle;
+		}
+
+		/// <summary>
+		/// Generates debug event (refreshes debug information display)
+		/// </summary>
+		private void GenerateDebugEvent()
+		{
+			// generate debug event
+			if (m_thread_running)
+			{
+				DateTime current_time = DateTime.Now;
+
+				if ((current_time - m_debug_event_timestamp).TotalMilliseconds > DebugEventPeriod)
+				{
+					m_debug_event_timestamp = current_time;
+
+					ExecutionHistory.UpdateHistory();
+
+					m_context.Post(delegate
+					{
+						DebuggerBreakEvent?.Invoke(TVC);
+					}, null);
+				}
+			}
+		}
+
 
 		/// <summary>
 		/// Adds last instruction to the execution history 

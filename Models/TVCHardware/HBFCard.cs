@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using TVCEmu.Helpers;
 using TVCEmuCommon;
+using TVCEmuCommon.Helpers;
 
 namespace TVCHardware
 {

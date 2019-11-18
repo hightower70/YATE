@@ -3,7 +3,8 @@
 	<Style x:Key="StandardDataGrid" TargetType="DataGrid">
 		<Setter Property="SelectionUnit" Value="Cell"/>
 		<Setter Property="HeadersVisibility" Value="Column"/>
-		<Setter Property="BorderBrush" Value="Transparent"/>
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrushNormal}"/>
+		<Setter Property="BorderThickness" Value="1"/>
 		<Setter Property="Background" Value="{DynamicResource LightBackground}"/>
 		<Setter Property="RowBackground" Value="{DynamicResource LightBackground}"/>
 		<Style.Resources>

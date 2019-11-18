@@ -160,7 +160,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Controls\CustomControls.csproj">
+    <ProjectReference Include="..\..\CustomControls\CustomControls.csproj">
       <Project>{80e3ed28-c8ae-4b73-9941-95cca882470e}</Project>
       <Name>CustomControls</Name>
     </ProjectReference>

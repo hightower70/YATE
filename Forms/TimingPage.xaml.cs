@@ -57,7 +57,6 @@ namespace TVCEmu.Forms
 		{
 			NotifyPropertyChanged("TState");
 
-
 			DateTime current_timestamp = DateTime.Now;
 			double ellapsed_time_in_ms = (current_timestamp - m_prev_timestamp).TotalMilliseconds;
 			if (ellapsed_time_in_ms > 1000)

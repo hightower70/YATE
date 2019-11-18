@@ -2,6 +2,7 @@
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using TVCEmu.Controls;
+using TVCEmu.Dialogs;
 using TVCEmu.Helpers;
 using TVCEmu.Models.TVCFiles;
 using TVCHardware;
@@ -129,8 +130,19 @@ namespace TVCEmu.Forms
 						TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory, BASFile.EncodingType.Unicode);
 						break;
 				}
+			}
+		}
 
-				
+		private void MiLoadFromGameBase_Click(object sender, RoutedEventArgs e)
+		{
+			GameBaseBrowser dialog = new GameBaseBrowser();
+
+			dialog.Owner = this;
+			if( dialog.ShowDialog() == true)
+			{
+				string filename = dialog.SelectedFileName;
+
+				TVCFiles.LoadProgramFile(filename, ExecutionControl.TVC.Memory);
 			}
 		}
 	}

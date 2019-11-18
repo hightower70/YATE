@@ -63,4 +63,7 @@
     <Style TargetType="ComboBox" BasedOn="{StaticResource StandardComboBox}"/>
     <Style TargetType="GroupBox" BasedOn="{StaticResource StandardGroupBox}"/>
     -->
+
+	<Style TargetType="c:RadioMenuItem" BasedOn="{StaticResource RadioMenuItem}"/>
+
 </ResourceDictionary>

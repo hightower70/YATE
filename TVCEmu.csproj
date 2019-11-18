@@ -66,6 +66,9 @@
     <Compile Include="Controls\ExecutionControlCommand.cs" />
     <Compile Include="Controls\ExecutionHistoryCollection.cs" />
     <Compile Include="Controls\ExecutionHistoryEntry.cs" />
+    <Compile Include="Dialogs\GameBaseBrowser.xaml.cs">
+      <DependentUpon>GameBaseBrowser.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Effects\CRTFilter.cs" />
     <Compile Include="Forms\ExecutionHistoryPage.xaml.cs">
       <DependentUpon>ExecutionHistoryPage.xaml</DependentUpon>
@@ -82,8 +85,6 @@
     <Compile Include="Forms\M6845Page.xaml.cs">
       <DependentUpon>M6845Page.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Helpers\CRC16.cs" />
-    <Compile Include="Helpers\HashCodeHelper.cs" />
     <Compile Include="Helpers\KeyboardHook.cs" />
     <Compile Include="Models\TVCFiles\BASFile.cs" />
     <Compile Include="Models\TVCFiles\BinaryFileStructHelper.cs" />
@@ -124,6 +125,10 @@
     <Compile Include="Models\Z80CPU\Z80OpcodesFDCB.cs" />
     <Compile Include="Models\Z80CPU\Z80Registers.cs" />
     <Compile Include="Models\Z80CPU\Z80Tables.cs" />
+    <Page Include="Dialogs\GameBaseBrowser.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Forms\ExecutionHistoryPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -188,6 +193,10 @@
     <Folder Include="Views\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="CustomControls\CustomControls.csproj">
+      <Project>{80e3ed28-c8ae-4b73-9941-95cca882470e}</Project>
+      <Name>CustomControls</Name>
+    </ProjectReference>
     <ProjectReference Include="D:\Projects\Retro\YATE\TVCEmuCommon\TVCEmuCommon.csproj">
       <Project>{980e3f3e-48c7-4ead-a731-6a2e1856366e}</Project>
       <Name>TVCEmuCommon</Name>
