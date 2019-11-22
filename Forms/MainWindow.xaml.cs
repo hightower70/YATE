@@ -143,6 +143,8 @@ namespace TVCEmu.Forms
 				string filename = dialog.SelectedFileName;
 
 				TVCFiles.LoadProgramFile(filename, ExecutionControl.TVC.Memory);
+
+				ExecutionControl.TVC.Keyboard.InjectKeys("DR,W,UR,DU,W,UU,DN,W,UN,DEnter,W,UEnter");
 			}
 		}
 	}

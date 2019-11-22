@@ -22,6 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows.Input;
@@ -38,6 +39,7 @@ namespace TVCHardware
 
 		public const int KeyboardRowCount = 16;		// Number of keyboard row in hardware
 		private const int PressedKeyCount = 16;   // Number of simulataniously pressed keys handled by the system
+		private const int KeyboardInjectionRate = 40; // injected string rate key/ms
 
 		#endregion
 
@@ -186,6 +188,13 @@ namespace TVCHardware
 		private KeyMappingEntry m_ctrl_key = null;
 		private KeyMappingEntry m_alt_key = null;
 
+		// Keyboard string injection members
+		private string m_keyboard_injection_string;
+		private int m_keyboard_injection_pos;
+		private ulong m_keyboard_injection_timestamp;
+		private ulong m_keyboard_injection_rate;
+
+
 		#endregion
 
 		/// <summary>
@@ -216,6 +225,10 @@ namespace TVCHardware
 			// add port access handlers
 			m_tvc.Ports.AddPortWriter(0x03, PortWrite03H);
 			m_tvc.Ports.AddPortReader(0x58, PortRead58H);
+
+			// setup injection service
+			m_keyboard_injection_pos = -1;
+			m_keyboard_injection_rate = m_tvc.MillisecToCPUTicks(KeyboardInjectionRate);
 		}
 
 		/// <summary>
@@ -225,6 +238,13 @@ namespace TVCHardware
 		/// <param name="inout_data">Data from the port</param>
 		private void PortRead58H(ushort in_address, ref byte inout_data)
 		{
+			// update injected keys (if injection is active)
+			if (m_keyboard_injection_pos >= 0)
+			{
+				UpdateInjectedKeyboardMatrix();
+			}
+
+			// get matrix data
 			inout_data = m_keyboard_matrix[m_selected_row];
 		}
 
@@ -236,6 +256,19 @@ namespace TVCHardware
 		private void PortWrite03H(ushort in_address, byte in_data)
 		{
 			m_selected_row = in_data & 0x0f;
+		}
+
+		public void InjectKeys(string in_string_to_inject)
+		{
+			m_keyboard_injection_string = in_string_to_inject;
+			m_keyboard_injection_pos = 0;
+			m_keyboard_injection_timestamp = m_tvc.GetCPUTicks();
+
+			// reset keyboard matrix
+			for (int i = 0; i < m_keyboard_matrix.Length; i++)
+			{
+				m_keyboard_matrix[i] = 0xff;
+			}
 		}
 
 		/// <summary>
@@ -332,6 +365,12 @@ namespace TVCHardware
 		/// </summary>
 		private void UpdateKeyboardMatrix()
 		{
+			// do not update when injection is in progress
+			if (m_keyboard_injection_pos >= 0)
+			{
+				return;
+			}
+
 			////////////////////////
 			// init keyboard matrix
 			byte[] keyboard_matrix = new byte[KeyboardRowCount];
@@ -340,57 +379,89 @@ namespace TVCHardware
 				keyboard_matrix[i] = 0xff;
 			}
 
-			/////////////////////////////////
-			// Add pressed keys to the matrix
-			KeyModifiers modifiers = KeyModifiers.KeepAll;
-
-			for (int i = 0; i < PressedKeyCount; i++)
+			if (m_keyboard_injection_pos >= 0)
 			{
-				if (m_pressed_keys[i] != Key.None)
+				Key pressed_key;
+
+				if (m_tvc.GetTicksSince(m_keyboard_injection_timestamp) > m_keyboard_injection_rate)
 				{
-					KeyMappingEntry windows_key = new KeyMappingEntry(m_pressed_keys[i], Keyboard.Modifiers, 0, 0, KeyModifiers.None);
+					m_keyboard_injection_timestamp = m_tvc.GetCPUTicks();
+					m_keyboard_injection_pos++;
+					if (m_keyboard_injection_pos >= m_keyboard_injection_string.Length)
+					{
+						m_keyboard_injection_pos = -1;
+					}
+				}
+
+				if (m_keyboard_injection_pos >= 0)
+				{
+					pressed_key = (Key)Enum.Parse(typeof(Key), m_keyboard_injection_string.Substring(m_keyboard_injection_pos, 1), true);
+
+					KeyMappingEntry windows_key = new KeyMappingEntry(pressed_key, ModifierKeys.None, 0, 0, KeyModifiers.None);
 
 					if (m_key_mapping.Contains(windows_key))
 					{
 						KeyMappingEntry entry = m_key_mapping[windows_key.GetHashCode()];
 
 						keyboard_matrix[entry.Row] &= (byte)(~(1 << entry.Column));
-						modifiers = entry.Modifiers;
 					}
 				}
 			}
-
-			////////////////////
-			// Handle modifiers
-
-			// shift key
-			if (m_shift_key != null)
+			else
 			{
-				if ((modifiers & KeyModifiers.AddShift) != 0)
+
+				/////////////////////////////////
+				// Add pressed keys to the matrix
+				KeyModifiers modifiers = KeyModifiers.KeepAll;
+
+				for (int i = 0; i < PressedKeyCount; i++)
+				{
+					if (m_pressed_keys[i] != Key.None)
+					{
+						KeyMappingEntry windows_key = new KeyMappingEntry(m_pressed_keys[i], Keyboard.Modifiers, 0, 0, KeyModifiers.None);
+
+						if (m_key_mapping.Contains(windows_key))
+						{
+							KeyMappingEntry entry = m_key_mapping[windows_key.GetHashCode()];
+
+							keyboard_matrix[entry.Row] &= (byte)(~(1 << entry.Column));
+							modifiers = entry.Modifiers;
+						}
+					}
+				}
+
+				////////////////////
+				// Handle modifiers
+
+				// shift key
+				if (m_shift_key != null)
+				{
+					if ((modifiers & KeyModifiers.AddShift) != 0)
 						keyboard_matrix[m_shift_key.Row] &= (byte)(~(1 << m_shift_key.Column));
 
-				if ((modifiers & KeyModifiers.RemoveShift) != 0)
+					if ((modifiers & KeyModifiers.RemoveShift) != 0)
 						keyboard_matrix[m_shift_key.Row] |= (byte)(1 << m_shift_key.Column);
-			}
+				}
 
-			// Ctrl shift key
-			if (m_ctrl_key != null)
-			{
-				if ((modifiers & KeyModifiers.AddCtrl) != 0)
-					keyboard_matrix[m_ctrl_key.Row] &= (byte)(~(1 << m_ctrl_key.Column));
+				// Ctrl shift key
+				if (m_ctrl_key != null)
+				{
+					if ((modifiers & KeyModifiers.AddCtrl) != 0)
+						keyboard_matrix[m_ctrl_key.Row] &= (byte)(~(1 << m_ctrl_key.Column));
 
-				if ((modifiers & KeyModifiers.RemoveCtrl) != 0)
-					keyboard_matrix[m_ctrl_key.Row] |= (byte)(1 << m_ctrl_key.Column);
-			}
+					if ((modifiers & KeyModifiers.RemoveCtrl) != 0)
+						keyboard_matrix[m_ctrl_key.Row] |= (byte)(1 << m_ctrl_key.Column);
+				}
 
-			// Alt shift key
-			if (m_alt_key != null)
-			{
-				if ((modifiers & KeyModifiers.AddAlt) != 0)
-					keyboard_matrix[m_alt_key.Row] &=(byte)(~(1 << m_alt_key.Column));
+				// Alt shift key
+				if (m_alt_key != null)
+				{
+					if ((modifiers & KeyModifiers.AddAlt) != 0)
+						keyboard_matrix[m_alt_key.Row] &= (byte)(~(1 << m_alt_key.Column));
 
-				if ((modifiers & KeyModifiers.RemoveAlt) != 0)
+					if ((modifiers & KeyModifiers.RemoveAlt) != 0)
 						keyboard_matrix[m_alt_key.Row] |= (byte)(1 << m_alt_key.Column);
+				}
 			}
 
 			////////////////////////
@@ -408,6 +479,98 @@ namespace TVCHardware
 		}
 
 		/// <summary>
+		/// Updates injected key, advaces to the nxt character with the desired rate
+		/// </summary>
+		private void UpdateInjectedKeyboardMatrix()
+		{
+			// do nothing if injection is not active 
+			if (m_keyboard_injection_pos < 0)
+				return;
+
+			// handle injection character rate
+			if (m_tvc.GetTicksSince(m_keyboard_injection_timestamp) < m_keyboard_injection_rate)
+				return;
+
+			// update ticks
+			m_keyboard_injection_timestamp = m_tvc.GetCPUTicks();
+
+			// check for end of the string
+			if (m_keyboard_injection_pos >= m_keyboard_injection_string.Length)
+			{
+				// reset keyboard matrix
+				for (int i = 0; i < m_keyboard_matrix.Length; i++)
+				{
+					m_keyboard_matrix[i] = 0xff;
+				}
+
+				// exit injection mode
+				m_keyboard_injection_pos = -1;
+			}
+			else
+			{
+				bool wait = false;
+
+				while (m_keyboard_injection_pos >= 0 && m_keyboard_injection_pos < m_keyboard_injection_string.Length && !wait)
+				{
+					// get the next command and character to inject
+					int char_pos = m_keyboard_injection_string.IndexOf(',', m_keyboard_injection_pos);
+
+					char command;
+					string key;
+
+					if (char_pos >= 0)
+					{
+						command = m_keyboard_injection_string[m_keyboard_injection_pos];
+						key = m_keyboard_injection_string.Substring(m_keyboard_injection_pos + 1, char_pos - m_keyboard_injection_pos - 1);
+						m_keyboard_injection_pos = char_pos + 1;
+					}
+					else
+					{
+						command = m_keyboard_injection_string[m_keyboard_injection_pos];
+						key = m_keyboard_injection_string.Substring(m_keyboard_injection_pos + 1);
+						m_keyboard_injection_pos = m_keyboard_injection_string.Length;
+					}
+
+					// find keyboard entry for the command's key
+					KeyMappingEntry key_map_entry = null;
+
+					if (!string.IsNullOrEmpty(key))
+					{
+						Key key_code = (Key)Enum.Parse(typeof(Key), key, true);
+
+						KeyMappingEntry windows_key = new KeyMappingEntry(key_code, ModifierKeys.None, 0, 0, KeyModifiers.None);
+
+						if (m_key_mapping.Contains(windows_key))
+						{
+							key_map_entry = m_key_mapping[windows_key.GetHashCode()];
+						}
+					}
+
+					// determine command
+					switch (char.ToUpper(command))
+					{
+						// down
+						case 'D':
+							if (key_map_entry != null)
+								m_keyboard_matrix[key_map_entry.Row] &= (byte)(~(1 << key_map_entry.Column));
+							break;
+
+						// up
+						case 'U':
+							if (key_map_entry != null)
+								m_keyboard_matrix[key_map_entry.Row] |= (byte)(1 << key_map_entry.Column);
+							break;
+
+						// wait
+						case 'W':
+							wait = true;
+							break;
+					}
+				}
+			}
+		}
+
+		/// <summary>
 		/// Loads key mapping from the resource text file
 		/// </summary>
 		/// <param name="in_resource_name">Name of the resource</param>
@@ -421,7 +584,6 @@ namespace TVCHardware
 				LoadKeyMappingTable(stream);
 			}
 		}
-
 
 		/// <summary>
 		/// Loads key mappting table from text file from the specified stream
