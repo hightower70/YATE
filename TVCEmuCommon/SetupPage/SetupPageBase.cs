@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2013-2014 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,33 +18,39 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Framework settings handler
+// Base class for Setup Dialog Pages
 ///////////////////////////////////////////////////////////////////////////////
-namespace TVCEmuCommon.Settings
-{
-	public class FrameworkSettingsFile : SettingsFileBase
-	{
-		#region · Data members ·
-		private static FrameworkSettingsFile m_default = null;
-		#endregion
+using System.Windows;
+using System.Windows.Controls;
 
-		#region · Singleton members ·
+namespace TVCEmuCommon.SetupPage
+{
+	/// <summary>
+	/// Base class for Setup Dialog Page
+	/// </summary>
+	public class SetupPageBase : UserControl
+	{
+		/// <summary>
+		/// Page changed event arguments
+		/// </summary>
+		public class SetupPageEventArgs
+		{
+			public FrameworkElement OldPage { get; set; }
+			public FrameworkElement NewPage { get; set; }
+		}
 
 		/// <summary>
-		/// Gets default singleton instance
+		/// Event triggered when page inside the setup dialog has been activated
 		/// </summary>
-		public static FrameworkSettingsFile Default
+		public virtual void OnSetupPageActivating(Window in_parent, SetupPageEventArgs in_event_info)
 		{
-			get
-			{
-				if (m_default == null)
-				{
-					m_default = new FrameworkSettingsFile();
-				}
-
-				return m_default;
-			}
 		}
-		#endregion
+
+		/// <summary>
+		/// Event triggered when page inside the setup dialog has been deactivated
+		/// </summary>
+		public virtual void OnSetupPageDeactivating(Window in_parent, SetupPageEventArgs in_event_info)
+		{
+		}
 	}
 }

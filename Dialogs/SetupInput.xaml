@@ -1,4 +1,4 @@
-﻿<tec:SetupPageBase x:Class="TVCEmu.Dialogs.SetupGeneral"
+﻿<tec:SetupPageBase x:Class="TVCEmu.Dialogs.SetupInput"
 						 xmlns:cc="clr-namespace:CustomControls;assembly=CustomControls"
 						 xmlns:tec="clr-namespace:TVCEmuCommon.SetupPage;assembly=TVCEmuCommon"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -12,26 +12,29 @@
 			<RowDefinition Height="35"/>
 			<RowDefinition Height="30"/>
 			<RowDefinition Height="30"/>
+			<RowDefinition Height="35"/>
+			<RowDefinition Height="30"/>
 			<RowDefinition Height="30"/>
 			<RowDefinition Height="49*"/>
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="90"/>
+			<ColumnDefinition Width="110"/>
 			<ColumnDefinition Width="1*"/>
-			<ColumnDefinition Width="50"/>
 		</Grid.ColumnDefinitions>
 
-		<Grid Grid.Row="0" Grid.ColumnSpan="3">
-			<cc:Title Text="Path Settings"/>
+		<!-- Keybaord settings -->
+		<Grid Grid.Row="0" Grid.ColumnSpan="2">
+			<cc:Title Text="Keyboard Settings"/>
 		</Grid>
-		
-		<TextBlock Grid.Row="1" Grid.Column="0" Text="Modules path:" VerticalAlignment="Center"/>
-		<TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ModulesPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-		<Button Grid.Row="1" Grid.Column="2" Margin="3" Content="..." />
+		<TextBlock Grid.Row="1" Grid.Column="0" Text="Keyboard mapping:" VerticalAlignment="Center"/>
+		<ComboBox Grid.Row="1" Grid.Column="1" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding KeyboardMappings}" SelectedValue="{Binding Settings.KeyboardMapping}" />
+		<CheckBox Grid.Row="2" Grid.Column="1" Margin="5,0,0,0" Content="Enable Ctrl-ESC Capture" IsChecked="{Binding Settings.CaptureCtrlESC}"/>
 
-		<TextBlock Grid.Row="2" Grid.Column="0" Text="Forms path:" VerticalAlignment="Center"/>
-		<TextBox Grid.Row="2" Grid.Column="1" Text="{Binding FormsPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-		<Button Grid.Row="2" Grid.Column="2" Margin="3" Content="..." />
+		<!-- Joystick settings -->
+		<Grid Grid.Row="3" Grid.ColumnSpan="2">
+			<cc:Title Text="Joystick Settings"/>
+		</Grid>
 
 	</Grid>
 </tec:SetupPageBase>
+

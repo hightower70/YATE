@@ -18,33 +18,26 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Framework settings handler
+// Class for storing 'Form' setup panel settings
 ///////////////////////////////////////////////////////////////////////////////
-namespace TVCEmuCommon.Settings
+using TVCEmuCommon.Settings;
+
+namespace TVCEmu.Settings
 {
-	public class FrameworkSettingsFile : SettingsFileBase
+	class SetupInputSettings : SettingsBase
 	{
-		#region · Data members ·
-		private static FrameworkSettingsFile m_default = null;
-		#endregion
+		public string KeyboardMapping { get; set; }
+		public bool CaptureCtrlESC { set; get; }
 
-		#region · Singleton members ·
-
-		/// <summary>
-		/// Gets default singleton instance
-		/// </summary>
-		public static FrameworkSettingsFile Default
+		public SetupInputSettings() : base("Main", "Input")
 		{
-			get
-			{
-				if (m_default == null)
-				{
-					m_default = new FrameworkSettingsFile();
-				}
-
-				return m_default;
-			}
+			SetDefaultValues();
 		}
-		#endregion
+
+		override public void SetDefaultValues()
+		{
+			CaptureCtrlESC = true;
+			KeyboardMapping = "default";
+		}
 	}
 }

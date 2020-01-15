@@ -211,11 +211,11 @@ namespace TVCHardware
 
 
 			m_disk_drives[0] = new DiskDrive();
-			m_disk_drives[0].Geometry.NumberOfTracks = 80;
+			m_disk_drives[0].Geometry.NumberOfTracks = 40;
 			m_disk_drives[0].Geometry.NumberOfSides = 1;
 			m_disk_drives[0].Geometry.SectorPerTrack = 9;
-			m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
-
+			//m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
+			m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
 		}
 
 		public void Initialize(ITVComputer in_tvcomputer)

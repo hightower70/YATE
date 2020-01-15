@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2019-2020 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,33 +18,22 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Framework settings handler
+// Interface for Cartridge Emulation
 ///////////////////////////////////////////////////////////////////////////////
-namespace TVCEmuCommon.Settings
+namespace TVCEmuCommon
 {
-	public class FrameworkSettingsFile : SettingsFileBase
+	/// <summary>
+	/// Cartridge Emulation Interface
+	/// </summary>
+	public interface ITVCCartridge
 	{
-		#region · Data members ·
-		private static FrameworkSettingsFile m_default = null;
-		#endregion
+		// Cartridge memory read/write
+		byte MemoryRead(ushort in_address);									// cartridge memory read
+		void MemoryWrite(ushort in_address, byte in_byte);	// cartridge memory write
 
-		#region · Singleton members ·
-
-		/// <summary>
-		/// Gets default singleton instance
-		/// </summary>
-		public static FrameworkSettingsFile Default
-		{
-			get
-			{
-				if (m_default == null)
-				{
-					m_default = new FrameworkSettingsFile();
-				}
-
-				return m_default;
-			}
-		}
-		#endregion
+		// Cartridge maintenance functions
+		void Initialize(ITVComputer in_parent);							// initializes cartridge (cartridge installation)
+		void Remove();																			// removes cartridge (cartridge removal)
+		void Reset();																				// Computer reset
 	}
 }

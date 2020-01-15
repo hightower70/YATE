@@ -291,11 +291,6 @@ namespace TVCHardware
 		public void PortWrite71H(ushort in_address, byte in_data)
 		{
 			m_6845_registers[m_6845_address] = in_data;
-
-			if(m_6845_address==5)
-			{
-
-			}
 		}
 
 		#endregion
@@ -576,7 +571,7 @@ namespace TVCHardware
 					}
 					else
 					{
-						m_frame_buffer.UIntBuffer[marker_index] = 0xff000000;
+						m_frame_buffer.UIntBuffer[marker_index ] = 0xff000000;
 						m_frame_buffer.UIntBuffer[marker_index + 1] = 0xff000000;
 						m_frame_buffer.UIntBuffer[marker_index + 2] = 0xff000000;
 					}

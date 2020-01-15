@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2019-2020 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,33 +18,50 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Framework settings handler
+// Videoton TV Computer ROM Cartridge Emulation
 ///////////////////////////////////////////////////////////////////////////////
-namespace TVCEmuCommon.Settings
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using TVCEmuCommon;
+
+namespace TVCEmu.Models.TVCHardware
 {
-	public class FrameworkSettingsFile : SettingsFileBase
+	class TVCCartridge : ITVCCartridge
 	{
-		#region · Data members ·
-		private static FrameworkSettingsFile m_default = null;
-		#endregion
+		public const int CartMemLength = 0x4000;
 
-		#region · Singleton members ·
+		public byte[] Memory { get; private set; }
 
-		/// <summary>
-		/// Gets default singleton instance
-		/// </summary>
-		public static FrameworkSettingsFile Default
+		public byte MemoryRead(ushort in_address)
 		{
-			get
-			{
-				if (m_default == null)
-				{
-					m_default = new FrameworkSettingsFile();
-				}
-
-				return m_default;
-			}
+			return Memory[in_address];
 		}
-		#endregion
+
+		public void MemoryWrite(ushort in_address, byte in_byte)
+		{
+			// no write
+		}
+
+		public void Reset()
+		{
+			// no reset
+		}
+
+		public void Initialize(ITVComputer in_parent)
+		{
+			Memory = new byte[CartMemLength];
+
+			for (int i = 0; i < Memory.Length; i++)
+				Memory[i] = 0xff;
+		}
+
+		public void Remove()
+		{
+			// no remove
+		}
 	}
 }

@@ -22,7 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 using System.Windows;
 
-namespace CommonClassLibrary.Settings
+namespace TVCEmuCommon.Settings
 {
 	public class WindowPosSettings
 	{

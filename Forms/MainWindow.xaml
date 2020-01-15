@@ -69,6 +69,9 @@
 				<Separator />
 				<MenuItem x:Name="miLoadGameBase" Header="Load from GameBase..." Click="MiLoadFromGameBase_Click"  />
 				<Separator />
+				<MenuItem x:Name="miCartridgeMemoryLoad" Header="Cartridge Load..." Click="MiCartridgeMemoryLoad_Click"  />
+				<MenuItem x:Name="miCartridgeMemoryClear" Header="Cartridge remove" Click="MiCartridgeMemoryClear_Click"  />
+				<Separator />
 				<MenuItem Header="_Exit" />
 			</MenuItem>
 
@@ -85,13 +88,12 @@
 					<c:RadioMenuItem Header="Expansion Card #3 ROM" GroupName="SourceListTarget"/>
 				</MenuItem>
 				<MenuItem Header="Source List Load"  />
-
 			</MenuItem>
-			<!--
+			
 			<MenuItem Header="_Tools">
-				<MenuItem Header="Options" />
-				<MenuItem Header="Device Settings"  />
-			</MenuItem>-->
+				<MenuItem x:Name="miOptions" Header="Options" Click="miOptions_Click" />
+			</MenuItem>
+			
 			<MenuItem Header="_Help" HorizontalAlignment="Right">
 				<MenuItem Header="_About" />
 			</MenuItem>

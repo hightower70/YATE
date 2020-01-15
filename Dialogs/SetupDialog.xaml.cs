@@ -20,11 +20,13 @@
 // ----------------
 // System Setup Dialog
 ///////////////////////////////////////////////////////////////////////////////
-using CommonClassLibrary.Settings;
-using CygnusControls;
+using TVCEmuCommon.Settings;
 using System.Windows;
+using TVCEmuCommon.ModuleManager;
+using TVCEmu.Settings;
+using TVCEmuCommon.SetupPage;
 
-namespace CygnusGroundStation.Dialogs
+namespace TVCEmu.Dialogs
 {
 	/// <summary>
 	/// Interaction logic for SetupDialog.xaml
@@ -54,6 +56,7 @@ namespace CygnusGroundStation.Dialogs
 
 		private void bAddModule_Click(object sender, RoutedEventArgs e)
 		{
+			/*
 			m_current_module_manager.SetupRefreshModuleInfo();
 
 			AddModuleDialog dialog = new AddModuleDialog();
@@ -73,7 +76,7 @@ namespace CygnusGroundStation.Dialogs
 					SettingsFileBase.ModuleInfo module_info = new SettingsFileBase.ModuleInfo(module.SectionName, module.DLLName, true);
 					m_current_settings.ModuleAdd(module_info);
 				}
-			}
+			}	*/
 		}
 
 		private void bOK_Click(object sender, RoutedEventArgs e)
@@ -83,7 +86,7 @@ namespace CygnusGroundStation.Dialogs
 		}
 
 		private void tvSetupTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-		{
+		{			
 			int module_index;
 			int page_index;
 
@@ -103,13 +106,13 @@ namespace CygnusGroundStation.Dialogs
 				new_page = m_current_module_manager.Modules[module_index].GetSettingsInfo()[page_index].Form;
 
 				ChangeSetupPage(new_page);
-			}
+			}			
 		}
 
 		private void ChangeSetupPage(FrameworkElement in_new_page)
 		{
 			FrameworkElement old_page;
-
+				
 			// get old page
 			if (gSetupFormContainer.Children.Count > 0)
 				old_page = (FrameworkElement)gSetupFormContainer.Children[0];
@@ -138,11 +141,11 @@ namespace CygnusGroundStation.Dialogs
 
 				if (in_new_page is SetupPageBase)
 					((SetupPageBase)in_new_page).OnSetupPageActivating(this, event_args);
-			}
+			}		
 		}
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-		{
+		{		
 			gSetupFormContainer.Children.Clear();
 
 			SetupDialogSettings settings = m_current_settings.GetSettings<SetupDialogSettings>();
@@ -153,7 +156,7 @@ namespace CygnusGroundStation.Dialogs
 		}
 
 		private void Window_Initialized(object sender, System.EventArgs e)
-		{
+		{			 
 			SetupDialogSettings settings = m_current_settings.GetSettings<SetupDialogSettings>();
 
 			settings.DialogPos.LoadWindowPositionAndSize(this);
@@ -165,6 +168,7 @@ namespace CygnusGroundStation.Dialogs
 
 		private void bRemoveModule_Click(object sender, RoutedEventArgs e)
 		{
+			/*
 			// find parent node
 			ModuleSettingsTreeInfo module_tree_info = tvSetupTree.SelectedItem as ModuleSettingsTreeInfo;
 
@@ -183,7 +187,7 @@ namespace CygnusGroundStation.Dialogs
 			m_current_settings.ModuleRemove(module_tree_info.ModuleIndex - 1);
 
 			// remove module
-			m_current_module_manager.SetupRemoveModule(module_tree_info.ModuleIndex);
+			m_current_module_manager.SetupRemoveModule(module_tree_info.ModuleIndex);			 */
 		}
 	}
 }

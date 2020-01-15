@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
 				xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
 				mc:Ignorable="d" 
-				x:Class="CygnusGroundStation.Dialogs.SetupDialog"
+				x:Class="TVCEmu.Dialogs.SetupDialog"
         Title="Setup"
 				Style="{DynamicResource WindowStyle}"
 				ShowInTaskbar="False" ResizeMode="CanMinimize" Closing="Window_Closing" Initialized="Window_Initialized" 

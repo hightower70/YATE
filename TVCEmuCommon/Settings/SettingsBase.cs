@@ -21,7 +21,7 @@
 // Interface for settings data class
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace CommonClassLibrary.Settings
+namespace TVCEmuCommon.Settings
 {
 	public abstract class SettingsBase
 	{

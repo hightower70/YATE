@@ -1,4 +1,5 @@
-﻿using TVCEmuCommon;
+﻿using TVCEmu.Models.TVCHardware;
+using TVCEmuCommon;
 using Z80CPU;
 
 namespace TVCHardware
@@ -17,6 +18,7 @@ namespace TVCHardware
 		public TVCKeyboard Keyboard { get; private set; }
 		public TVCInterrupt Interrupt { get; private set; }
 		public ITVCCard[] Cards { get; private set; }
+		public ITVCCartridge Cartridge { get; private set; }
 
 
 		public void Initialize()
@@ -29,6 +31,7 @@ namespace TVCHardware
 			//Memory.LoadCartMemory(@"c:\Temp\tvc\mralex.rom");
 			//Memory.LoadCartMemory(@"c:\Temp\tvc\invaders.rom");
 			//Memory.LoadCartMemory(@"c:\Temp\tvc\vili.rom");
+			//Memory.LoadCartMemory(@"c:\Users\laszlo.arvai\Downloads\cfcart128.crt");
 
 			Video = new TVCVideo(this);
 			Keyboard = new TVCKeyboard(this);
@@ -41,6 +44,12 @@ namespace TVCHardware
 			InsertCard(0, new HBFCard());
 
 			Ports.AddPortReader(0x5a, PortRead5AH);
+
+			// cartridge init
+			//Cartridge = new TVCCartridge();
+			//Cartridge.Initialize(this);
+			Cartridge = new TVCMultiCart();
+			Cartridge.Initialize(this);
 
 			Reset();
 		}
@@ -60,8 +69,29 @@ namespace TVCHardware
 				if (Cards[i] != null)
 					Cards[i].CardReset();
 			}
+
+			// reset cartridge
+			Cartridge.Reset();
 		}
 
+		/// <summary>
+		/// Resets computer (Cold reset)
+		/// </summary>
+		public void ColdReset()
+		{
+			// clear memory
+			Memory.ClearMemory();
+
+			Reset();
+		}
+
+		#region · Expansion Card handling ·
+
+		/// <summary>
+		/// Inserts expansion cart to the one of the TV Computer expansion slot
+		/// </summary>
+		/// <param name="in_slot_index">Index of the exansion slot</param>
+		/// <param name="in_card">Expansion card to object to insert</param>
 		public void InsertCard(int in_slot_index, ITVCCard in_card)
 		{
 			// remove card (if installed)
@@ -87,6 +117,10 @@ namespace TVCHardware
 			}
 		}
 
+		/// <summary>
+		/// Removes expansion card from the TV Computer expansion slot
+		/// </summary>
+		/// <param name="in_slot_index">Expansion slot index for removing card</param>
 		public void RemoveCard(int in_slot_index)
 		{
 			if (Cards[in_slot_index] != null)
@@ -107,11 +141,21 @@ namespace TVCHardware
 			Cards[in_slot_index] = null;
 		}
 
+		/// <summary>
+		/// Calsulatess expansion card start port address from the card index
+		/// </summary>
+		/// <param name="in_slot_index">Card index</param>
+		/// <returns>First I/O port address of the given card</returns>
 		private ushort GetCardIOAddress(int in_slot_index)
 		{
 			return (ushort)((in_slot_index + 1) * 0x10);
 		}
 
+		/// <summary>
+		/// Reds expansion card ID register
+		/// </summary>
+		/// <param name="in_address">not used</param>
+		/// <param name="inout_data">Data to read from the card</param>
 		private void PortRead5AH(ushort in_address, ref byte inout_data)
 		{
 			byte data = 0;
@@ -131,6 +175,8 @@ namespace TVCHardware
 			inout_data = data;
 		}
 
+		#endregion																								 
+
 		public void PeriodicCallback()
 		{
 			for (int i = 0; i < ExpansionCardCount; i++)
@@ -139,8 +185,6 @@ namespace TVCHardware
 					Cards[i].CardPeriodicCallback(CPU.TotalTState);
 			}
 		}
-
-
 
 		/// <summary>
 		/// Converts milliseconds to CPU clock cycle count
@@ -181,5 +225,24 @@ namespace TVCHardware
 		{
 			return CPU.TotalTState - in_start_ticks;
 		}
+
+		#region · Cartridge handling routines ·
+
+		/// <summary>
+		/// Inserts cartridge
+		/// </summary>
+		/// <param name="in_cartridge"></param>
+		public void InsertCartridge(ITVCCartridge in_cartridge)
+		{
+		}
+
+		/// <summary>
+		/// Removes cartridge
+		/// </summary>
+		public void RemoveCartridge()
+		{
+		}
+
+		#endregion
 	}
 }

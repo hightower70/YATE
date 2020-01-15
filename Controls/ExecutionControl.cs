@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Windows;
 using System.Windows.Input;
 using TVCHardware;
 
@@ -15,13 +16,22 @@ namespace TVCEmu.Controls
 
 		#region · Types · 
 
+		public enum ExecutionStateRequest
+		{
+			NoChange,
+
+			Run,
+			RunFullSpeed,
+			Pause,
+			Restore,
+			Reset
+		}
+
 		public enum ExecutionState
 		{
 			Paused,
 			Running,
-			RunningFullSpeed,
-			ResetAndRun,
-			ResetAndPause
+			RunningFullSpeed
 		}
 
 		public delegate void DebuggerBreakEventDelegate(TVComputer in_sender);
@@ -40,9 +50,15 @@ namespace TVCEmu.Controls
 		private uint m_instruction_t_cycle;
 		private ushort m_instruction_start_pc; // address of the current instruction's first byte
 
+		private ExecutionStateRequest m_execution_state_request;
+		private AutoResetEvent m_execution_state_changed_event;
+
 		private ExecutionState m_execution_state;
+		private ExecutionState m_last_execution_state;
 
 		private DateTime m_debug_event_timestamp;
+
+		public readonly Window ParentWindow;
 		#endregion
 
 		#region · Constructor ·
@@ -50,8 +66,10 @@ namespace TVCEmu.Controls
 		/// <summary>
 		/// Default constructor
 		/// </summary>
-		public ExecutionControl()
+		public ExecutionControl(Window in_parent_window)
 		{
+			ParentWindow = in_parent_window;
+
 			TVC = new TVComputer();
 			ExecutionHistory = new ExecutionHistoryCollection(2);
 
@@ -59,9 +77,12 @@ namespace TVCEmu.Controls
 			m_thread_event = new AutoResetEvent(false);
 			m_context = SynchronizationContext.Current;
 			m_thread_running = false;
-			m_context = SynchronizationContext.Current;
 
 			m_execution_state = ExecutionState.Running;
+			m_last_execution_state = ExecutionState.Running;
+
+			m_execution_state_request = ExecutionStateRequest.NoChange;
+			m_execution_state_changed_event = new AutoResetEvent(false);
 
 			DebugStepIntoCommand = new ExecutionControlCommand(DebugStepExecute);
 			DebugPauseCommand = new ExecutionControlCommand(DebugPauseExecute);
@@ -78,11 +99,7 @@ namespace TVCEmu.Controls
 
 		public void DebugRunExecute(object parameter)
 		{
-			if (m_execution_state != ExecutionState.Running)
-			{
-				m_execution_state = ExecutionState.Running;
-				m_thread_event.Set();
-			}
+			ChangeExecutionState(ExecutionStateRequest.Run);
 		}
 
 		// Run full speed
@@ -90,11 +107,7 @@ namespace TVCEmu.Controls
 
 		public void DebugRunFullSpeedExecute(object parameter)
 		{
-			if (m_execution_state != ExecutionState.RunningFullSpeed)
-			{
-				m_execution_state = ExecutionState.RunningFullSpeed;
-				m_thread_event.Set();
-			}
+			ChangeExecutionState(ExecutionStateRequest.RunFullSpeed);
 		}
 
 		// Reset command
@@ -102,12 +115,15 @@ namespace TVCEmu.Controls
 
 		public void DebugResetExecute(object parameter)
 		{
-			if (m_execution_state == ExecutionState.Running)
-				m_execution_state = ExecutionState.ResetAndRun;
-			else
-				m_execution_state = ExecutionState.ResetAndPause;
+			ChangeExecutionState(ExecutionStateRequest.Reset);
+		}
 
-			m_thread_event.Set();
+		// Pause
+		public ExecutionControlCommand DebugPauseCommand { get; private set; }
+
+		public void DebugPauseExecute(object parameter)
+		{
+			ChangeExecutionState(ExecutionStateRequest.Pause);
 		}
 
 		// Step into
@@ -116,18 +132,6 @@ namespace TVCEmu.Controls
 		public void DebugStepExecute(object parameter)
 		{
 			StepInto();
-		}
-
-		// Pause
-		public ExecutionControlCommand DebugPauseCommand { get; private set; }
-
-		public void DebugPauseExecute(object parameter)
-		{
-			if (m_execution_state != ExecutionState.Paused)
-			{
-				m_execution_state = ExecutionState.Paused;
-				m_thread_event.Set();
-			}
 		}
 
 		#endregion
@@ -201,6 +205,19 @@ namespace TVCEmu.Controls
 			m_stream_thread = null;
 		}
 
+		public void ChangeExecutionState(ExecutionStateRequest in_request)
+		{
+			if (in_request == ExecutionStateRequest.NoChange)
+				return;
+
+			m_execution_state_changed_event.Reset();
+
+			m_execution_state_request = in_request;
+			m_thread_event.Set();
+
+			m_execution_state_changed_event.WaitOne();
+		}
+
 		#endregion
 
 		#region · Simulation thread ·
@@ -232,6 +249,51 @@ namespace TVCEmu.Controls
 
 			while (m_thread_running)
 			{
+				// handle execution state change
+				switch(m_execution_state_request)
+				{
+					// change to pause state
+					case ExecutionStateRequest.Pause:
+						m_execution_state_request = ExecutionStateRequest.NoChange;
+						m_last_execution_state = m_execution_state;
+						m_execution_state = ExecutionState.Paused;
+						m_execution_state_changed_event.Set();
+						break;
+
+					case ExecutionStateRequest.Restore:
+						m_execution_state_request = ExecutionStateRequest.NoChange;
+						m_execution_state = m_last_execution_state;
+						m_execution_state_changed_event.Set();
+						break;
+
+					// change to running
+					case ExecutionStateRequest.Run:
+						m_execution_state_request = ExecutionStateRequest.NoChange;
+						m_execution_state = ExecutionState.Running;
+						m_execution_state_changed_event.Set();
+						break;
+
+					// full speed run
+					case ExecutionStateRequest.RunFullSpeed:
+						m_execution_state_request = ExecutionStateRequest.NoChange;
+						m_execution_state = ExecutionState.RunningFullSpeed;
+						m_execution_state_changed_event.Set();
+						break;
+
+					// resets computer
+					case ExecutionStateRequest.Reset:
+						m_execution_state_request = ExecutionStateRequest.NoChange;
+						TVC.Reset();
+						m_execution_state_changed_event.Set();
+						break;
+
+					// no change
+					case ExecutionStateRequest.NoChange:
+						// do nothing
+						break;
+				}
+
+				// execute according the execution state
 				switch (m_execution_state)
 				{
 					case ExecutionState.Running:
@@ -269,16 +331,6 @@ namespace TVCEmu.Controls
 						GenerateDebugEvent();
 						m_thread_event.WaitOne(0);
 						break;
-	
-					case ExecutionState.ResetAndPause:
-						TVC.Reset();
-						m_execution_state = ExecutionState.Paused;
-						break;
-
-					case ExecutionState.ResetAndRun:
-						TVC.Reset();
-						m_execution_state = ExecutionState.Running;
-						break;
 
 					case ExecutionState.Paused:
 						m_thread_event.WaitOne(1000);
@@ -294,8 +346,9 @@ namespace TVCEmu.Controls
 		{
 			uint current_instruction_t_cycle;
 			uint frame_start_cycle = m_cpu_t_cycle;
+			bool breakpoint_exit = false;
 
-			while (!TVC.Video.RenderScanline() && m_thread_running)
+			while (!TVC.Video.RenderScanline() && m_thread_running && !breakpoint_exit)
 			{
 				m_target_cycle += 200;	 //TODO: calculate from video timing
 				TVC.Memory.VideoMemAccessCount = 0;
@@ -312,12 +365,18 @@ namespace TVCEmu.Controls
 
 						m_instruction_start_pc = TVC.CPU.Registers.PC;
 						m_instruction_t_cycle = 0;
+								 /*
+						if (TVC.CPU.Registers.PC >= 0xc184 && TVC.CPU.Registers.PC < 0xc188)
+						{
+							breakpoint_exit = true;
+							m_execution_state = ExecutionState.Paused;
+						}	 */
 					}
 
 					if (TVC.Interrupt.IsIntActive())
 						m_cpu_t_cycle += (uint)TVC.CPU.Int();
 
-				} while (((long)m_target_cycle - m_cpu_t_cycle) > 0 && m_thread_running);
+				} while (((long)m_target_cycle - m_cpu_t_cycle) > 0 && m_thread_running && !breakpoint_exit);
 
 				if (TVC.Memory.VideoMemAccessCount > 0)
 				{

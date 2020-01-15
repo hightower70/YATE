@@ -1,10 +1,14 @@
-﻿using System.Windows;
+﻿using CustomControls;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using TVCEmu.Controls;
 using TVCEmu.Dialogs;
 using TVCEmu.Helpers;
 using TVCEmu.Models.TVCFiles;
+using TVCEmu.Settings;
+using TVCEmuCommon.ModuleManager;
+using TVCEmuCommon.Settings;
 using TVCHardware;
 
 namespace TVCEmu.Forms
@@ -18,19 +22,33 @@ namespace TVCEmu.Forms
 		private Int32Rect m_refresh_rect;
 
 		public ExecutionControl ExecutionControl { get; }
+		public TVCCartridgeControl CartridgeControl { get; }
 
 		private KeyboardHook m_keyboard_hook = new KeyboardHook();
 
 		public MainWindow()
 		{
+			// load config file and get settings
+			FrameworkSettingsFile.Default.Load();
+
 			m_keyboard_hook.EnableHook(Window_KeyDown);
 
-			ExecutionControl = new ExecutionControl();
+			// setup execution control
+			ExecutionControl = new ExecutionControl(this);
 
 			ExecutionControl.Initialize();
 			ExecutionControl.TVC.Video.FrameReady += FrameReady;
 
+			// setup cartridge control
+			CartridgeControl = new TVCCartridgeControl();
+			CartridgeControl.Initialize(this, ExecutionControl);
+
+			// setup data context for data binding
 			DataContext = this;
+
+			// load modules
+			ModuleManager.Default.AddMainModule(new ModuleInterface());
+			ModuleManager.Default.ModulesLoad();
 
 			InitializeComponent();
 
@@ -58,6 +76,13 @@ namespace TVCEmu.Forms
 		{
 			ExecutionControl.Stop();
 			m_keyboard_hook.ReleaseHook();
+
+			MainGeneralSettings settings = FrameworkSettingsFile.Default.GetSettings<MainGeneralSettings>();
+
+			settings.MainWindowPos.SaveWindowPositionAndSize(this);
+
+			FrameworkSettingsFile.Default.SetSettings(settings);
+			FrameworkSettingsFile.Default.Save();
 		}
 
 		private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -133,6 +158,16 @@ namespace TVCEmu.Forms
 			}
 		}
 
+		private void MiCartridgeMemoryLoad_Click(object sender, RoutedEventArgs e)
+		{
+			CartridgeControl.OnCartridgeMemoryLoad();
+		}
+
+		private void MiCartridgeMemoryClear_Click(object sender, RoutedEventArgs e)
+		{
+			CartridgeControl.OnCartridgeMemoryClear();
+		}
+
 		private void MiLoadFromGameBase_Click(object sender, RoutedEventArgs e)
 		{
 			GameBaseBrowser dialog = new GameBaseBrowser();
@@ -145,6 +180,27 @@ namespace TVCEmu.Forms
 				TVCFiles.LoadProgramFile(filename, ExecutionControl.TVC.Memory);
 
 				ExecutionControl.TVC.Keyboard.InjectKeys("DR,W,UR,DU,W,UU,DN,W,UN,DEnter,W,UEnter");
+			}
+		}
+
+		private void miOptions_Click(object sender, RoutedEventArgs e)
+		{
+			Window setup = new SetupDialog();
+			setup.Owner = this;
+			if (setup.ShowDialog() ?? false)
+			{						
+				using (new WaitCursor())
+				{
+					// stop modules and dispatcher timer
+
+					// save settings if dialog result was success
+					FrameworkSettingsFile.Default.CopySettingsFrom(SetupDialog.CurrentSettings);
+					FrameworkSettingsFile.Default.Save();
+
+					// reload modules
+					ModuleManager.Default.ModulesLoad();
+					ModuleManager.Default.ModulesInitializeAndStart();
+				}																									
 			}
 		}
 	}

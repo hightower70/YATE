@@ -1,17 +1,17 @@
 ﻿using System.Windows;
-using TVCEmu.Settings;
+using TVCEmuCommon.Settings;
 using TVCEmuCommon.SetupPage;
 
 namespace TVCEmu.Dialogs
 {
 	/// <summary>
-	/// Interaction logic for SetupPath.xaml
+	/// Interaction logic for SetupForms.xaml
 	/// </summary>
-	public partial class SetupGeneral : SetupPageBase
+	public partial class SetupInput : SetupPageBase
 	{
-		private MainGeneralSettings m_data_provider;
+		private SetupInputDataProvider m_data_provider;
 
-		public SetupGeneral()
+		public SetupInput()
 		{
 			InitializeComponent();
 		}
@@ -19,14 +19,13 @@ namespace TVCEmu.Dialogs
 		public override void OnSetupPageActivating(Window in_parent, SetupPageEventArgs in_event_info)
 		{
 			// setup data provider
-			m_data_provider = SetupDialog.CurrentSettings.GetSettings<MainGeneralSettings>();
+			m_data_provider = new SetupInputDataProvider(in_parent.Owner);
 			this.DataContext = m_data_provider;
 		}
 
 		public override void OnSetupPageDeactivating(Window in_parent, SetupPageEventArgs in_event_info)
 		{
-			SetupDialog.CurrentSettings.SetSettings(m_data_provider);
+			m_data_provider.Save();
 		}
-
 	}
 }

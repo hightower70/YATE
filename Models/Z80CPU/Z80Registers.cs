@@ -452,6 +452,8 @@ namespace Z80CPU
 
 			R = 0;
 			I = 0;
+
+			PC = 0x0000;
 		}
 
 	}

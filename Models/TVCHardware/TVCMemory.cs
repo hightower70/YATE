@@ -46,7 +46,6 @@ namespace TVCHardware
 		public const int PageLength = 0x4000;
 		public const int SysMemLength = 0x8000;
 		public const int ExtMemLength = 0x4000;
-		public const int CartMemLength = 0x8000;
 		public const int IOMemSize = 0x4000;
 		public const int UserMemSize = 0x8000;
 		public const int VideoMemSize = 0x8000;
@@ -60,7 +59,6 @@ namespace TVCHardware
 		private byte[] m_mem_sys;
 		private byte[] m_mem_ext;
 		private byte[][] m_mem_iomem;
-		private byte[] m_mem_cart;
 		private byte[] m_mem_video;
 		private byte[] m_mem_user;
 
@@ -78,7 +76,6 @@ namespace TVCHardware
 			get { return m_mem_video; }
 		}
 
-
 		public TVCMemory(TVComputer in_tvc)
 		{
 			m_tvc = in_tvc;
@@ -89,7 +86,6 @@ namespace TVCHardware
 			// reserve space for memories
 			m_mem_sys = new byte[SysMemLength];
 			m_mem_ext = new byte[ExtMemLength];
-			m_mem_cart = new byte[CartMemLength];
 
 			m_mem_iomem = new byte[IOCardCount][];
 			for (int i = 0; i < IOCardCount; i++)
@@ -113,6 +109,17 @@ namespace TVCHardware
 		private void PortReset03H()
 		{
 			PortWrite03H(0x03, 0);
+		}
+
+		public void ClearMemory()
+		{
+			// clear video memory
+			for (int i = 0; i < m_mem_user.Length; i++)
+				m_mem_user[i] = 0;
+
+			// clear main memory
+			for (int i = 0; i < m_mem_user.Length; i++)
+				m_mem_video[i] = 0;
 		}
 
 		public byte Read(ushort in_address, bool in_m1_state = false)
@@ -231,7 +238,7 @@ namespace TVCHardware
 
 				case 1:
 					m_page_reader[0] = MemCartRead;
-					m_page_writer[0] = MemNoWrite;
+					m_page_writer[0] = MemCartWrite;
 					break;
 
 				case 2:
@@ -280,7 +287,7 @@ namespace TVCHardware
 			{
 				case 0:
 					m_page_reader[3] = MemCartRead;
-					m_page_writer[3] = MemNoWrite;
+					m_page_writer[3] = MemCartWrite;
 					break;
 
 				case 1:
@@ -345,11 +352,6 @@ namespace TVCHardware
 			LoadMemoryContent(in_ext_name, 0, m_mem_ext);
 		}
 
-		public void LoadCartMemory(string in_cart_name)
-		{
-			LoadMemoryContent(in_cart_name, 0, m_mem_cart);
-		}
-
 		private void LoadMemoryContent(string name, ushort in_address, byte[] in_memory)
 		{
 			byte[] data = File.ReadAllBytes(name);
@@ -370,11 +372,6 @@ namespace TVCHardware
 		private byte MemSysRead(ushort in_page_address)
 		{
 			return m_mem_sys[in_page_address];
-		}
-
-		private byte MemCartRead(ushort in_page_address)
-		{
-			return m_mem_cart[in_page_address];
 		}
 
 		/// <summary>
@@ -507,6 +504,20 @@ namespace TVCHardware
 			{
 				// no write to ext memory
 			}
+		}
+
+		private byte MemCartRead(ushort in_page_address)
+		{
+			if (m_tvc.Cartridge != null)
+				return m_tvc.Cartridge.MemoryRead(in_page_address);
+
+			return 0xff;
+		}
+
+		private void MemCartWrite(ushort in_page_address, byte in_data)
+		{
+			if (m_tvc.Cartridge != null)
+				m_tvc.Cartridge.MemoryWrite(in_page_address, in_data);
 		}
 
 		public int VideoMemAccessCount { get; set; } = 0;

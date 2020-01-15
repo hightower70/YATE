@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2013-2014 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,33 +18,38 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Framework settings handler
+// Main module interface
 ///////////////////////////////////////////////////////////////////////////////
-namespace TVCEmuCommon.Settings
+using TVCEmu.Dialogs;
+using TVCEmuCommon.ModuleManager;
+
+namespace TVCEmu.Settings
 {
-	public class FrameworkSettingsFile : SettingsFileBase
+	public class ModuleInterface : ModuleBase
 	{
-		#region · Data members ·
-		private static FrameworkSettingsFile m_default = null;
-		#endregion
+		ModuleSettingsInfo[]	m_module_settings_info;
 
-		#region · Singleton members ·
-
-		/// <summary>
-		/// Gets default singleton instance
-		/// </summary>
-		public static FrameworkSettingsFile Default
+		public ModuleInterface()
 		{
-			get
+			ModuleName = GetDisplayName();
+			m_module_settings_info = new ModuleSettingsInfo[]
 			{
-				if (m_default == null)
-				{
-					m_default = new FrameworkSettingsFile();
-				}
-
-				return m_default;
-			}
+				new ModuleSettingsInfo("General", new SetupGeneral(), null),
+				new ModuleSettingsInfo("Input", new SetupInput(), null)
+				//new ModuleSettingsInfo("Communication", new SetupCommunication(), null),
+				//new ModuleSettingsInfo("About", new AboutControl(), null)
+			};
 		}
-		#endregion
+
+
+		override public string GetDisplayName()
+		{
+			return "Gygnus Ground Station";
+		}
+
+		public override ModuleSettingsInfo[] GetSettingsInfo()
+		{
+			return m_module_settings_info;
+		}
 	}
 }

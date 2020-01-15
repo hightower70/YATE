@@ -18,33 +18,42 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Framework settings handler
+// Data provider class for SetupForms dialog
 ///////////////////////////////////////////////////////////////////////////////
+using System.Windows;
+using TVCEmu.Dialogs;
+using TVCEmu.Helpers;
+using TVCEmu.Settings;
+
 namespace TVCEmuCommon.Settings
 {
-	public class FrameworkSettingsFile : SettingsFileBase
+	class SetupInputDataProvider
 	{
-		#region · Data members ·
-		private static FrameworkSettingsFile m_default = null;
-		#endregion
+		public SetupInputSettings Settings { get; private set; }
+		private Joystick m_joystick;
+		public readonly string[] InstalledJoysticks;
+		public string[] KeyboardMappings { get; private set; }
 
-		#region · Singleton members ·
-
-		/// <summary>
-		/// Gets default singleton instance
-		/// </summary>
-		public static FrameworkSettingsFile Default
+		public SetupInputDataProvider(Window in_parent)
 		{
-			get
-			{
-				if (m_default == null)
-				{
-					m_default = new FrameworkSettingsFile();
-				}
+			m_joystick = new Joystick(in_parent);
+			//InstalledJoysticks = m_joystick.FindJoysticks();
 
-				return m_default;
-			}
+			KeyboardMappings = new string[] { "default" };
+
+			Load();
 		}
-		#endregion
+
+		public void Load()
+		{						 
+			MainGeneralSettings settings = FrameworkSettingsFile.Default.GetSettings<MainGeneralSettings>();
+			
+			Settings = SetupDialog.CurrentSettings.GetSettings<SetupInputSettings>();
+		}
+
+		public void Save()
+		{
+			SetupDialog.CurrentSettings.SetSettings(Settings);
+		}
 	}
 }

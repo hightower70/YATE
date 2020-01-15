@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CommonClassLibrary.Settings
+namespace TVCEmuCommon.Settings
 {
 	public interface ISettingsDataProvider
 	{

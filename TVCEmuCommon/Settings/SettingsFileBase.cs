@@ -32,7 +32,7 @@ using System.Runtime.Serialization;
 using System.Xml;
 using TVCEmuCommon.Helpers;
 
-namespace CommonClassLibrary.Settings
+namespace TVCEmuCommon.Settings
 {
 	public class SettingsFileBase : ISettingsFileBase
 	{

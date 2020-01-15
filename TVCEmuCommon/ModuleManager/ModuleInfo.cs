@@ -18,33 +18,47 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Framework settings handler
+// Module information class
 ///////////////////////////////////////////////////////////////////////////////
-namespace TVCEmuCommon.Settings
+
+namespace TVCEmuCommon.ModuleManager
 {
-	public class FrameworkSettingsFile : SettingsFileBase
+	/// <summary>
+	/// Module information
+	/// </summary>
+	public class ModuleInfo
 	{
-		#region · Data members ·
-		private static FrameworkSettingsFile m_default = null;
+		#region · Properties ·
+
+		public string DLLName { get; set; }
+		public string SectionName { get; set; }
+		public string Description { get; set; }
+		public string VersionString { get; set; }
+		public string ModuleIndex { get; set; }
+
 		#endregion
 
-		#region · Singleton members ·
+		#region · Member functions ·
 
-		/// <summary>
-		/// Gets default singleton instance
-		/// </summary>
-		public static FrameworkSettingsFile Default
+		public override string ToString()
 		{
-			get
-			{
-				if (m_default == null)
-				{
-					m_default = new FrameworkSettingsFile();
-				}
-
-				return m_default;
-			}
+			return Description;
 		}
+
+		public override bool Equals(object in_object)
+		{
+			// If this and obj do not refer to the same type, then they are not equal.
+			if (in_object.GetType() != this.GetType())
+				return false;
+
+			return (DLLName == ((ModuleInfo)in_object).DLLName) && (ModuleIndex == ((ModuleInfo)in_object).ModuleIndex);
+    }
+
+		public override int GetHashCode()
+		{
+			return new { DLLName, ModuleIndex }.GetHashCode();
+		}
+
 		#endregion
 	}
 }

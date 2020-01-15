@@ -18,7 +18,7 @@
 		<ResourceDictionary Source="TreeViewStyle.xaml"/>
 		<ResourceDictionary Source="GridSplitterStyle.xaml"/>
 		<ResourceDictionary Source="MenuStyles.xaml"/>
-		<!--<ResourceDictionary Source="TitleStyle.xaml"/>-->
+		<ResourceDictionary Source="TitleStyle.xaml"/>
 		<ResourceDictionary Source="SyntaxHighlighterStyles.xaml"/>
 		<ResourceDictionary Source="CheckBoxStyle.xaml"/>
 		<ResourceDictionary Source="CheckBoxSliderStyle.xaml"/>
@@ -48,7 +48,7 @@
 	<!--<Style TargetType="c:PathTrimmingTextBlock" BasedOn="{StaticResource StandardPathTrimmingTextBlockStyle}"/>-->
 	<Style TargetType="TreeView" BasedOn="{StaticResource StandardTreeView}"/>
 	<Style TargetType="GridSplitter" BasedOn="{StaticResource StandardGridSplitter}"/>
-	<!-- <Style TargetType="c:Title" BasedOn="{StaticResource StandardTitle}"/>-->
+	<Style TargetType="c:Title" BasedOn="{StaticResource StandardTitle}"/>
 	<Style TargetType="DataGrid" BasedOn="{StaticResource StandardDataGrid}"/>
   <Style TargetType="ProgressBar" BasedOn="{StaticResource StandardProgressBar}"/>
 	<!--<Style TargetType="c:AutoCompleteTextBox" BasedOn="{StaticResource StandardAutoCompleteTextBox}"/>-->
