@@ -21,47 +21,133 @@
 // Videoton TV Computer ROM Cartridge Emulation
 ///////////////////////////////////////////////////////////////////////////////
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using TVCEmu.Settings;
 using TVCEmuCommon;
+using TVCEmuCommon.Settings;
 
 namespace TVCEmu.Models.TVCHardware
 {
-	class TVCCartridge : ITVCCartridge
-	{
-		public const int CartMemLength = 0x4000;
+  /// <summary>
+  /// Class for emulating TVC cartridge interface
+  /// </summary>
+  class TVCCartridge : ITVCCartridge
+  {
+    #region  · Constants ·
+    public const int CartMemLength = 0x4000;
+    #endregion
 
-		public byte[] Memory { get; private set; }
+    #region  · Properties ·
+    /// <summary>
+    /// Cartidge memmory content
+    /// </summary>
+    public byte[] Memory { get; private set; }
+    #endregion
 
-		public byte MemoryRead(ushort in_address)
-		{
-			return Memory[in_address];
-		}
+    /// <summary>
+    /// Reads cartridge memory by CPU
+    /// </summary>
+    /// <param name="in_address">Address ro read from</param>
+    /// <returns>Data byte at the given address</returns>
+    public byte MemoryRead(ushort in_address)
+    {
+      return Memory[in_address];
+    }
 
-		public void MemoryWrite(ushort in_address, byte in_byte)
-		{
-			// no write
-		}
+    /// <summary>
+    /// Writes cartridge memory (cartridge is read-only)
+    /// </summary>
+    /// <param name="in_address">Address to write</param>
+    /// <param name="in_byte">Data to write</param>
+    public void MemoryWrite(ushort in_address, byte in_byte)
+    {
+      // no write
+    }
 
-		public void Reset()
-		{
-			// no reset
-		}
+    public void Reset()
+    {
+      // no reset
+    }
 
-		public void Initialize(ITVComputer in_parent)
-		{
-			Memory = new byte[CartMemLength];
+    /// <summary>
+    /// Initializes cartridge
+    /// </summary>
+    /// <param name="in_parent">TVC hardware class</param>
+    public void Initialize(ITVComputer in_parent)
+    {
+      // allocate cartridge memory
+      Memory = new byte[CartMemLength];
 
-			for (int i = 0; i < Memory.Length; i++)
-				Memory[i] = 0xff;
-		}
+      // load cartridge content
+      try
+      {
+        CartridgeSettings settings = FrameworkSettingsFile.Default.GetSettings<CartridgeSettings>();
 
-		public void Remove()
-		{
-			// no remove
-		}
-	}
+        if (settings!=null && !string.IsNullOrEmpty(settings.CartridgeFileName) && settings.CartridgeActive)
+          ReadCartridgeFile(settings.CartridgeFileName);
+      }
+      catch
+      {
+        ClearCartridge();
+      }
+    }
+
+    /// <summary>
+    /// Clears cartridge content
+    /// </summary>
+    public void ClearCartridge()
+    {
+      // if load failed -> init cartridge
+      for (int i = 0; i < Memory.Length; i++)
+        Memory[i] = 0xff;
+    }
+
+    /// <summary>
+    /// Removes cartridge
+    /// </summary>
+    public void Remove()
+    {
+      // no remove
+    }
+
+    /// <summary>
+    /// Reads cartrige content from a file
+    /// </summary>
+    /// <param name="in_file_name"></param>
+    public void ReadCartridgeFile(string in_file_name)
+    {
+      long file_length = 0;
+
+      if (!string.IsNullOrEmpty(in_file_name))
+      {
+        // load cart content
+        FileInfo file = new FileInfo(in_file_name);
+        file_length = file.Length;
+
+        // maximize length up to the cartidge size
+        if (file_length > TVCCartridge.CartMemLength)
+          file_length = TVCCartridge.CartMemLength;
+
+        // load file
+        byte[] file_data;
+
+        using (FileStream fs = File.OpenRead(in_file_name))
+        {
+          using (BinaryReader binaryReader = new BinaryReader(fs))
+          {
+            file_data = binaryReader.ReadBytes((int)fs.Length);
+          }
+        }
+
+        // copy content to the memory
+        Array.Copy(file_data, 0, Memory, 0, file_length);
+      }
+
+      // clear remaining memory
+      for (int i = (int)file_length; i < TVCCartridge.CartMemLength; i++)
+      {
+        Memory[i] = 0xff;
+      }
+    }
+  }
 }

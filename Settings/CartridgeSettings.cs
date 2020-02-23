@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2020 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,47 +18,29 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Module information class
+// Cofiguration information for cartridge 
 ///////////////////////////////////////////////////////////////////////////////
+using TVCEmuCommon.Settings;
 
-namespace TVCEmuCommon.ModuleManager
+namespace TVCEmu.Settings
 {
-	/// <summary>
-	/// Module information
-	/// </summary>
-	public class ModuleInfo
+  public class CartridgeSettings : SettingsBase
 	{
-		#region · Properties ·
-
-		public string DLLName { get; set; }     
-		public string SectionName { get; set; }
-		public string Description { get; set; }
-		public string VersionString { get; set; }
-		public string ModuleIndex { get; set; }
-
-		#endregion
-
-		#region · Member functions ·
-
-		public override string ToString()
+    /// <summary>Cartridge image file name</summary>
+    public string CartridgeFileName { set; get; }
+    /// <summary>True if cartridge is enabled</summary>
+    public bool CartridgeActive { get; set; }
+		
+		public CartridgeSettings()	: base("Main","Cartridge")
 		{
-			return Description;
+			SetDefaultValues();
 		}
 
-		public override bool Equals(object in_object)
+		override public void SetDefaultValues()
 		{
-			// If this and obj do not refer to the same type, then they are not equal.
-			if (in_object.GetType() != this.GetType())
-				return false;
-
-			return (DLLName == ((ModuleInfo)in_object).DLLName) && (ModuleIndex == ((ModuleInfo)in_object).ModuleIndex);
-    }
-
-		public override int GetHashCode()
-		{
-			return new { DLLName, ModuleIndex }.GetHashCode();
+			CartridgeFileName = "";
+      CartridgeActive = false;
 		}
-
-		#endregion
 	}
+
 }

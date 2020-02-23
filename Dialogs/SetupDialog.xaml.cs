@@ -56,7 +56,6 @@ namespace TVCEmu.Dialogs
 
 		private void bAddModule_Click(object sender, RoutedEventArgs e)
 		{
-			/*
 			m_current_module_manager.SetupRefreshModuleInfo();
 
 			AddModuleDialog dialog = new AddModuleDialog();
@@ -76,7 +75,7 @@ namespace TVCEmu.Dialogs
 					SettingsFileBase.ModuleInfo module_info = new SettingsFileBase.ModuleInfo(module.SectionName, module.DLLName, true);
 					m_current_settings.ModuleAdd(module_info);
 				}
-			}	*/
+			}
 		}
 
 		private void bOK_Click(object sender, RoutedEventArgs e)
@@ -168,7 +167,6 @@ namespace TVCEmu.Dialogs
 
 		private void bRemoveModule_Click(object sender, RoutedEventArgs e)
 		{
-			/*
 			// find parent node
 			ModuleSettingsTreeInfo module_tree_info = tvSetupTree.SelectedItem as ModuleSettingsTreeInfo;
 
@@ -187,7 +185,7 @@ namespace TVCEmu.Dialogs
 			m_current_settings.ModuleRemove(module_tree_info.ModuleIndex - 1);
 
 			// remove module
-			m_current_module_manager.SetupRemoveModule(module_tree_info.ModuleIndex);			 */
+			m_current_module_manager.SetupRemoveModule(module_tree_info.ModuleIndex);
 		}
 	}
 }

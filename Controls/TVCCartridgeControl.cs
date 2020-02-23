@@ -1,31 +1,73 @@
-﻿using System;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2019-2020 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// Videoton TV Computer ROM Cartridge UI Control
+///////////////////////////////////////////////////////////////////////////////
 using System.IO;
 using TVCEmu.Forms;
 using TVCEmu.Models.TVCHardware;
-using TVCHardware;
+using TVCEmu.Settings;
+using TVCEmuCommon.Settings;
 
 namespace TVCEmu.Controls
 {
+  /// <summary>
+  /// TVC Cartridge UI control class
+  /// </summary>
 	public class TVCCartridgeControl
 	{
 		private ExecutionControl m_execution_control;
+    private MainWindow m_main_window;
 
 		public void Initialize(MainWindow in_main_window, ExecutionControl in_execution_control)
 		{
 			m_execution_control = in_execution_control;
+      m_main_window = in_main_window;
 		}
 
+    /// <summary>
+    /// Handle cartridge memory load UI event
+    /// </summary>
 		public void OnCartridgeMemoryLoad()
 		{
-			// Configure open file dialog box
-			Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog
-			{
-				DefaultExt = ".crt",
-				Filter = "Cartridge file (*.crt)|*.CRT|Binary file (*.bin)|*.bin|ROM file (*.rom)|*.rom"
+      // only supported for the standard cartridge
+      if (!(m_execution_control.TVC.Cartridge is TVCCartridge))
+        return;
+
+      // Configure open file dialog box
+      Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog
+      {
+        DefaultExt = ".crt",
+        Filter = "Cartridge file (*.crt)|*.CRT|Binary file (*.bin)|*.bin|ROM file (*.rom)|*.rom"
 			};
 
-			// Show open file dialog box
-			bool? result = null;
+      // Get cartridge file folder
+      CartridgeSettings settings = FrameworkSettingsFile.Default.GetSettings<CartridgeSettings>();
+
+      if (settings != null && !string.IsNullOrEmpty(settings.CartridgeFileName))
+      {
+        dlg.InitialDirectory = Path.GetFullPath(settings.CartridgeFileName);
+      }
+
+      // Show open file dialog box
+      bool? result = null;
 			result = dlg.ShowDialog();
 
 			// Process open file dialog box results
@@ -33,62 +75,60 @@ namespace TVCEmu.Controls
 			{
 				string file_name = dlg.FileName;
 
-				// load cart content
-				FileInfo file = new FileInfo(file_name);
-				long file_length = file.Length;
+        // stop execution
+        m_execution_control.ChangeExecutionState(ExecutionControl.ExecutionStateRequest.Pause);
 
-				if (file_length > TVCCartridge.CartMemLength)
-					file_length = TVCCartridge.CartMemLength;
-
-				byte[] file_data;
-
-				using (FileStream fs = File.OpenRead(file_name))
-				{
-					using (BinaryReader binaryReader = new BinaryReader(fs))
-					{
-						file_data = binaryReader.ReadBytes((int)fs.Length);
-					}
-				}
-
-				// stop execution
-				m_execution_control.ChangeExecutionState(ExecutionControl.ExecutionStateRequest.Pause);
-
-				// copy content to the memory
-				byte[] cart_memory = ((TVCCartridge)m_execution_control.TVC.Cartridge).Memory;
-				Array.Copy(file_data, 0, cart_memory, 0, file_length);
-
-				// clear remaining memory
-				for (int i = (int)file_length; i < TVCCartridge.CartMemLength; i++)
-				{
-					cart_memory[i] = 0xff;
-				}
+        try
+        {
+          TVCCartridge cartridge = (TVCCartridge)m_execution_control.TVC.Cartridge;
+          cartridge.ReadCartridgeFile(file_name);
+        }
+        catch
+        {
+          CustomControls.CustomMessageBox msgbox = new CustomControls.CustomMessageBox(m_main_window);
+          msgbox.ShowMessageBoxFromResource("srError", "srFileLoadError", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
 
 				// reset computer
 				m_execution_control.TVC.ColdReset();
 
 				// restore execution state
 				m_execution_control.ChangeExecutionState(ExecutionControl.ExecutionStateRequest.Restore);
-			}
-		}
 
+        // save cartidge file name
+        settings.CartridgeActive = true;
+        settings.CartridgeFileName = file_name;
+        FrameworkSettingsFile.Default.SetSettings(settings);
+        FrameworkSettingsFile.Default.Save();
+      }
+    }
+
+    /// <summary>
+    /// Handles cartridge memory clean
+    /// </summary>
 		public void OnCartridgeMemoryClear()
 		{
-			// stop execution
-			m_execution_control.ChangeExecutionState(ExecutionControl.ExecutionStateRequest.Pause);
+      // only supported for the standard cartridge
+      if (!(m_execution_control.TVC.Cartridge is TVCCartridge))
+        return;
+
+      // stop execution
+      m_execution_control.ChangeExecutionState(ExecutionControl.ExecutionStateRequest.Pause);
 
 			// clear remaining memory
-			byte[] cart_memory = ((TVCCartridge)m_execution_control.TVC.Cartridge).Memory;
-			for (int i = 0; i < TVCCartridge.CartMemLength; i++)
-			{
-				cart_memory[i] = 0xff;
-			}
+			((TVCCartridge)m_execution_control.TVC.Cartridge).ClearCartridge();
 
 			// reset computer
 			m_execution_control.TVC.ColdReset();
 
 			// restore execution state
 			m_execution_control.ChangeExecutionState(ExecutionControl.ExecutionStateRequest.Restore);
-		}
 
-	}
+      // save cartidge file name
+      CartridgeSettings settings = FrameworkSettingsFile.Default.GetSettings<CartridgeSettings>();
+      settings.CartridgeActive = false;
+      FrameworkSettingsFile.Default.SetSettings(settings);
+      FrameworkSettingsFile.Default.Save();
+    }
+  }
 }

@@ -25,7 +25,15 @@ namespace CustomControls
 			m_result = MessageBoxResult.None;
 		}
 
-		public MessageBoxResult ShowMessageBox(string in_title, string in_message, MessageBoxButton in_button, MessageBoxImage in_image)
+    public MessageBoxResult ShowMessageBoxFromResource(string in_title_key, string in_message_key, MessageBoxButton in_button, MessageBoxImage in_image)
+    {
+      string title = (string)Application.Current.FindResource(in_title_key);
+      string message = (string)Application.Current.FindResource(in_message_key);
+
+      return ShowMessageBox(title, message, in_button, in_image);
+    }
+
+    public MessageBoxResult ShowMessageBox(string in_title, string in_message, MessageBoxButton in_button, MessageBoxImage in_image)
 		{
 
 			// set icon visibility

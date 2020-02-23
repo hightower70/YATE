@@ -44,7 +44,7 @@ namespace TVCEmu.Settings
 
 		override public string GetDisplayName()
 		{
-			return "Gygnus Ground Station";
+			return "Emulator";
 		}
 
 		public override ModuleSettingsInfo[] GetSettingsInfo()

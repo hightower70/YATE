@@ -227,7 +227,7 @@ namespace TVCEmuCommon.ModuleManager
 			String path = GetModulePath();
 			ModuleBase main_class;
 
-			module_files = Directory.GetFiles(path, "*.module");
+			module_files = Directory.GetFiles(path, "*.extension.dll");
 
 			m_available_modules.Clear();
 			for (int i = 0; i < module_files.Length; i++)
@@ -333,7 +333,7 @@ namespace TVCEmuCommon.ModuleManager
 			// generate filename
 			filename = GetModulePath();
 			filename = Path.Combine(filename, in_filename);
-			filename += ".module";
+			filename += ".dll";
 
 			// load dll
 			try
@@ -346,7 +346,7 @@ namespace TVCEmuCommon.ModuleManager
 				{
 					if (type.IsClass == true)
 					{
-						if (type.FullName.EndsWith(".ModuleInterface"))
+						if (type.FullName.EndsWith(".ExpansionMain"))
 						{
 							// create an instance of the object
 							out_interface_class = (ModuleBase)Activator.CreateInstance(type);

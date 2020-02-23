@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace TVCHardware
+namespace HBF
 {
 	/// <summary>
 	/// Virtual disk image

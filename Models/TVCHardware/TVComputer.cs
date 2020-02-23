@@ -9,7 +9,13 @@ namespace TVCHardware
 		public const int ExpansionCardCount = 4;
 		public const int ExpansionCardPortRange = 16;
 
-		public const int CPUClock = 3125000;
+		public int CPUClock
+    {
+      get
+      {
+        return 3125000;
+      }
+    }
 
 		public Z80 CPU { get; private set; }
 		public TVCPorts Ports { get; private set; }
@@ -41,15 +47,15 @@ namespace TVCHardware
 
 			Cards = new ITVCCard[ExpansionCardCount];
 
-			InsertCard(0, new HBFCard());
+			//InsertCard(0, new HBF.HBFCard());
 
 			Ports.AddPortReader(0x5a, PortRead5AH);
 
 			// cartridge init
-			//Cartridge = new TVCCartridge();
-			//Cartridge.Initialize(this);
-			Cartridge = new TVCMultiCart();
+			Cartridge = new TVCCartridge();
 			Cartridge.Initialize(this);
+			//Cartridge = new TVCMultiCart();
+			//Cartridge.Initialize(this);
 
 			Reset();
 		}
@@ -70,8 +76,8 @@ namespace TVCHardware
 					Cards[i].CardReset();
 			}
 
-			// reset cartridge
-			Cartridge.Reset();
+      // reset cartridge
+      Cartridge?.Reset();
 		}
 
 		/// <summary>

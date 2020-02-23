@@ -30,13 +30,13 @@ namespace TVCEmuCommon.Settings
 	class SetupInputDataProvider
 	{
 		public SetupInputSettings Settings { get; private set; }
-		private Joystick m_joystick;
+		//private Joystick m_joystick;
 		public readonly string[] InstalledJoysticks;
 		public string[] KeyboardMappings { get; private set; }
 
 		public SetupInputDataProvider(Window in_parent)
 		{
-			m_joystick = new Joystick(in_parent);
+			//m_joystick = new Joystick(in_parent);
 			//InstalledJoysticks = m_joystick.FindJoysticks();
 
 			KeyboardMappings = new string[] { "default" };

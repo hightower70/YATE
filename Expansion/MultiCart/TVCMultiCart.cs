@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TVCEmuCommon;
 
-namespace TVCEmu.Models.TVCHardware
+namespace Multicart
 {
 	public class TVCMultiCart : ITVCCartridge
 	{

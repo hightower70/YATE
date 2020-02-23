@@ -4,11 +4,10 @@ using System.IO;
 using TVCEmuCommon;
 using TVCEmuCommon.Helpers;
 
-namespace TVCHardware
+namespace HBF
 {
 	public class HBFCard : ITVCCard
 	{
-
 		private const int NumberOfDrives = 4;
 		private const int InvalidDriveIndex = -1;
 
@@ -32,7 +31,10 @@ namespace TVCHardware
 		private readonly int[] SteppingDelays = { 6, 12, 20, 30 };
 
 		private readonly byte[] m_address_buffer = new byte[AddressLength];
-							 
+					
+    /// <summary>
+    /// Internal operation status
+    /// </summary>
 		private enum OperationState
 		{
 			None,
@@ -55,14 +57,6 @@ namespace TVCHardware
 			TrackWriteTrack,
 			TrackWriteSide,
 			WriteSector
-
-		}
-		
-		private enum ReadWriteMode
-		{
-			None,
-
-			TrackWrite
 
 		}
 
@@ -90,24 +84,28 @@ namespace TVCHardware
 			DRQ = 0x80,          // Data request flag
 			INT = 0x01           // Interrupt flag
 		}
-
+          
+    /// <summary>
+    /// Parameter register bits
+    /// </summary>
+    [Flags]
 		enum ParametersFlags: byte
 		{
 			DriveSelect0 = 0x01,
 			DriveSelect1 = 0x02,
-			DriveSelect2 =  0x04,
+			DriveSelect2 = 0x04,
 			DriveSelect3 = 0x08,
 
 			DriveSelectMask = DriveSelect0 | DriveSelect1 | DriveSelect2 | DriveSelect3,
 
 			HeadLoad = 0x10,
 			DoubleDensityEnabled = 0x20,
-			MotorOn = 0x04,
-			SideSelect = 0x08
+			MotorOn = 0x40,
+			SideSelect = 0x80
 		}
 
 		/// <summary>
-		/// Internal status register
+		/// Internal status register bits
 		/// </summary>
 		[Flags]
 		enum StatusFlags : byte
@@ -153,7 +151,6 @@ namespace TVCHardware
 		private byte m_fdc_data;
 		private bool m_fdc_reset_state;
 		private byte m_fdc_last_step_direction;
-		private ReadWriteMode m_read_write_mode;
 		private bool m_prev_index_pulse_state;
 
 		/// <summary>HBU card registers</summary>
@@ -207,18 +204,25 @@ namespace TVCHardware
 				m_disk_drives[i] = new DiskDrive();
 			}
 
-			LoadCardRom(@"..\..\roms\VT-DOS12-DISK.ROM");
+      //LoadCardRom(@"..\..\roms\VT-DOS12-DISK.ROM");
+      LoadCardRom(@"..\..\roms\UPM-DISK.ROM");
 
 
-			m_disk_drives[0] = new DiskDrive();
-			m_disk_drives[0].Geometry.NumberOfTracks = 40;
-			m_disk_drives[0].Geometry.NumberOfSides = 1;
+      m_disk_drives[0] = new DiskDrive();
+			m_disk_drives[0].Geometry.NumberOfTracks = 80;
+			m_disk_drives[0].Geometry.NumberOfSides = 2;
 			m_disk_drives[0].Geometry.SectorPerTrack = 9;
-			//m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
-			m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
-		}
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_TEST.dsk");
+      m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_test1.xdi");
+    }
 
-		public void Initialize(ITVComputer in_tvcomputer)
+    /// <summary>
+    /// Initialize HBF card
+    /// </summary>
+    /// <param name="in_tvcomputer"></param>
+    public void Initialize(ITVComputer in_tvcomputer)
 		{
 			m_tvcomputer = in_tvcomputer;
 
@@ -228,6 +232,10 @@ namespace TVCHardware
 		}
 
 
+    /// <summary>
+    /// Loads ROM content of the card from the given file
+    /// </summary>
+    /// <param name="in_file_name">File name containing the binary rom content</param>
 		public void LoadCardRom(string in_file_name)
 		{
 			byte[] data = File.ReadAllBytes(in_file_name);
@@ -235,6 +243,11 @@ namespace TVCHardware
 			Array.Copy(data, 0, m_card_rom, 0, data.Length);
 		}
 
+    /// <summary>
+    /// Memory read function for card mamory
+    /// </summary>
+    /// <param name="in_address">Address of the memory</param>
+    /// <returns>Byte from the card memory</returns>
 		public byte CardMemoryRead(ushort in_address)
 		{
 			if (in_address < CardROMPageSize)
@@ -243,6 +256,11 @@ namespace TVCHardware
 				return m_card_ram[in_address - CardROMPageSize];
 		}
 
+    /// <summary>
+    /// Writes card memory
+    /// </summary>
+    /// <param name="in_address">Addres of the memory</param>
+    /// <param name="in_byte">Data to write</param>
 		public void CardMemoryWrite(ushort in_address, byte in_byte)
 		{
 			if (in_address < CardROMPageSize)
@@ -251,11 +269,18 @@ namespace TVCHardware
 				m_card_ram[in_address - CardROMPageSize] = in_byte;
 		}
 
+    /// <summary>
+    /// Gets ID byte of the card
+    /// </summary>
+    /// <returns></returns>
 		public byte CardGetID()
 		{
 			return 0x02;
 		}
 
+    /// <summary>
+    /// Hardware reset of the card
+    /// </summary>
 		public void CardReset()
 		{
 			// reset card
@@ -272,7 +297,6 @@ namespace TVCHardware
 			m_fdc_sector = 0;
 			m_fdc_data = 0;
 			m_fdc_last_step_direction = 0;
-			m_read_write_mode = ReadWriteMode.None;
 
 			m_head_loaded = false;
 			
@@ -297,7 +321,7 @@ namespace TVCHardware
 
 					// If no disk present, NOTREADY
 					if (IsDriveReady())
-						m_fdc_status &= StatusFlags.NOTREADY;
+						m_fdc_status &= ~StatusFlags.NOTREADY;
 					else
 						m_fdc_status |= StatusFlags.NOTREADY;
 
@@ -333,7 +357,7 @@ namespace TVCHardware
 								if (m_head_loaded)
 									m_fdc_status |= StatusFlags.HEADLOAD;
 								else
-									m_fdc_status &= StatusFlags.HEADLOAD;
+									m_fdc_status &= ~StatusFlags.HEADLOAD;
 							}
 							break;
 
@@ -367,12 +391,7 @@ namespace TVCHardware
 							break;
 					}
 
-					// set busy flag
-					if (m_read_write_mode != ReadWriteMode.None)
-						m_fdc_status |= StatusFlags.BUSY;
-					else
-						m_fdc_status &= ~StatusFlags.BUSY;
-
+          // return status
 					inout_data = (byte)m_fdc_status;
 
 					return;
@@ -472,6 +491,9 @@ namespace TVCHardware
 							// command group I
 							m_fdc_status_mode = 1;
 
+              // set head load
+              m_head_loaded = ((in_value & (byte)CommandFlags.LOADHEAD) != 0);
+
 							// if already at track zero
 							if (m_disk_drives[m_current_drive_index].Track == 0)
 							{
@@ -494,8 +516,11 @@ namespace TVCHardware
 							// command group I
 							m_fdc_status_mode = 1;
 
-							// Reset any executing command
-							m_data_count = 0;
+              // set head load
+              m_head_loaded = ((in_value & (byte)CommandFlags.LOADHEAD) != 0);
+
+              // Reset any executing command
+              m_data_count = 0;
 							m_data_length = 0;
 
 							StartOperation(Math.Abs( (int)m_fdc_data - (int)m_fdc_track) * SteppingDelays[in_value & (byte)CommandFlags.STEPRATE], (StatusFlags)(((in_value & (byte)CommandFlags.LOADHEAD) != 0) ? StatusFlags.HEADLOAD : 0), HardwareFlags.INT, m_fdc_data);
@@ -508,11 +533,16 @@ namespace TVCHardware
 						case 0x60: // STEP-OUT
 						case 0x70: // STEP-OUT-AND-UPDATE
 							{
-								// command group I
-								m_fdc_status_mode = 1;
-								
-								// Either store or fetch step direction
-								if ((in_value & 0x40) != 0)
+                Debug.WriteLine("Step");
+
+                // command group I
+                m_fdc_status_mode = 1;
+
+                // set head load
+                m_head_loaded = ((in_value & (byte)CommandFlags.LOADHEAD) != 0);
+
+                // Either store or fetch step direction
+                if ((in_value & 0x40) != 0)
 									m_fdc_last_step_direction = (byte)(in_value & 0x20);
 								else
 									in_value = (byte)((in_value & ~0x20) | m_fdc_last_step_direction);
@@ -550,7 +580,6 @@ namespace TVCHardware
 							// command group III
 							m_fdc_status_mode = 3;
 
-							m_read_write_mode = ReadWriteMode.TrackWrite;
 							m_operation_start_tick = m_tvcomputer.GetCPUTicks();
 							m_operation_state = OperationState.TrackWriteWaitForIndex;
 							m_prev_index_pulse_state = IsIndexPulse();
@@ -563,7 +592,7 @@ namespace TVCHardware
 						// Sector read
 						case 0x80:	// single sector read
 						case 0x90:  // multiple sector read
-							Debug.WriteLine("Sector read, T:{0:d}, S:{1:d}", m_fdc_track, m_fdc_sector);
+							Debug.WriteLine("Sector read, T:{0:d}, S:{1:d}, H:{2:d}", m_fdc_track, m_fdc_sector, GetCurrentDriveSide());
 
 							// check drive
 							if (m_current_drive_index == InvalidDriveIndex || !m_disk_drives[m_current_drive_index].IsDiskPresent())
@@ -573,7 +602,7 @@ namespace TVCHardware
 							else
 							{
 								// check sector and track address
-								/*if (m_fdc_track != m_disk_drives[m_current_drive_index].Track || m_fdc_sector < 1 || m_fdc_sector > m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack)
+								if (m_fdc_track != m_disk_drives[m_current_drive_index].Track || m_fdc_sector < 1 || m_fdc_sector > m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack)
 								{
 									m_fdc_status = StatusFlags.NOTFOUND;
 									m_reg_hw_status = HardwareFlags.INT;
@@ -581,7 +610,7 @@ namespace TVCHardware
 									m_fdc_status_mode = 2;
 									m_data_length = 0;
 								}
-								else	*/
+								else
 								{
 									m_disk_drives[m_current_drive_index].Track = m_fdc_track;
 
@@ -589,9 +618,11 @@ namespace TVCHardware
 									m_data_length = m_disk_drives[m_current_drive_index].Geometry.SectorLength * (((in_value & 0x10) != 0) ? m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack - m_fdc_sector + 1 : 1);
 									m_operation_start_tick = m_tvcomputer.GetCPUTicks();
 									m_operation_state = OperationState.SectorRead;
-									m_fdc_status_mode = 2;
+                  m_fdc_status = StatusFlags.BUSY;
+                  m_fdc_status_mode = 2;
+                  m_head_loaded = true;
 
-									m_disk_drives[m_current_drive_index].SeekSector(m_fdc_sector, GetCurrentDriveSide());
+                  m_disk_drives[m_current_drive_index].SeekSector(m_fdc_sector, GetCurrentDriveSide());
 								}
 							}
 							break;
@@ -705,7 +736,6 @@ namespace TVCHardware
 					break;
 
 				case PORT_DATA:
-					Debug.WriteLine("Data register set: {0:x2}", in_value);
 					m_fdc_data = in_value;
 #if false
 					// check track write mode
@@ -751,7 +781,7 @@ namespace TVCHardware
 
 				// parameter register
 				case PORT_PARAM:
-					Debug.WriteLine("Param register set: {0:x2}", in_value);
+					//Debug.WriteLine("Param register set: {0:x2}", in_value);
 					m_reg_param = (ParametersFlags)in_value;
 
 					switch (m_reg_param & ParametersFlags.DriveSelectMask)
@@ -785,10 +815,15 @@ namespace TVCHardware
 
 					break;
 			}
-
-			
 		}
 
+    /// <summary>
+    /// Starts head moving operaton in emulated speed (lengthty) or fast mode (immediate).
+    /// </summary>
+    /// <param name="in_delay_us">Operation length in us</param>
+    /// <param name="in_new_status_flags">New status flag after the operation is complete</param>
+    /// <param name="in_new_hardware_flags">New hardware status flag after the operation is complete</param>
+    /// <param name="in_new_track">Track register value after the operation is complete</param>
 		private void StartOperation(int in_delay_us, StatusFlags in_new_status_flags, HardwareFlags in_new_hardware_flags, byte in_new_track)
 		{
 			if(m_fast_operation)
@@ -851,8 +886,6 @@ namespace TVCHardware
 
 		private void UpdateHardwareStatus()
 		{
-
-
 			switch (m_operation_state)
 			{
 				case OperationState.TrackWriteWaitForIndex:
@@ -881,7 +914,8 @@ namespace TVCHardware
 							// stop operation
 							m_data_length = 0;
 							m_operation_state = OperationState.None;
-							m_reg_hw_status |= HardwareFlags.INT;
+              m_fdc_status &= ~StatusFlags.BUSY;
+              m_reg_hw_status |= HardwareFlags.INT;
 						}
 						else
 						{
@@ -963,29 +997,38 @@ namespace TVCHardware
 						m_operation_state = OperationState.TrackWriteIDMark1;
 					break;
 			}
-
-
 		}
 
 		private int TickToByteIndex(ulong in_tick_count)
 		{
-			return (int)(in_tick_count * DataTransferSpeed / 8 / TVComputer.CPUClock);
+			return (int)(in_tick_count * DataTransferSpeed / 8ul / (ulong)m_tvcomputer.CPUClock);
 		}
 
+    /// <summary>
+    /// Gets the selected side of the current drive
+    /// </summary>
+    /// <returns>Selected side: 0 or 1</returns>
 		private byte GetCurrentDriveSide()
 		{
 			return (byte)((m_reg_param & ParametersFlags.SideSelect) != 0 ? 1 : 0);
 		}
 
+    /// <summary>
+    /// Gets the head position (track) of the currently selected drive
+    /// </summary>
+    /// <returns></returns>
 		private byte GetCurrentDriveTrack()
 		{
 			if (m_current_drive_index == InvalidDriveIndex)
 				return 0;
 			else
 				return m_disk_drives[m_current_drive_index].Track;
-
 		}
 
+    /// <summary>
+    /// Gets the physical sector length of the current drive
+    /// </summary>
+    /// <returns></returns>
 		private byte GetCurrentSectorLength()
 		{
 			int sector_length = 512;

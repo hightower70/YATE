@@ -39,7 +39,7 @@ namespace TVCEmuCommon.ModuleManager
 
 		#endregion
 
-		#region Data Members
+		#region · Data Members ·
 
 		protected SettingsFileBase m_module_settings;
 		protected string m_module_name;
