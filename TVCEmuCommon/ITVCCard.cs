@@ -2,20 +2,22 @@
 {
 	public interface ITVCCard
 	{
-		void CardReset();
-
 		// memory read/write
-		byte CardMemoryRead(ushort in_address);
-		void CardMemoryWrite(ushort in_address, byte in_byte);
+		byte MemoryRead(ushort in_address);
+		void MemoryWrite(ushort in_address, byte in_byte);
 
 		// port read/write
-		void CardPortRead(ushort in_address, ref byte inout_data);
-		void CardPortWrite(ushort in_address, byte in_byte);
+		void PortRead(ushort in_address, ref byte inout_data);
+		void PortWrite(ushort in_address, byte in_byte);
 
-		byte CardGetID();
+    // emulation functions
+		void PeriodicCallback(ulong in_cpu_tick);
+    void Reset();
+    byte GetID();
 
-		void CardPeriodicCallback(ulong in_cpu_tick);
-
-		void Initialize(ITVComputer in_parent);
-	}
+    // card management
+    //int SlotIndex { get; }
+    void Install(ITVComputer in_parent);
+    void Remove();
+  }
 }

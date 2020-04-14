@@ -67,6 +67,9 @@
     <Compile Include="Controls\ExecutionHistoryCollection.cs" />
     <Compile Include="Controls\ExecutionHistoryEntry.cs" />
     <Compile Include="Controls\TVCCartridgeControl.cs" />
+    <Compile Include="Dialogs\CardSlotSelectDialog.xaml.cs">
+      <DependentUpon>CardSlotSelectDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\AddModuleDialog.xaml.cs">
       <DependentUpon>AddModuleDialog.xaml</DependentUpon>
     </Compile>
@@ -75,6 +78,9 @@
     </Compile>
     <Compile Include="Dialogs\SetupDialog.xaml.cs">
       <DependentUpon>SetupDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\SetupGamebase.xaml.cs">
+      <DependentUpon>SetupGamebase.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dialogs\SetupInput.xaml.cs">
       <DependentUpon>SetupInput.xaml</DependentUpon>
@@ -119,6 +125,7 @@
     <Compile Include="Models\TVCHardware\TVCKeyboard.cs" />
     <Compile Include="Models\TVCHardware\TVCMemory.cs" />
     <Compile Include="Models\TVCHardware\TVCPorts.cs" />
+    <Compile Include="Models\TVCHardware\TVCSound.cs" />
     <Compile Include="Models\TVCHardware\TVCVideo.cs" />
     <Compile Include="Models\Z80CPU\Z80Disassembler.cs" />
     <Compile Include="Models\Z80CPU\Z80DisassemblerInstruction.cs" />
@@ -138,11 +145,16 @@
     <Compile Include="Models\Z80CPU\Z80Registers.cs" />
     <Compile Include="Models\Z80CPU\Z80Tables.cs" />
     <Compile Include="Settings\CartridgeSettings.cs" />
+    <Compile Include="Settings\GamebaseSettings.cs" />
     <Compile Include="Settings\MainGeneralSettings.cs" />
     <Compile Include="Settings\ModuleInterface.cs" />
     <Compile Include="Settings\SetupDialogSettings.cs" />
     <Compile Include="Settings\SetupInputDataProvider.cs" />
     <Compile Include="Settings\SetupInputSettings.cs" />
+    <Page Include="Dialogs\CardSlotSelectDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Dialogs\AddModuleDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -152,6 +164,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Dialogs\SetupDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\SetupGamebase.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

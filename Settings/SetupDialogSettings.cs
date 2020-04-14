@@ -24,7 +24,7 @@ using TVCEmuCommon.Settings;
 
 namespace TVCEmu.Settings
 {
-	class SetupDialogSettings	: SettingsBase
+	class SetupDialogSettings	: BaseSettings
 	{
 		// Dialog position settings
 		public WindowPosSettings DialogPos;

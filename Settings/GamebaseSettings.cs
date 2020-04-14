@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2020 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,47 +18,38 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Module information class
+// Gamebase configuration data 
 ///////////////////////////////////////////////////////////////////////////////
+using TVCEmuCommon.Settings;
 
-namespace TVCEmuCommon.ModuleManager
+namespace TVCEmu.Settings
 {
-	/// <summary>
-	/// Module information
-	/// </summary>
-	public class ModuleInfo
+  /// <summary>
+  /// Gamebase configuration settings
+  /// </summary>
+  public class GamebaseSettings : BaseSettings
 	{
-		#region · Properties ·
+		/// <summary>Gamebase database file path</summary>
+		public string GamebaseDatabaseFile { set; get; }
 
-		public string DLLName { get; set; }     
-		public string SectionName { get; set; }
-		public string Description { get; set; }
-		public string VersionString { get; set; }
-		public string ModuleIndex { get; set; }
+    /// <summary>Autostart of the loaded gamebase game</summary>
+    public bool Autostart { get; set; }
 
-		#endregion
+    /// <summary>Position of the browse dialog</summary>
+    public WindowPosSettings BrowseDialogPos { get; private set; }
 
-		#region · Member functions ·
-
-		public override string ToString()
+    public GamebaseSettings()	: base("Main","Gamebase")
 		{
-			return Description;
+      BrowseDialogPos = new WindowPosSettings();
+      SetDefaultValues();
 		}
 
-		public override bool Equals(object in_object)
+		override public void SetDefaultValues()
 		{
-			// If this and obj do not refer to the same type, then they are not equal.
-			if (in_object.GetType() != this.GetType())
-				return false;
-
-			return (DLLName == ((ModuleInfo)in_object).DLLName) && (ModuleIndex == ((ModuleInfo)in_object).ModuleIndex);
+			GamebaseDatabaseFile = "";
+      Autostart = true;
+      BrowseDialogPos.SetDefault(770, 535);
     }
-
-		public override int GetHashCode()
-		{
-			return new { DLLName, ModuleIndex }.GetHashCode();
-		}
-
-		#endregion
 	}
+
 }

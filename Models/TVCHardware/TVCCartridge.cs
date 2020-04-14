@@ -81,7 +81,7 @@ namespace TVCEmu.Models.TVCHardware
       // load cartridge content
       try
       {
-        CartridgeSettings settings = FrameworkSettingsFile.Default.GetSettings<CartridgeSettings>();
+        CartridgeSettings settings = SettingsFile.Default.GetSettings<CartridgeSettings>();
 
         if (settings!=null && !string.IsNullOrEmpty(settings.CartridgeFileName) && settings.CartridgeActive)
           ReadCartridgeFile(settings.CartridgeFileName);

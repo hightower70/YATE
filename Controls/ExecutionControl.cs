@@ -365,12 +365,12 @@ namespace TVCEmu.Controls
 
 						m_instruction_start_pc = TVC.CPU.Registers.PC;
 						m_instruction_t_cycle = 0;
-								 /*
-						if (TVC.CPU.Registers.PC >= 0xc184 && TVC.CPU.Registers.PC < 0xc188)
+								 
+						if (TVC.CPU.Registers.PC == 0x0f1d)
 						{
 							breakpoint_exit = true;
 							m_execution_state = ExecutionState.Paused;
-						}	 */
+						}	 
 					}
 
 					if (TVC.Interrupt.IsIntActive())

@@ -24,7 +24,7 @@ using TVCEmuCommon.Settings;
 
 namespace TVCEmu.Settings
 {
-	class SetupInputSettings : SettingsBase
+	class SetupInputSettings : BaseSettings
 	{
 		public string KeyboardMapping { get; set; }
 		public bool CaptureCtrlESC { set; get; }

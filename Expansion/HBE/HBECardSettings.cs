@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2019-2020 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,33 +18,28 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Framework settings handler
+// EPROM programmer interface card settings
 ///////////////////////////////////////////////////////////////////////////////
-namespace TVCEmuCommon.Settings
+using TVCEmuCommon.Settings;
+
+namespace HBE
 {
-	public class FrameworkSettingsFile : SettingsFileBase
-	{
-		#region · Data members ·
-		private static FrameworkSettingsFile m_default = null;
-		#endregion
+  public class HBECardSettings : CardBaseSettings
+  {
+    public HBECard.EPROMType EPROMType;
+    public string EPROMFileName;
 
-		#region · Singleton members ·
+    public HBECardSettings() : base("HBE", "General")
+    {
+      SetDefaultValues();
+    }
 
-		/// <summary>
-		/// Gets default singleton instance
-		/// </summary>
-		public static FrameworkSettingsFile Default
-		{
-			get
-			{
-				if (m_default == null)
-				{
-					m_default = new FrameworkSettingsFile();
-				}
+    override public void SetDefaultValues()
+    {
+      base.SetDefaultValues();
 
-				return m_default;
-			}
-		}
-		#endregion
-	}
+      EPROMType = HBECard.EPROMType.E2K;
+      EPROMFileName = "";
+    }
+  }
 }

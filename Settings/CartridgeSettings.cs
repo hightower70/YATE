@@ -24,7 +24,7 @@ using TVCEmuCommon.Settings;
 
 namespace TVCEmu.Settings
 {
-  public class CartridgeSettings : SettingsBase
+  public class CartridgeSettings : BaseSettings
 	{
     /// <summary>Cartridge image file name</summary>
     public string CartridgeFileName { set; get; }

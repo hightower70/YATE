@@ -1,38 +1,38 @@
 ﻿using HBS.Forms;
-using TVCEmuCommon.ModuleManager;
+using TVCEmuCommon.ExpansionManager;
 
 namespace HBS
 {
-  public class ExpansionMain : ModuleBase
+  public class ExpansionMain : ExpansionBase
   {
     #region · Data members ·
-    private ModuleSettingsInfo[] m_module_settings_info;
+    private ExpansionSetupPageInfo[] m_settings_page_info;
     #endregion
 
     public ExpansionMain()
     {
-      ModuleName = GetDisplayName();
-      m_module_settings_info = new ModuleSettingsInfo[]
+      m_settings_page_info = new ExpansionSetupPageInfo[]
       {
-        new ModuleSettingsInfo("Config", new SetupConfiguration(), null),
-        new ModuleSettingsInfo("Information", new SetupInformation(), null),
-        new ModuleSettingsInfo("About", new SetupAbout(), null)
+        new ExpansionSetupPageInfo("Config", typeof(SetupConfiguration)),
+        new ExpansionSetupPageInfo("Information", typeof(SetupInformation)),
+        new ExpansionSetupPageInfo("About", typeof(SetupAbout))
       };
     }
 
-    override public string GetDisplayName()
+    public override void Initialize(ExpansionManager in_expansion_manager)
     {
-      return "Serial Interface Card";
+      base.Initialize(in_expansion_manager);
+
+      //Settings = ParentManager.Settings.GetSettings<HBSCardSettings>();
     }
 
-    public override ModuleSettingsInfo[] GetSettingsInfo()
-    {
-      return m_module_settings_info;
-    }
 
-    public override string GetSettingsName()
+    public override void GetExpansionInfo(ExpansionInfo inout_module_info)
     {
-      return "HBS";
+      inout_module_info.Description = "Serial Interface Card";
+      inout_module_info.SectionName = "HBS";
+      inout_module_info.Type = ExpansionInfo.ExpansionType.Card;
+      inout_module_info.SetupPages = m_settings_page_info;
     }
   }
 }

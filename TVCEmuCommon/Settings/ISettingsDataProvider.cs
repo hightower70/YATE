@@ -8,7 +8,7 @@ namespace TVCEmuCommon.Settings
 {
 	public interface ISettingsDataProvider
 	{
-		void LoadSettings(SettingsFileBase in_settings);
-		void SaveSettings(SettingsFileBase in_settings);
+		void LoadSettings(SettingsFile in_settings);
+		void SaveSettings(SettingsFile in_settings);
 	}
 }

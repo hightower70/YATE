@@ -90,6 +90,9 @@
 				<MenuItem Header="Source List Load"  />
 			</MenuItem>
 			
+			<MenuItem Header="_Expansions" x:Name="miExpansions">
+			</MenuItem>
+
 			<MenuItem Header="_Tools">
 				<MenuItem x:Name="miOptions" Header="Options" Click="miOptions_Click" />
 			</MenuItem>

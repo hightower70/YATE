@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013-2014 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2019-2020 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,25 +18,24 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Interface for settings data class
+// Floppy interface card settings
 ///////////////////////////////////////////////////////////////////////////////
+using TVCEmuCommon.Settings;
 
-namespace TVCEmuCommon.Settings
+namespace HBF
 {
-	public abstract class SettingsBase
-	{
-		private string m_module_name;
-		private string m_section_name;
+  public class HBFCardSettings : CardBaseSettings
+  {
+    public int CardSlotIndex { set; get; }
 
-		internal string ModuleName { get { return m_module_name; } }
-		internal string SectionName { get { return m_section_name; } }
+    public HBFCardSettings() : base("HBF", "General")
+    {
+      SetDefaultValues();
+    }
 
-		public SettingsBase(string in_module_name, string in_section_name)
-		{
-			m_module_name = in_module_name;
-			m_section_name = in_section_name;
-		}
-
-		abstract public void SetDefaultValues();
-	}
+    override public void SetDefaultValues()
+    {
+      base.SetDefaultValues();
+    }
+  }
 }

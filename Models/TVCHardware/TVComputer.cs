@@ -6,7 +6,6 @@ namespace TVCHardware
 {
 	public class TVComputer : ITVComputer
 	{
-		public const int ExpansionCardCount = 4;
 		public const int ExpansionCardPortRange = 16;
 
 		public int CPUClock
@@ -45,7 +44,7 @@ namespace TVCHardware
 
 			CPU = new Z80(Memory, Ports, null, true);
 
-			Cards = new ITVCCard[ExpansionCardCount];
+			Cards = new ITVCCard[TVComputerConstants.ExpansionCardCount];
 
 			//InsertCard(0, new HBF.HBFCard());
 
@@ -70,10 +69,10 @@ namespace TVCHardware
 			Ports.Reset();
 
 			// reset cards
-			for (int i = 0; i < ExpansionCardCount; i++)
+			for (int i = 0; i < TVComputerConstants.ExpansionCardCount; i++)
 			{
 				if (Cards[i] != null)
-					Cards[i].CardReset();
+					Cards[i].Reset();
 			}
 
       // reset cartridge
@@ -108,7 +107,7 @@ namespace TVCHardware
 			Cards[in_slot_index] = in_card;
 
 			// set parent
-			Cards[in_slot_index].Initialize(this);
+			Cards[in_slot_index].Install(this);
 
 			// set io callbacks
 			ushort port_address = GetCardIOAddress(in_slot_index);
@@ -116,8 +115,8 @@ namespace TVCHardware
 			// subscribe to port read-write event 
 			for (int port_count = 0; port_count < ExpansionCardPortRange; port_count++)
 			{
-				Ports.AddPortReader(port_address, in_card.CardPortRead);
-				Ports.AddPortWriter(port_address, in_card.CardPortWrite);
+				Ports.AddPortReader(port_address, in_card.PortRead);
+				Ports.AddPortWriter(port_address, in_card.PortWrite);
 
 				port_address++;
 			}
@@ -136,8 +135,8 @@ namespace TVCHardware
 
 				for (int port_count = 0; port_count < ExpansionCardPortRange; port_count++)
 				{
-					Ports.RemovePortReader(port_address, Cards[in_slot_index].CardPortRead);
-					Ports.RemovePortWriter(port_address, Cards[in_slot_index].CardPortWrite);
+					Ports.RemovePortReader(port_address, Cards[in_slot_index].PortRead);
+					Ports.RemovePortWriter(port_address, Cards[in_slot_index].PortWrite);
 
 					port_address++;
 				}
@@ -166,11 +165,11 @@ namespace TVCHardware
 		{
 			byte data = 0;
 
-			for (int i = 0; i < ExpansionCardCount; i++)
+			for (int i = 0; i < TVComputerConstants.ExpansionCardCount; i++)
 			{
 				if (Cards[i] != null)
 				{
-					data |= (byte)(Cards[i].CardGetID() << (i * 2));
+					data |= (byte)(Cards[i].GetID() << (i * 2));
 				}
 				else
 				{
@@ -185,10 +184,10 @@ namespace TVCHardware
 
 		public void PeriodicCallback()
 		{
-			for (int i = 0; i < ExpansionCardCount; i++)
+			for (int i = 0; i < TVComputerConstants.ExpansionCardCount; i++)
 			{
 				if (Cards[i] != null)
-					Cards[i].CardPeriodicCallback(CPU.TotalTState);
+					Cards[i].PeriodicCallback(CPU.TotalTState);
 			}
 		}
 

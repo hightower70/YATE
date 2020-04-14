@@ -46,14 +46,12 @@ namespace TVCEmuCommon.Settings
 
 		public void Load()
 		{						 
-			MainGeneralSettings settings = FrameworkSettingsFile.Default.GetSettings<MainGeneralSettings>();
-			
-			Settings = SetupDialog.CurrentSettings.GetSettings<SetupInputSettings>();
+			Settings = SettingsFile.Editing.GetSettings<SetupInputSettings>();
 		}
 
 		public void Save()
 		{
-			SetupDialog.CurrentSettings.SetSettings(Settings);
+      SettingsFile.Editing.SetSettings(Settings);
 		}
 	}
 }

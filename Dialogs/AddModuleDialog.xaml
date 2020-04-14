@@ -18,7 +18,7 @@
 		</Grid.RowDefinitions>
 		<TextBlock Grid.Row="0" Text="Available modules:" Margin="5,3,0,0"/>
 
-		<ListBox Grid.Row="1" x:Name="lbModules" Margin="0,5,0,0" ItemsSource="{Binding AvailableModules}" MouseDoubleClick="lbModules_MouseDoubleClick">
+		<ListBox Grid.Row="1" x:Name="lbModules" Margin="3,5,3,0" ItemsSource="{Binding AvailableModules}" MouseDoubleClick="lbModules_MouseDoubleClick">
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<Grid>
@@ -31,9 +31,9 @@
 							<RowDefinition Height="16"/>
 						</Grid.RowDefinitions>
 						<TextBlock Grid.Column="0" Grid.Row="0"  Foreground="{StaticResource Foreground}" FontSize="16" Text="{Binding Description}"/>
-						<!-- Data="M5,20 L26,20 26,11 5,11 Z M8,21 L8,26 M13,21 L13,26 M18,21 L18,26 M23,21 L23,26 M8,5 L8,11 M13,5 L13,11 M18,5 L18,11 M23,5 L23,11" -->
-						<!-- Data="M7,26 L10,29 20,29 20,26 25,26 25,6 20,6 20,3 10,3 7,6 Z M21,22 L25,22 M21,19 L25,19 M21,16 L25,16 M21,13 L25,13 M21,10 L25,10" -->
-						<Path Grid.Column="1" Grid.RowSpan="2" Data="M3,7 3,21 6,21 6,25 24,25 24,21 30,20 30,10 26,7 Z M9,21 L9,25 M12,21 L12,25 M15,21 L15,25 M18,21 L18,25 M21,21 L21,25 " Stroke="White" StrokeThickness="2" SnapsToDevicePixels="True" VerticalAlignment="Center"/>
+						<Path Grid.Column="1" Grid.RowSpan="2" Stroke="White" StrokeThickness="2" SnapsToDevicePixels="True" VerticalAlignment="Center" Data="M3,7 3,21 6,21 6,25 24,25 24,21 30,20 30,10 26,7 Z M9,21 L9,25 M12,21 L12,25 M15,21 L15,25 M18,21 L18,25 M21,21 L21,25 " Visibility="{Binding Type, Converter={StaticResource conv}, ConverterParameter=0}"/>
+						<Path Grid.Column="1" Grid.RowSpan="2" Stroke="White" StrokeThickness="2" SnapsToDevicePixels="True" VerticalAlignment="Center" Data="M7,26 L10,29 20,29 20,26 25,26 25,6 20,6 20,3 10,3 7,6 Z M21,22 L25,22 M21,19 L25,19 M21,16 L25,16 M21,13 L25,13 M21,10 L25,10" Visibility="{Binding Type, Converter={StaticResource conv}, ConverterParameter=1}"/>
+						<Path Grid.Column="1" Grid.RowSpan="2" Stroke="White" StrokeThickness="2" SnapsToDevicePixels="True" VerticalAlignment="Center" Data="M5,20 L26,20 26,11 5,11 Z M8,21 L8,26 M13,21 L13,26 M18,21 L18,26 M23,21 L23,26 M8,5 L8,11 M13,5 L13,11 M18,5 L18,11 M23,5 L23,11" Visibility="{Binding Type, Converter={StaticResource conv}, ConverterParameter=2}"/>
 						<StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal">
 							<TextBlock Text="Version:" Margin="0,0,3,0"/>
 							<TextBlock Foreground="{StaticResource Foreground}" Text="{Binding VersionString}"/>

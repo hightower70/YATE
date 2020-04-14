@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using TVCEmu.Settings;
+using TVCEmuCommon.Settings;
 using TVCEmuCommon.SetupPage;
 
 namespace TVCEmu.Dialogs
@@ -19,13 +20,13 @@ namespace TVCEmu.Dialogs
 		public override void OnSetupPageActivating(Window in_parent, SetupPageEventArgs in_event_info)
 		{
 			// setup data provider
-			m_data_provider = SetupDialog.CurrentSettings.GetSettings<MainGeneralSettings>();
+			m_data_provider = SettingsFile.Editing.GetSettings<MainGeneralSettings>();
 			this.DataContext = m_data_provider;
 		}
 
 		public override void OnSetupPageDeactivating(Window in_parent, SetupPageEventArgs in_event_info)
 		{
-			SetupDialog.CurrentSettings.SetSettings(m_data_provider);
+      SettingsFile.Editing.SetSettings(m_data_provider);
 		}
 
 	}

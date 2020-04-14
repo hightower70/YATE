@@ -7,7 +7,7 @@ using TVCEmu.Dialogs;
 using TVCEmu.Helpers;
 using TVCEmu.Models.TVCFiles;
 using TVCEmu.Settings;
-using TVCEmuCommon.ModuleManager;
+using TVCEmuCommon.ExpansionManager;
 using TVCEmuCommon.Settings;
 using TVCHardware;
 
@@ -29,7 +29,7 @@ namespace TVCEmu.Forms
 		public MainWindow()
 		{
 			// load config file and get settings
-			FrameworkSettingsFile.Default.Load();
+			SettingsFile.Default.Load();
 
 			m_keyboard_hook.EnableHook(Window_KeyDown);
 
@@ -47,10 +47,11 @@ namespace TVCEmu.Forms
 			DataContext = this;
 
 			// load modules
-			ModuleManager.Default.AddMainModule(new ModuleInterface());
-			ModuleManager.Default.ModulesLoad();
+			ExpansionManager.Default.AddMainModule(typeof(ModuleInterface));
+			ExpansionManager.Default.LoadExpansions();
+      ExpansionManager.Default.InstallExpansions(ExecutionControl.TVC);
 
-			InitializeComponent();
+      InitializeComponent();
 
 			ExecutionControl.Start();
 		}
@@ -77,12 +78,12 @@ namespace TVCEmu.Forms
 			ExecutionControl.Stop();
 			m_keyboard_hook.ReleaseHook();
 
-			MainGeneralSettings settings = FrameworkSettingsFile.Default.GetSettings<MainGeneralSettings>();
+			MainGeneralSettings settings = SettingsFile.Default.GetSettings<MainGeneralSettings>();
 
 			settings.MainWindowPos.SaveWindowPositionAndSize(this);
 
-			FrameworkSettingsFile.Default.SetSettings(settings);
-			FrameworkSettingsFile.Default.Save();
+			SettingsFile.Default.SetSettings(settings);
+			SettingsFile.Default.Save();
 		}
 
 		private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -177,9 +178,15 @@ namespace TVCEmu.Forms
 			{
 				string filename = dialog.SelectedFileName;
 
+        // load program 
 				TVCFiles.LoadProgramFile(filename, ExecutionControl.TVC.Memory);
 
-				ExecutionControl.TVC.Keyboard.InjectKeys("DR,W,UR,DU,W,UU,DN,W,UN,DEnter,W,UEnter");
+        // autostart program is enabled
+        GamebaseSettings settings = SettingsFile.Default.GetSettings<GamebaseSettings>();
+        if (settings.Autostart)
+        {
+          ExecutionControl.TVC.Keyboard.InjectKeys("DR,W,UR,DU,W,UU,DN,W,UN,DEnter,W,UEnter");
+        }
 			}
 		}
 
@@ -194,14 +201,14 @@ namespace TVCEmu.Forms
 					// stop modules and dispatcher timer
 
 					// save settings if dialog result was success
-					FrameworkSettingsFile.Default.CopySettingsFrom(SetupDialog.CurrentSettings);
-					FrameworkSettingsFile.Default.Save();
+					SettingsFile.Default.CopySettingsFrom(SettingsFile.Editing);
+					SettingsFile.Default.Save();
 
 					// reload modules
-					ModuleManager.Default.ModulesLoad();
-					ModuleManager.Default.ModulesInitializeAndStart();
-				}																									
-			}
+					ExpansionManager.Default.LoadExpansions();
+          ExpansionManager.Default.InstallExpansions(ExecutionControl.TVC);
+        }
+      }
 		}
 	}
 }

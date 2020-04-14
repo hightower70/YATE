@@ -57,6 +57,7 @@
       <DependentUpon>SetupInformation.xaml</DependentUpon>
     </Compile>
     <Compile Include="HBFCard.cs" />
+    <Compile Include="HBFCardSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

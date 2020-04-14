@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TVCEmuCommon;
 
 namespace Multicart
 {
-	public class TVCMultiCart : ITVCCartridge
+  public class TVCMultiCart : ITVCCartridge
 	{
 		public const int MaxCartRomSize = 1024 * 1024;
 		public const int MaxCartRamSize = 512 * 1024;

@@ -4,9 +4,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TVCEmu.Dialogs"
+        xmlns:CustomControls="clr-namespace:CustomControls;assembly=CustomControls" 
         mc:Ignorable="d"
-        Title="Load from GameBase" Style="{DynamicResource WindowStyle}" Height="535" Width="770">
-    <Grid Background="{DynamicResource Background}">
+        Title="Load from GameBase" Style="{DynamicResource WindowStyle}" Height="535" Width="770" Initialized="Window_Initialized" Closing="Window_Closing">
+	<Window.Resources>
+		<CustomControls:IsEqualToVisibilityConverter x:Key="conv"/>
+	</Window.Resources>
+
+	<Grid Background="{DynamicResource Background}">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="*"/>
 			<RowDefinition Height="30"/>
@@ -19,20 +24,12 @@
 							AutoGenerateColumns="False"
 							SelectionMode="Single"
 							GridLinesVisibility="None" HeadersVisibility="None" SelectionUnit="FullRow" AlternationCount="2" AlternatingRowBackground="{DynamicResource Background}" SelectionChanged="Dtgrid_SelectionChanged" Margin="5" IsReadOnly="True">
-<!--
-			<DataGrid.RowDetailsTemplate>
-				<DataTemplate>
-					<StackPanel Orientation="Horizontal" Margin="5">
-						<TextBlock  Width="400" TextWrapping="Wrap" Text="{Binding Path=Year}"/>
-					</StackPanel>
-				</DataTemplate>
-			</DataGrid.RowDetailsTemplate>
--->
-			<DataGrid.Columns>
+		<DataGrid.Columns>
 				<DataGridTextColumn Width="*" Header="Name" Binding="{Binding Path=Name}" />
 			</DataGrid.Columns>
 		</DataGrid>
-		<!--<ListBox Grid.Column="0" x:Name="dtgrid" DisplayMemberPath="Name"/>-->
+		<TextBlock Grid.Column="0" Panel.ZIndex="1" Text="No game found" Foreground="{DynamicResource HalftoneForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ElementName=dtGrid, Path=Items.Count, Converter={StaticResource conv}, ConverterParameter=0}" />
+
 		<Grid Grid.Column="1">
 			<Grid.RowDefinitions>
 				<RowDefinition Height="320"/>
@@ -66,7 +63,9 @@
 				<TextBlock Grid.Column="1" Grid.Row="3" Text="{Binding ElementName=dtGrid, Path=SelectedItem.Language}" Foreground="DeepSkyBlue"/>
 
 				<TextBlock Grid.Column="2" Grid.Row="0" Text="Memo:"/>
-				<TextBlock Grid.Column="2" Grid.Row="1" Grid.RowSpan="3" Text="{Binding ElementName=dtGrid, Path=SelectedItem.MemoText}" TextWrapping="Wrap" Foreground="DeepSkyBlue"/>
+				<ScrollViewer Grid.Column="2" Grid.Row="1" Grid.RowSpan="3" VerticalScrollBarVisibility="Auto" >
+				<TextBlock Text="{Binding ElementName=dtGrid, Path=SelectedItem.MemoText}" TextWrapping="Wrap" Foreground="DeepSkyBlue" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+				</ScrollViewer>
 			</Grid>
 		</Grid>
 

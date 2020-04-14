@@ -387,6 +387,13 @@ namespace TVCHardware
 				int total_horizontal_pixel = (m_6845_registers[MC6845_HTOTAL] + 1) * 8;
 				int image_offset = (total_horizontal_pixel - first_visible_column - m_image_width) / 2;
 				int frame_buffer_pos = (m_scanline_index - first_visible_line) * m_image_width * 2 -first_visible_column;
+
+        // TODO: check 
+        if(frame_buffer_pos<0)
+        {
+          frame_buffer_pos = 0;
+        }
+
 				int pixel_index = 0;
 				int first_visible_pixel = ((m_6845_registers[MC6845_HTOTAL] + 1) - (m_6845_registers[MC6845_HSYNCPOS] + 1)) * 8 + image_offset;
 				uint border_color = BorderColorRegisterToColor(m_port_00h);

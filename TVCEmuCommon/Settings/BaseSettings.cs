@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2013-2014 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,35 +18,29 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// System settings handler class
+// Module settings base class
 ///////////////////////////////////////////////////////////////////////////////
-using Microsoft.Win32;
+
 using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Xml;
-using TVCEmuCommon.Helpers;
 
 namespace TVCEmuCommon.Settings
 {
-	public interface ISettingsFileBase
+	public class BaseSettings
 	{
-		void SetSettings(SettingsBase in_settings_data);
-		T GetSettings<T>() where T : SettingsBase, new();
-									/*
-		List<ModuleInfo> GetModuleList();
-		void ModuleAdd(ModuleInfo in_module_info);
-		void ModuleRemove(int in_module_index);
-								*/
-		bool Load();
-		void Save();
-		void CopySettingsFrom(SettingsFileBase in_settings);
-		
+    [NonSerialized]
+    public string ModuleName;
+
+    [NonSerialized]
+    public string SectionName;
+
+		public BaseSettings(string in_module_name, string in_section_name)
+		{
+			ModuleName = in_module_name;
+			SectionName = in_section_name;
+		}
+
+		public virtual void SetDefaultValues()
+    {
+    }
 	}
 }
-

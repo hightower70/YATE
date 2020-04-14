@@ -3,41 +3,34 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using TVCEmuCommon.ModuleManager;
+using TVCEmuCommon.ExpansionManager;
 
 namespace MultiCart
 {
-	public class ExpansionMain : ModuleBase
+	public class ExpansionMain : ExpansionBase
 	{
 		#region · Data members ·
-		private ModuleSettingsInfo[] m_module_settings_info;
+		private ExpansionSetupPageInfo[] m_setup_page_info;
 		#endregion
 
 		public ExpansionMain()
 		{
-			ModuleName = GetDisplayName();
-			m_module_settings_info = new ModuleSettingsInfo[]
+			m_setup_page_info = new ExpansionSetupPageInfo[]
 			{
-				new ModuleSettingsInfo("Config", new SetupConfiguration(), null),
-				new ModuleSettingsInfo("Information", new SetupInformation(), null),
-				new ModuleSettingsInfo("About", new SetupAbout(), null)
+				new ExpansionSetupPageInfo("Config", typeof( SetupConfiguration)),
+				new ExpansionSetupPageInfo("Information", typeof(SetupInformation)),
+				new ExpansionSetupPageInfo("About", typeof( SetupAbout))
 			};
 		}
 
-		override public string GetDisplayName()
-		{
-			return "MultiCart ROM Extender";
-		}
+    public override void GetExpansionInfo(ExpansionInfo inout_module_info)
+    {
+      inout_module_info.Description = "MultiCart ROM Extender";
+      inout_module_info.SectionName = "MultiCart";
+      inout_module_info.Type = ExpansionInfo.ExpansionType.Cartridge;
+      inout_module_info.SetupPages = m_setup_page_info;
+    }
 
-		public override ModuleSettingsInfo[] GetSettingsInfo()
-		{
-			return m_module_settings_info;
-		}
-
-		public override string GetSettingsName()
-		{
-			return "MultiCart";
-		}
 	}
 }
 

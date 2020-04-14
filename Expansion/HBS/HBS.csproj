@@ -55,6 +55,7 @@
     <Compile Include="Forms\SetupInformation.xaml.cs">
       <DependentUpon>SetupInformation.xaml</DependentUpon>
     </Compile>
+    <Compile Include="HBSCard.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

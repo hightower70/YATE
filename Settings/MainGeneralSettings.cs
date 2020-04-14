@@ -4,7 +4,7 @@ using TVCEmuCommon.Settings;
 
 namespace TVCEmu.Settings
 {
-	public class MainGeneralSettings : SettingsBase
+	public class MainGeneralSettings : BaseSettings
 	{
 		// Path settings
 		public string ModulesPath { set; get; }

@@ -59,11 +59,11 @@ namespace TVCEmu.Controls
 			};
 
       // Get cartridge file folder
-      CartridgeSettings settings = FrameworkSettingsFile.Default.GetSettings<CartridgeSettings>();
+      CartridgeSettings settings = SettingsFile.Default.GetSettings<CartridgeSettings>();
 
       if (settings != null && !string.IsNullOrEmpty(settings.CartridgeFileName))
       {
-        dlg.InitialDirectory = Path.GetFullPath(settings.CartridgeFileName);
+        dlg.InitialDirectory = Path.GetDirectoryName(settings.CartridgeFileName);
       }
 
       // Show open file dialog box
@@ -98,8 +98,8 @@ namespace TVCEmu.Controls
         // save cartidge file name
         settings.CartridgeActive = true;
         settings.CartridgeFileName = file_name;
-        FrameworkSettingsFile.Default.SetSettings(settings);
-        FrameworkSettingsFile.Default.Save();
+        SettingsFile.Default.SetSettings(settings);
+        SettingsFile.Default.Save();
       }
     }
 
@@ -125,10 +125,10 @@ namespace TVCEmu.Controls
 			m_execution_control.ChangeExecutionState(ExecutionControl.ExecutionStateRequest.Restore);
 
       // save cartidge file name
-      CartridgeSettings settings = FrameworkSettingsFile.Default.GetSettings<CartridgeSettings>();
+      CartridgeSettings settings = SettingsFile.Default.GetSettings<CartridgeSettings>();
       settings.CartridgeActive = false;
-      FrameworkSettingsFile.Default.SetSettings(settings);
-      FrameworkSettingsFile.Default.Save();
+      SettingsFile.Default.SetSettings(settings);
+      SettingsFile.Default.Save();
     }
   }
 }

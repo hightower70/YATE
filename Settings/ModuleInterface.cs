@@ -21,35 +21,30 @@
 // Main module interface
 ///////////////////////////////////////////////////////////////////////////////
 using TVCEmu.Dialogs;
-using TVCEmuCommon.ModuleManager;
+using TVCEmuCommon.ExpansionManager;
 
 namespace TVCEmu.Settings
 {
-	public class ModuleInterface : ModuleBase
+	public class ModuleInterface : ExpansionBase
 	{
-		ModuleSettingsInfo[]	m_module_settings_info;
+		ExpansionSetupPageInfo[]	m_setup_page_info;
 
 		public ModuleInterface()
 		{
-			ModuleName = GetDisplayName();
-			m_module_settings_info = new ModuleSettingsInfo[]
-			{
-				new ModuleSettingsInfo("General", new SetupGeneral(), null),
-				new ModuleSettingsInfo("Input", new SetupInput(), null)
-				//new ModuleSettingsInfo("Communication", new SetupCommunication(), null),
-				//new ModuleSettingsInfo("About", new AboutControl(), null)
-			};
+      //ModuleName = GetDisplayName();
+      m_setup_page_info = new ExpansionSetupPageInfo[]
+      {
+        new ExpansionSetupPageInfo("General", typeof( SetupGeneral)),
+        new ExpansionSetupPageInfo("Input", typeof(SetupInput)),
+        new ExpansionSetupPageInfo("Gamebase", typeof( SetupGamebase))
+      };
 		}
 
-
-		override public string GetDisplayName()
-		{
-			return "Emulator";
-		}
-
-		public override ModuleSettingsInfo[] GetSettingsInfo()
-		{
-			return m_module_settings_info;
-		}
+    public override void GetExpansionInfo(ExpansionInfo inout_module_info)
+    {
+      inout_module_info.Description = "Emulator";
+      inout_module_info.SectionName = "Main";
+      inout_module_info.SetupPages = m_setup_page_info;
+    }
 	}
 }

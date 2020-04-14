@@ -622,12 +622,25 @@ namespace TVCHardware
 
 						key_mapping.Add(new KeyMappingEntry(windows_key, modifier_keys, row, col, key_modifiers));
 
+            // Add Shift + key
 						if (key_modifiers.HasFlag(KeyModifiers.KeepShift))
 						{
 							key_mapping.Add(new KeyMappingEntry(windows_key, modifier_keys | ModifierKeys.Shift, row, col, key_modifiers));
 						}
-					}
-				}
+
+            // Add Ctrl + key
+            if (key_modifiers.HasFlag(KeyModifiers.KeepCtrl))
+            {
+              key_mapping.Add(new KeyMappingEntry(windows_key, modifier_keys | ModifierKeys.Control, row, col, key_modifiers));
+            }
+
+            // Add Alt + key
+            if (key_modifiers.HasFlag(KeyModifiers.KeepAlt))
+            {
+              key_mapping.Add(new KeyMappingEntry(windows_key, modifier_keys | ModifierKeys.Alt, row, col, key_modifiers));
+            }
+          }
+        }
 			}
 
 			// cache control keys

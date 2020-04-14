@@ -34,7 +34,7 @@ using TVCEmuCommon.Helpers;
 
 namespace TVCEmuCommon.Settings
 {
-	public class SettingsFileBase : ISettingsFileBase
+	public class SettingsFile
 	{
 		#region · Constants ·
 		private const string RootElementName = "Settings";
@@ -42,80 +42,20 @@ namespace TVCEmuCommon.Settings
 		#endregion
 
 		#region · Types ·
-		/// <summary>
-		/// 
-		/// </summary>
-		public class ModuleInfo
-		{
-			public string SectionName;
-			public string ModuleName;
-			public bool Active;
-			public int ModuleIndex;
 
-			public 	ModuleInfo()
-			{
-				SectionName = "";
-				ModuleName = "";
-				Active = false;
-				ModuleIndex = 0;
-			}
-
-			public 	ModuleInfo(string in_section_name)
-			{
-				SectionName = in_section_name;
-				ModuleName = "";
-				Active = false;
-				ModuleIndex = 0;
-			}
-
-			public 	ModuleInfo(string in_secion_name, string in_module_name, bool in_active)
-			{
-				SectionName = in_secion_name;
-				ModuleName = in_module_name;
-				Active = in_active;
-				ModuleIndex = 0;
-			}
-
-			public ModuleInfo(ModuleInfo in_module_info)
-			{
-				SectionName = in_module_info.SectionName;
-				ModuleName = in_module_info.ModuleName;
-				Active = in_module_info.Active;
-				ModuleIndex = 0;
-			}
-
-			public override string ToString()
-			{
-				return SectionName;
-			}
-
-			public override bool Equals(object in_object)
-			{
-				// If this and obj do not refer to the same type, then they are not equal.
-				if (in_object.GetType() != this.GetType())
-					return false;
-
-				return (SectionName == ((ModuleInfo)in_object).SectionName);
-			}
-
-			public override int GetHashCode()
-			{
-				return SectionName.GetHashCode();
-			}
-		}
 		#endregion
 
 		#region · Data members ·
 		private XmlDocument m_xml_doc = null;
 		private string m_config_filename;
-		private Dictionary<string, SettingsBase> m_settings = new Dictionary<string, SettingsBase>();
-		private List<ModuleInfo> m_modules = new List<ModuleInfo>();
+		private Dictionary<string, BaseSettings> m_settings = new Dictionary<string, BaseSettings>();
+		private List<ModuleBaseSettingsInfo> m_modules = new List<ModuleBaseSettingsInfo>();
 
 		#endregion
 
 		#region · Constructor ·
 		// Default constructor
-		public SettingsFileBase()
+		public SettingsFile()
 		{
 			m_xml_doc = new XmlDocument();
 		}
@@ -140,7 +80,7 @@ namespace TVCEmuCommon.Settings
 		/// Adds content of a settings class to the settings file
 		/// </summary>
 		/// <param name="in_settings_data"></param>
-		public void SetSettings(SettingsBase in_settings_data)
+		public void SetSettings(BaseSettings in_settings_data)
 		{
 			string key = GetSettigsKey(in_settings_data);
 
@@ -156,7 +96,7 @@ namespace TVCEmuCommon.Settings
 		/// </summary>
 		/// <param name="in_settings_data"></param>
 		/// <returns></returns>
-		public T GetSettings<T>() where T:SettingsBase, new()
+		public T GetSettings<T>() where T:BaseSettings, new()
 		{
 			XmlNode root_node = null;
 			bool success = true;
@@ -200,7 +140,7 @@ namespace TVCEmuCommon.Settings
 
 				// store settings or set to default values
 				if (success)
-					m_settings.Add(key, (SettingsBase)result);
+					m_settings.Add(key, (BaseSettings)result);
 				else
 					result.SetDefaultValues();
 			}
@@ -212,12 +152,34 @@ namespace TVCEmuCommon.Settings
 		/// Generates the list of the modules stored in config file
 		/// </summary>
 		/// <returns>List of the modules</returns>
-		public List<ModuleInfo> GetModuleList()
+		public List<ModuleBaseSettingsInfo> GetModuleList()
 		{
 			return m_modules;
 		}
 
-		public void ModuleAdd(ModuleInfo in_module_info)
+    /// <summary>
+    /// Gets the list of the active cards
+    /// </summary>
+    /// <returns></returns>
+    public IList<ModuleBaseSettingsInfo> GetSlotList()
+    {
+      ModuleBaseSettingsInfo[] cards = new ModuleBaseSettingsInfo[TVComputerConstants.ExpansionCardCount];
+
+      for (int module_index = 0; module_index < cards.Length; module_index++)
+      {
+        cards[module_index] = null;
+      }
+
+      for (int module_index = 0; module_index < m_modules.Count; module_index++)
+      {
+        if (m_modules[module_index].Active && m_modules[module_index].SlotIndex >= 0 && m_modules[module_index].SlotIndex < TVComputerConstants.ExpansionCardCount)
+          cards[m_modules[module_index].SlotIndex] = m_modules[module_index];
+      }
+
+      return cards;
+    }
+
+		public void ModuleAdd(ModuleBaseSettingsInfo in_module_info)
 		{
 			m_modules.Add(in_module_info);
 		}
@@ -291,13 +253,9 @@ namespace TVCEmuCommon.Settings
 						// Skip module creation for "Main" module
 						if (node_list[i].Name != "Main")
 						{
-							ModuleInfo entry = new ModuleInfo();
+              ModuleBaseSettingsInfo entry = new ModuleBaseSettingsInfo(node_list[i]);
 
-							entry.SectionName = node_list[i].Name;
-							entry.ModuleName = node_list[i].Attributes["ModuleName"].InnerText;
-							bool.TryParse(node_list[i].Attributes["Active"].InnerText, out entry.Active);
-
-							int index = m_modules.LastIndexOf(entry);
+              int index = m_modules.LastIndexOf(entry);
 							if(index == -1)
 								entry.ModuleIndex = 0;
 							else
@@ -359,7 +317,7 @@ namespace TVCEmuCommon.Settings
 			}
 
 			// create module objects
-			foreach(ModuleInfo module in m_modules)
+			foreach(ModuleBaseSettingsInfo module in m_modules)
 			{
 				XmlNodeList node_list = m_xml_doc.DocumentElement.SelectNodes('/' + RootElementName + '/' + module.SectionName);
 
@@ -368,28 +326,19 @@ namespace TVCEmuCommon.Settings
 					// create a new node
 					XmlNode module_node = m_xml_doc.CreateElement(module.SectionName);
 
-					// create 'Active' attribute
-					XmlAttribute active = m_xml_doc.CreateAttribute("Active");
-					active.Value = module.Active.ToString();
-					module_node.Attributes.Append(active);
-
-					// create 'ModuleName' attribute
-					XmlAttribute module_name = m_xml_doc.CreateAttribute("ModuleName");
-					module_name.Value = module.ModuleName;
-					module_node.Attributes.Append(module_name);
-
+          module.Save(module_node);
+					
 					m_xml_doc.DocumentElement.AppendChild(module_node);
 				}
 				else
 				{
-					// update a node
-					node_list[module.ModuleIndex].Attributes["Active"].InnerText = module.Active.ToString();
+          // update a node
+          module.Save(node_list[module.ModuleIndex]);
 				}
-
 			}
 
 			// serialize settings objects
-			foreach (KeyValuePair<string, SettingsBase> settings in m_settings)
+			foreach (KeyValuePair<string, BaseSettings> settings in m_settings)
 			{
 				XmlNode module_node = top_level_parent_node.SelectSingleNode(settings.Value.ModuleName);
 				XmlNode section_node = top_level_parent_node.SelectSingleNode(settings.Value.ModuleName + "/" + settings.Value.SectionName);
@@ -408,14 +357,14 @@ namespace TVCEmuCommon.Settings
 		/// Copies settings from another settings class
 		/// </summary>
 		/// <param name="in_settings"></param>
-		public void CopySettingsFrom(SettingsFileBase in_settings)
+		public void CopySettingsFrom(SettingsFile in_settings)
 		{
 			// clone XML doc
 			m_xml_doc = (XmlDocument)in_settings.m_xml_doc.Clone();
 
 			// clone cached settings
 			m_settings.Clear();
-			foreach (KeyValuePair<string, SettingsBase> settings in in_settings.m_settings)
+			foreach (KeyValuePair<string, BaseSettings> settings in in_settings.m_settings)
 			{
 				m_settings.Add(settings.Key, settings.Value);
 			}
@@ -424,20 +373,58 @@ namespace TVCEmuCommon.Settings
 			m_modules.Clear();
 			for (int i = 0; i < in_settings.m_modules.Count; i++)
 			{
-				m_modules.Add(new ModuleInfo(in_settings.m_modules[i]));
+				m_modules.Add(new ModuleBaseSettingsInfo(in_settings.m_modules[i]));
 			}
 		}
 
-		#endregion
+    #endregion
 
-		#region · Private members ·
+    #region · Singleton members ·
 
-		/// <summary>
-		/// Generates settings key from module and section name
-		/// </summary>
-		/// <param name="in_settings"></param>
-		/// <returns></returns>
-		private string GetSettigsKey(SettingsBase in_settings)
+    private static SettingsFile m_default = null;
+    private static SettingsFile m_editing = null;
+
+    /// <summary>
+    /// Gets default singleton instance
+    /// </summary>
+    public static SettingsFile Default
+    {
+      get
+      {
+        if (m_default == null)
+        {
+          m_default = new SettingsFile();
+        }
+
+        return m_default;
+      }
+    }
+
+    /// <summary>
+    /// Gets instance of the currently editing settings
+    /// </summary>
+    public static SettingsFile Editing
+    {
+      get
+      {
+        if (m_editing == null)
+        {
+          m_editing = new SettingsFile();
+        }
+
+        return m_editing;
+      }
+    }
+    #endregion
+
+    #region · Private members ·
+
+    /// <summary>
+    /// Generates settings key from module and section name
+    /// </summary>
+    /// <param name="in_settings"></param>
+    /// <returns></returns>
+    private string GetSettigsKey(BaseSettings in_settings)
 		{
 			return in_settings.ModuleName + '+' + in_settings.SectionName;
 		}
@@ -652,13 +639,13 @@ namespace TVCEmuCommon.Settings
 				string name = in_name;
 				XmlNode parent_node = in_parent;
 
-				if (in_object is SettingsBase)
+				if (in_object is BaseSettings)
 				{
 					// ISystemSettings shoud be the top level settings object
 					if (parent_node.Name != RootElementName)
 						throw new ArgumentException("Invalid XML parent for IsystemSettings object");
 
-					string module_name = ((SettingsBase)in_object).ModuleName;
+					string module_name = ((BaseSettings)in_object).ModuleName;
 
 					// check if module is exists
 					XmlNode module_node = m_xml_doc.SelectSingleNode('/' + RootElementName + '/' + module_name);
@@ -671,7 +658,7 @@ namespace TVCEmuCommon.Settings
 
 					parent_node = module_node;
 
-					name = ((SettingsBase)in_object).SectionName;
+					name = ((BaseSettings)in_object).SectionName;
 				}
 
 				// create child element
@@ -778,6 +765,7 @@ namespace TVCEmuCommon.Settings
 			}
 		}
 		#endregion
+
 	}
 }
 

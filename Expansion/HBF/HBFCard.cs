@@ -185,9 +185,25 @@ namespace HBF
 
 		private bool m_head_loaded;
 
-		public HBFCard()
+    private HBFCardSettings m_settings;
+
+    #region · Properties ·
+    public int SlotIndex
+    {
+      get
+      {
+        if (m_settings != null)
+          return m_settings.CardSlotIndex;
+        else
+          return -1;
+      }
+    }
+    #endregion
+
+
+    public HBFCard()
 		{
-			CardReset();
+			Reset();
 
 			// CRC calculator init
 			m_crc_generator = new CRC16(0x1021, 0xffff);
@@ -218,18 +234,28 @@ namespace HBF
       m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_test1.xdi");
     }
 
+    public void SetSettings(HBFCardSettings in_settings)
+    {
+      m_settings = in_settings;
+    }
+      
     /// <summary>
     /// Initialize HBF card
     /// </summary>
     /// <param name="in_tvcomputer"></param>
-    public void Initialize(ITVComputer in_tvcomputer)
+    public void Install(ITVComputer in_tvcomputer)
 		{
 			m_tvcomputer = in_tvcomputer;
 
-			// set timing
-			m_index_pulse_period = in_tvcomputer.MicrosecToCPUTicks(IndexPulsePeriod);
+      // set timing
+      m_index_pulse_period = in_tvcomputer.MicrosecToCPUTicks(IndexPulsePeriod);
 			m_index_pulse_width = in_tvcomputer.MicrosecToCPUTicks(IndexPulseWidth);
 		}
+
+    public void Remove()
+    {
+
+    }
 
 
     /// <summary>
@@ -248,7 +274,7 @@ namespace HBF
     /// </summary>
     /// <param name="in_address">Address of the memory</param>
     /// <returns>Byte from the card memory</returns>
-		public byte CardMemoryRead(ushort in_address)
+		public byte MemoryRead(ushort in_address)
 		{
 			if (in_address < CardROMPageSize)
 				return m_card_rom[in_address + ((m_reg_page >> 4) & 0x03) * CardROMPageSize];
@@ -261,7 +287,7 @@ namespace HBF
     /// </summary>
     /// <param name="in_address">Addres of the memory</param>
     /// <param name="in_byte">Data to write</param>
-		public void CardMemoryWrite(ushort in_address, byte in_byte)
+		public void MemoryWrite(ushort in_address, byte in_byte)
 		{
 			if (in_address < CardROMPageSize)
 				return; // no ROM write
@@ -273,7 +299,7 @@ namespace HBF
     /// Gets ID byte of the card
     /// </summary>
     /// <returns></returns>
-		public byte CardGetID()
+		public byte GetID()
 		{
 			return 0x02;
 		}
@@ -281,7 +307,7 @@ namespace HBF
     /// <summary>
     /// Hardware reset of the card
     /// </summary>
-		public void CardReset()
+		public void Reset()
 		{
 			// reset card
 			m_reg_page = 0;
@@ -310,7 +336,7 @@ namespace HBF
 	/** Read value from a WD1793 register A. Returns read data  **/
 	/** on success or 0xFF on failure (bad register address).   **/
 	/*************************************************************/
-	public void CardPortRead(ushort in_address, ref byte inout_data)
+	public void PortRead(ushort in_address, ref byte inout_data)
 		{
 			switch (in_address & 0x0f)
 			{
@@ -438,7 +464,7 @@ namespace HBF
 		/** Write value V into WD1793 register A. Returns DRQ/IRQ   **/
 		/** values.                                                 **/
 		/*************************************************************/
-		public void CardPortWrite(ushort in_address, byte in_value)
+		public void PortWrite(ushort in_address, byte in_value)
 		{
 			if ((in_address & 0x0f) != 8)
 				Debug.Write((in_address & 0x0f).ToString("X2") + ":" + in_value.ToString("X2") + " = ");
@@ -703,8 +729,8 @@ namespace HBF
 								D->IRQ = WD1793_DRQ;
 								D->Wait = 255;
 							}
-#endif
 							break;
+#endif
 #if false
 						case 0xE0: /* READ-TRACK */
 							if (D->Verbose) printf("WD1793: READ-TRACK %d (%02Xh) UNSUPPORTED!\n", D->R[1], V);
@@ -718,8 +744,8 @@ namespace HBF
 							if (D->Verbose) printf("WD1793: UNSUPPORTED OPERATION %02Xh!\n", V);
 							break;
 #endif
-					}
-					break;
+          }
+          break;
 
 				// track register
 				case PORT_TRACK:
@@ -850,7 +876,7 @@ namespace HBF
 			}
 		}
 
-		public void CardPeriodicCallback(ulong in_cpu_tick)
+		public void PeriodicCallback(ulong in_cpu_tick)
 		{
 			switch (m_operation_state)
 			{

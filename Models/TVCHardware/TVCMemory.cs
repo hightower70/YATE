@@ -482,7 +482,7 @@ namespace TVCHardware
 			{
 				// read IO mem
 				if (m_tvc.Cards[m_ext_mem_select] != null)
-					return m_tvc.Cards[m_ext_mem_select].CardMemoryRead(in_page_address);
+					return m_tvc.Cards[m_ext_mem_select].MemoryRead(in_page_address);
 
 				return 0xff;
 			}
@@ -498,7 +498,7 @@ namespace TVCHardware
 			{
 				// write IO mem
 				if (m_tvc.Cards[m_ext_mem_select] != null)
-					m_tvc.Cards[m_ext_mem_select].CardMemoryWrite(in_page_address, in_data);
+					m_tvc.Cards[m_ext_mem_select].MemoryWrite(in_page_address, in_data);
 			}
 			else
 			{

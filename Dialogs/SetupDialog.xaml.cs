@@ -22,7 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 using TVCEmuCommon.Settings;
 using System.Windows;
-using TVCEmuCommon.ModuleManager;
+using TVCEmuCommon.ExpansionManager;
 using TVCEmu.Settings;
 using TVCEmuCommon.SetupPage;
 
@@ -33,47 +33,39 @@ namespace TVCEmu.Dialogs
 	/// </summary>
 	public partial class SetupDialog : Window
 	{
-		static SettingsFileBase m_current_settings;
-		static ModuleManager m_current_module_manager;
-
-		public static SettingsFileBase CurrentSettings
-		{
-			get { return m_current_settings; }
-		}
+		private ExpansionManager m_current_expansion_manager;
 
 		public SetupDialog()
 		{
-			// copy current settings
-			m_current_settings = new SettingsFileBase();
-			m_current_settings.CopySettingsFrom(FrameworkSettingsFile.Default);
+      // copy current settings to a temporary storage
+      SettingsFile.Editing.CopySettingsFrom(SettingsFile.Default);
 
 			// copy current module information
-			m_current_module_manager = new ModuleManager();
-			m_current_module_manager.CopyModulesFrom(ModuleManager.Default, m_current_settings);
+			m_current_expansion_manager = new ExpansionManager(ExpansionManager.Default, SettingsFile.Editing);
 
 			InitializeComponent();
 		}
 
 		private void bAddModule_Click(object sender, RoutedEventArgs e)
 		{
-			m_current_module_manager.SetupRefreshModuleInfo();
+			m_current_expansion_manager.SetupRefreshModuleInfo();
 
 			AddModuleDialog dialog = new AddModuleDialog();
 			dialog.Owner = this;
-			dialog.lbModules.DataContext = m_current_module_manager;
+			dialog.lbModules.DataContext = m_current_expansion_manager;
 
 			dialog.ShowDialog();
 
 			if(dialog.DialogResult ?? false)
 			{
-				foreach (ModuleInfo module in dialog.lbModules.SelectedItems)
+				foreach (ExpansionInfo module in dialog.lbModules.SelectedItems)
 				{
 					// load module
-					m_current_module_manager.SetupAddModule(module.DLLName);
+					m_current_expansion_manager.SetupAddModule(module.DLLName);
 
 					// add module list
-					SettingsFileBase.ModuleInfo module_info = new SettingsFileBase.ModuleInfo(module.SectionName, module.DLLName, true);
-					m_current_settings.ModuleAdd(module_info);
+					ModuleBaseSettingsInfo module_info = new ModuleBaseSettingsInfo(module.SectionName, module.DLLName, true);
+          SettingsFile.Editing.ModuleAdd(module_info);
 				}
 			}
 		}
@@ -89,20 +81,22 @@ namespace TVCEmu.Dialogs
 			int module_index;
 			int page_index;
 
-			if (e.NewValue is ModuleSettingsTreeInfo)
+			if (e.NewValue is ExpansionSetupTreeInfo)
 			{
 				FrameworkElement new_page;
 
 				// get module and page index
-				module_index = (e.NewValue as ModuleSettingsTreeInfo).ModuleIndex;
-				page_index = (e.NewValue as ModuleSettingsTreeInfo).FormIndex;
+				module_index = (e.NewValue as ExpansionSetupTreeInfo).ModuleIndex;
+				page_index = (e.NewValue as ExpansionSetupTreeInfo).FormIndex;
 
 				// the module main node will display the same settings form as the first form
 				if (page_index < 0)
 					page_index = 0;
 
-				// get new page
-				new_page = m_current_module_manager.Modules[module_index].GetSettingsInfo()[page_index].Form;
+        // get new page
+        ExpansionInfo expansion_info = new ExpansionInfo();
+        m_current_expansion_manager.Modules[module_index].GetExpansionInfo(expansion_info);
+        new_page = expansion_info.SetupPages[page_index].Form;
 
 				ChangeSetupPage(new_page);
 			}			
@@ -147,28 +141,28 @@ namespace TVCEmu.Dialogs
 		{		
 			gSetupFormContainer.Children.Clear();
 
-			SetupDialogSettings settings = m_current_settings.GetSettings<SetupDialogSettings>();
+			SetupDialogSettings settings = SettingsFile.Editing.GetSettings<SetupDialogSettings>();
 
 			settings.DialogPos.SaveWindowPositionAndSize(this);
 
-			m_current_settings.SetSettings(settings);
+      SettingsFile.Editing.SetSettings(settings);
 		}
 
 		private void Window_Initialized(object sender, System.EventArgs e)
 		{			 
-			SetupDialogSettings settings = m_current_settings.GetSettings<SetupDialogSettings>();
+			SetupDialogSettings settings = SettingsFile.Editing.GetSettings<SetupDialogSettings>();
 
 			settings.DialogPos.LoadWindowPositionAndSize(this);
 
-			m_current_module_manager.SetupBuildTreeInfo();
+			m_current_expansion_manager.SetupBuildTreeInfo();
 
-			tvSetupTree.DataContext = m_current_module_manager;
+			tvSetupTree.DataContext = m_current_expansion_manager;
 		}
 
 		private void bRemoveModule_Click(object sender, RoutedEventArgs e)
 		{
 			// find parent node
-			ModuleSettingsTreeInfo module_tree_info = tvSetupTree.SelectedItem as ModuleSettingsTreeInfo;
+			ExpansionSetupTreeInfo module_tree_info = tvSetupTree.SelectedItem as ExpansionSetupTreeInfo;
 
 			// sanity check
 			if (module_tree_info == null)
@@ -176,16 +170,16 @@ namespace TVCEmu.Dialogs
 
 			// find module parent
 			if (module_tree_info.Parent != null)
-				module_tree_info = (ModuleSettingsTreeInfo)module_tree_info.Parent;
+				module_tree_info = (ExpansionSetupTreeInfo)module_tree_info.Parent;
 
 			// do not remove main settings
 			if (module_tree_info.ModuleIndex == 0)
 				return;
 
-			m_current_settings.ModuleRemove(module_tree_info.ModuleIndex - 1);
+      SettingsFile.Editing.ModuleRemove(module_tree_info.ModuleIndex - 1);
 
 			// remove module
-			m_current_module_manager.SetupRemoveModule(module_tree_info.ModuleIndex);
+			m_current_expansion_manager.SetupRemoveModule(module_tree_info.ModuleIndex);
 		}
 	}
 }

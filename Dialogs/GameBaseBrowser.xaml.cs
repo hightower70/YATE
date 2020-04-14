@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Data;
 using System.Data.OleDb;
-using System.Drawing;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using TVCEmu.Settings;
+using TVCEmuCommon.Settings;
 
 namespace TVCEmu.Dialogs
 {
-	/// <summary>
-	/// Interaction logic for GameBaseBrowser.xaml
-	/// </summary>
-	public partial class GameBaseBrowser : Window
+  /// <summary>
+  /// Interaction logic for GameBaseBrowser.xaml
+  /// </summary>
+  public partial class GameBaseBrowser : Window
 	{
 		private string m_gamebase_path;
 		private string m_gamebase_root;
@@ -30,26 +31,34 @@ namespace TVCEmu.Dialogs
 
 		public GameBaseBrowser()
 		{
-			SelectedFileName = "";
-			m_gamebase_path = @"D:\Projects\Retro\TVCEmu.1\GameBase\Videoton TV Computer.mdb";
-			m_gamebase_root = Path.GetDirectoryName(m_gamebase_path);
+      InitializeComponent();
 
-			m_connection = new OleDbConnection("Provider = Microsoft.Jet.OLEDB.4.0; Data Source = " + m_gamebase_path);
+      SelectedFileName = "";
 
-			InitializeComponent();
-			Bind();
-		}
+      try
+      {
+        // Get gamebase directories
+        GamebaseSettings settings = SettingsFile.Default.GetSettings<GamebaseSettings>();
 
-		private void Bind()
-		{
-			m_connection.Open();
-			OleDbDataAdapter da = new OleDbDataAdapter(m_command_string, m_connection);
-			DataTable dt = new DataTable();
-			da.Fill(dt);
-			m_connection.Close();
+        m_gamebase_path = settings.GamebaseDatabaseFile;
+        m_gamebase_root = Path.GetDirectoryName(m_gamebase_path);
 
-			dtGrid.ItemsSource = dt.DefaultView;
-		}
+        // open database connection
+        m_connection = new OleDbConnection("Provider = Microsoft.Jet.OLEDB.4.0; Data Source = " + m_gamebase_path);
+        m_connection.Open();
+        OleDbDataAdapter da = new OleDbDataAdapter(m_command_string, m_connection);
+        DataTable dt = new DataTable();
+        da.Fill(dt);
+        m_connection.Close();
+
+        // fill datagrid with the content of the database
+        dtGrid.ItemsSource = dt.DefaultView;
+      }
+      catch
+      {
+
+      }
+    }
 
 		private void Dtgrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
 		{
@@ -65,5 +74,24 @@ namespace TVCEmu.Dialogs
 			SelectedFileName = Path.Combine(m_gamebase_root, "Games", ((DataRowView)dtGrid.SelectedItem)["Filename"].ToString());
 			DialogResult = true;
 		}
-	}
+
+    private void Window_Initialized(object sender, EventArgs e)
+    {
+      GamebaseSettings settings = SettingsFile.Default.GetSettings<GamebaseSettings>();
+
+      settings.BrowseDialogPos.LoadWindowPositionAndSize(this);
+    }
+
+    private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+      if (DialogResult ?? false)
+      {
+        GamebaseSettings settings = SettingsFile.Default.GetSettings<GamebaseSettings>();
+
+        settings.BrowseDialogPos.SaveWindowPositionAndSize(this);
+
+        SettingsFile.Default.Save();
+      }
+    }
+  }
 }
