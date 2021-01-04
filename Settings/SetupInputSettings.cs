@@ -20,16 +20,15 @@
 // ----------------
 // Class for storing 'Form' setup panel settings
 ///////////////////////////////////////////////////////////////////////////////
-using TVCEmuCommon.Settings;
 
-namespace TVCEmu.Settings
+namespace YATECommon.Settings
 {
-	class SetupInputSettings : BaseSettings
-	{
+  class SetupInputSettings : SettingsBase
+  {
 		public string KeyboardMapping { get; set; }
 		public bool CaptureCtrlESC { set; get; }
 
-		public SetupInputSettings() : base("Main", "Input")
+		public SetupInputSettings() : base(SettingsCategory.Emulator, "Input")
 		{
 			SetDefaultValues();
 		}

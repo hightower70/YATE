@@ -20,16 +20,15 @@
 // ----------------
 // Class for storing Setup Dialog position
 ///////////////////////////////////////////////////////////////////////////////
-using TVCEmuCommon.Settings;
 
-namespace TVCEmu.Settings
+namespace YATECommon.Settings
 {
-	class SetupDialogSettings	: BaseSettings
+  class SetupDialogSettings	: SettingsBase
 	{
 		// Dialog position settings
 		public WindowPosSettings DialogPos;
 
-		public SetupDialogSettings() : base("Main","SetupDialog")
+		public SetupDialogSettings() : base(SettingsCategory.Emulator, "SetupDialog")
 		{
 			DialogPos = new WindowPosSettings();
 			SetDefaultValues();

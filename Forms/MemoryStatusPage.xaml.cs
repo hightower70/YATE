@@ -2,15 +2,15 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using TVCEmu.Controls;
-using TVCHardware;
+using YATE.Controls;
+using YATE.Emulator.TVCHardware;
 
-namespace TVCEmu.Forms
+namespace YATE.Forms
 {
-	/// <summary>
-	/// Interaction logic for MemoryMappingView.xaml
-	/// </summary>
-	public partial class MemoryStatusPage : UserControl, INotifyPropertyChanged
+  /// <summary>
+  /// Interaction logic for MemoryMappingView.xaml
+  /// </summary>
+  public partial class MemoryStatusPage : UserControl, INotifyPropertyChanged
 	{
 		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionControl), typeof(MemoryStatusPage), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
 

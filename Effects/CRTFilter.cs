@@ -25,7 +25,7 @@ using System.Windows;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Media3D;
 
-namespace TVCEmu.Effects
+namespace YATE.Effects
 {
 	/// <summary>CRT like filter effect</summary>
 	public class CRTFilter : ShaderEffect
@@ -106,7 +106,7 @@ namespace TVCEmu.Effects
 		public CRTFilter()
 		{
 			PixelShader pixelShader = new PixelShader();
-			pixelShader.UriSource = new Uri("/TVCEmu;component/Effects/CRTFilter.ps", UriKind.Relative);
+			pixelShader.UriSource = new Uri("/YATE;component/Effects/CRTFilter.ps", UriKind.Relative);
 			this.PixelShader = pixelShader;
 			this.UpdateShaderValue(InputProperty);
 			this.UpdateShaderValue(WidthProperty);

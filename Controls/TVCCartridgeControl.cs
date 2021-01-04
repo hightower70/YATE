@@ -21,12 +21,12 @@
 // Videoton TV Computer ROM Cartridge UI Control
 ///////////////////////////////////////////////////////////////////////////////
 using System.IO;
-using TVCEmu.Forms;
-using TVCEmu.Models.TVCHardware;
-using TVCEmu.Settings;
-using TVCEmuCommon.Settings;
+using YATE.Emulator.TVCHardware;
+using YATE.Forms;
+using YATE.Settings;
+using YATECommon.Settings;
 
-namespace TVCEmu.Controls
+namespace YATE.Controls
 {
   /// <summary>
   /// TVC Cartridge UI control class
@@ -59,7 +59,7 @@ namespace TVCEmu.Controls
 			};
 
       // Get cartridge file folder
-      CartridgeSettings settings = SettingsFile.Default.GetSettings<CartridgeSettings>();
+      TVCConfigurationSettings settings = SettingsFile.Default.GetSettings<TVCConfigurationSettings>();
 
       if (settings != null && !string.IsNullOrEmpty(settings.CartridgeFileName))
       {
@@ -125,7 +125,7 @@ namespace TVCEmu.Controls
 			m_execution_control.ChangeExecutionState(ExecutionControl.ExecutionStateRequest.Restore);
 
       // save cartidge file name
-      CartridgeSettings settings = SettingsFile.Default.GetSettings<CartridgeSettings>();
+      TVCConfigurationSettings settings = SettingsFile.Default.GetSettings<TVCConfigurationSettings>();
       settings.CartridgeActive = false;
       SettingsFile.Default.SetSettings(settings);
       SettingsFile.Default.Save();

@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
 				xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+				xmlns:sys="clr-namespace:System;assembly=mscorlib"
 				mc:Ignorable="d" 
-				x:Class="TVCEmu.Dialogs.SetupDialog"
+				x:Class="YATE.Dialogs.SetupDialog"
         Title="Setup"
 				Style="{DynamicResource WindowStyle}"
 				ShowInTaskbar="False" ResizeMode="CanMinimize" Closing="Window_Closing" Initialized="Window_Initialized" 
@@ -31,7 +32,22 @@
 				<TreeView x:Name="tvSetupTree" Grid.Row="0" Margin="4,3,3,0" ItemsSource="{Binding ModuleSetupTreeInfo}" ItemContainerStyle="{DynamicResource TreeViewItemFullRowSelect}" SelectedItemChanged="tvSetupTree_SelectedItemChanged">
 					<TreeView.ItemTemplate>
 						<HierarchicalDataTemplate ItemsSource="{Binding Children}">
-							<TextBlock Text="{Binding DisplayName}" />
+							<StackPanel Orientation="Horizontal">
+								<TextBlock Text="{Binding DisplayName}" />
+								<TextBlock x:Name="tbSlotIndex" Text="{Binding SlotIndex, StringFormat={}[Slot #{0}]}" Margin="3,0,0,0"/>
+							</StackPanel>
+							<HierarchicalDataTemplate.Triggers>
+								<DataTrigger Binding="{Binding Path=SlotIndex}" Value="-1">
+									<DataTrigger.Setters>
+										<Setter TargetName="tbSlotIndex" Property="Visibility" Value="Collapsed"/>
+									</DataTrigger.Setters>
+								</DataTrigger>
+							</HierarchicalDataTemplate.Triggers>
+							<HierarchicalDataTemplate.ItemTemplate>
+									<DataTemplate>
+									<TextBlock Text="{Binding DisplayName}" />
+								</DataTemplate>
+								</HierarchicalDataTemplate.ItemTemplate>
 						</HierarchicalDataTemplate>
 					</TreeView.ItemTemplate>
 				</TreeView>

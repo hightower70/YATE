@@ -20,15 +20,15 @@
 // ----------------
 // Gamebase configuration data 
 ///////////////////////////////////////////////////////////////////////////////
-using TVCEmuCommon.Settings;
+using YATECommon.Settings;
 
-namespace TVCEmu.Settings
+namespace YATE.Settings
 {
   /// <summary>
   /// Gamebase configuration settings
   /// </summary>
-  public class GamebaseSettings : BaseSettings
-	{
+  public class GamebaseSettings : SettingsBase
+  {
 		/// <summary>Gamebase database file path</summary>
 		public string GamebaseDatabaseFile { set; get; }
 
@@ -38,7 +38,7 @@ namespace TVCEmu.Settings
     /// <summary>Position of the browse dialog</summary>
     public WindowPosSettings BrowseDialogPos { get; private set; }
 
-    public GamebaseSettings()	: base("Main","Gamebase")
+    public GamebaseSettings()	: base(SettingsCategory.Emulator, "Gamebase")
 		{
       BrowseDialogPos = new WindowPosSettings();
       SetDefaultValues();

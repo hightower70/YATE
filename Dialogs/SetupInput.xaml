@@ -1,6 +1,6 @@
-﻿<tec:SetupPageBase x:Class="TVCEmu.Dialogs.SetupInput"
+﻿<tec:SetupPageBase x:Class="YATE.Dialogs.SetupInput"
 						 xmlns:cc="clr-namespace:CustomControls;assembly=CustomControls"
-						 xmlns:tec="clr-namespace:TVCEmuCommon.SetupPage;assembly=TVCEmuCommon"
+						 xmlns:tec="clr-namespace:YATECommon.SetupPage;assembly=YATECommon"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 

@@ -21,13 +21,11 @@
 // Data provider class for SetupForms dialog
 ///////////////////////////////////////////////////////////////////////////////
 using System.Windows;
-using TVCEmu.Dialogs;
-using TVCEmu.Helpers;
-using TVCEmu.Settings;
+using YATECommon.Settings;
 
-namespace TVCEmuCommon.Settings
+namespace YATECommon.Settings
 {
-	class SetupInputDataProvider
+  class SetupInputDataProvider
 	{
 		public SetupInputSettings Settings { get; private set; }
 		//private Joystick m_joystick;

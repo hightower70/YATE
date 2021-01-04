@@ -1,8 +1,8 @@
 ﻿using System.Windows;
-using TVCEmuCommon.Settings;
-using TVCEmuCommon.SetupPage;
+using YATECommon.Settings;
+using YATECommon.SetupPage;
 
-namespace TVCEmu.Dialogs
+namespace YATE.Dialogs
 {
 	/// <summary>
 	/// Interaction logic for SetupForms.xaml

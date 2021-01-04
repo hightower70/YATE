@@ -20,18 +20,17 @@
 // ----------------
 // System Setup Dialog
 ///////////////////////////////////////////////////////////////////////////////
-using TVCEmuCommon.Settings;
 using System.Windows;
-using TVCEmuCommon.ExpansionManager;
-using TVCEmu.Settings;
-using TVCEmuCommon.SetupPage;
+using YATECommon.ExpansionManager;
+using YATECommon.Settings;
+using YATECommon.SetupPage;
 
-namespace TVCEmu.Dialogs
+namespace YATE.Dialogs
 {
-	/// <summary>
-	/// Interaction logic for SetupDialog.xaml
-	/// </summary>
-	public partial class SetupDialog : Window
+  /// <summary>
+  /// Interaction logic for SetupDialog.xaml
+  /// </summary>
+  public partial class SetupDialog : Window
 	{
 		private ExpansionManager m_current_expansion_manager;
 
@@ -48,32 +47,40 @@ namespace TVCEmu.Dialogs
 
 		private void bAddModule_Click(object sender, RoutedEventArgs e)
 		{
-			m_current_expansion_manager.SetupRefreshModuleInfo();
+			m_current_expansion_manager.SetupRefreshAvailableExpansionInfo();
 
-			AddModuleDialog dialog = new AddModuleDialog();
-			dialog.Owner = this;
-			dialog.lbModules.DataContext = m_current_expansion_manager;
+			AddExpansionDialog dialog = new AddExpansionDialog(this, m_current_expansion_manager);
 
 			dialog.ShowDialog();
 
 			if(dialog.DialogResult ?? false)
 			{
-				foreach (ExpansionInfo module in dialog.lbModules.SelectedItems)
-				{
-					// load module
-					m_current_expansion_manager.SetupAddModule(module.DLLName);
+        m_current_expansion_manager.SetupAddModule(dialog.SelectedExpansion, dialog.SelectedSlotIndex);
 
-					// add module list
-					ModuleBaseSettingsInfo module_info = new ModuleBaseSettingsInfo(module.SectionName, module.DLLName, true);
-          SettingsFile.Editing.ModuleAdd(module_info);
-				}
-			}
-		}
+        //TODO:javitani
+        /*
+      foreach (ExpansionInfo module in dialog.lbModules.SelectedItems)
+      {
+        // load module
+        m_current_expansion_manager.SetupAddModule(module.DLLName);
+
+        // add module list
+        ModuleBaseSettingsInfo module_info = new ModuleBaseSettingsInfo(module.SectionName, module.DLLName, true);
+        SettingsFile.Editing.ModuleAdd(module_info);
+      }                                             */
+      }
+    }
 
 		private void bOK_Click(object sender, RoutedEventArgs e)
 		{
-			ChangeSetupPage(null); 
-			this.DialogResult = true;
+      if( tvSetupTree.SelectedItem is ExpansionSetupTreeInfo)
+      {
+        int module_index = (tvSetupTree.SelectedItem as ExpansionSetupTreeInfo).ModuleIndex;
+
+        ChangeSetupPage(null, m_current_expansion_manager.Expansions[module_index].ExpansionClass);
+      }
+
+      this.DialogResult = true;
 		}
 
 		private void tvSetupTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -95,14 +102,14 @@ namespace TVCEmu.Dialogs
 
         // get new page
         ExpansionInfo expansion_info = new ExpansionInfo();
-        m_current_expansion_manager.Modules[module_index].GetExpansionInfo(expansion_info);
+        m_current_expansion_manager.Expansions[module_index].ExpansionClass.GetExpansionInfo(expansion_info);
         new_page = expansion_info.SetupPages[page_index].Form;
 
-				ChangeSetupPage(new_page);
+        ChangeSetupPage(new_page, m_current_expansion_manager.Expansions[module_index].ExpansionClass);
 			}			
 		}
 
-		private void ChangeSetupPage(FrameworkElement in_new_page)
+		private void ChangeSetupPage(FrameworkElement in_new_page, ExpansionBase in_main_class)
 		{
 			FrameworkElement old_page;
 				
@@ -122,6 +129,7 @@ namespace TVCEmu.Dialogs
 			SetupPageBase.SetupPageEventArgs event_args = new SetupPageBase.SetupPageEventArgs();
 			event_args.NewPage = in_new_page;
 			event_args.OldPage = old_page;
+      event_args.MainClass = in_main_class;
 
 			// call changed event handler of the old page
 			if (old_page is SetupPageBase)
@@ -176,10 +184,12 @@ namespace TVCEmu.Dialogs
 			if (module_tree_info.ModuleIndex == 0)
 				return;
 
-      SettingsFile.Editing.ModuleRemove(module_tree_info.ModuleIndex - 1);
+      // remove module
+      LoadedExpansionInfo expansion = m_current_expansion_manager.Expansions[module_tree_info.ModuleIndex];
 
-			// remove module
-			m_current_expansion_manager.SetupRemoveModule(module_tree_info.ModuleIndex);
+      m_current_expansion_manager.SetupRemoveModule(module_tree_info.ModuleIndex);
+
+      SettingsFile.Editing.ModuleDeactivate(expansion.SectionName, expansion.ModuleIndex);
 		}
 	}
 }

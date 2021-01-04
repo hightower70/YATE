@@ -1,28 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using TVCEmu.Controls;
-using TVCHardware;
+using YATE.Controls;
+using YATE.Emulator.TVCHardware;
 
-namespace TVCEmu.Forms
+namespace YATE.Forms
 {
-	/// <summary>
-	/// Interaction logic for RegisterPage.xaml
-	/// </summary>
-	public partial class TimingPage : UserControl, INotifyPropertyChanged
+  /// <summary>
+  /// Interaction logic for RegisterPage.xaml
+  /// </summary>
+  public partial class TimingPage : UserControl, INotifyPropertyChanged
 	{
 		private DateTime m_prev_timestamp;
 		private ulong m_prev_t_state;

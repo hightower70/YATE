@@ -1,0 +1,39 @@
+﻿<tec:SetupPageBase x:Class="YATE.Dialogs.SetupAudio"
+						 xmlns:cc="clr-namespace:CustomControls;assembly=CustomControls"
+						 xmlns:tec="clr-namespace:YATECommon.SetupPage;assembly=YATECommon"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+	<Grid Margin="5">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="35"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="35"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="49*"/>
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="110"/>
+			<ColumnDefinition Width="1*"/>
+		</Grid.ColumnDefinitions>
+
+		<!-- Keybaord settings -->
+		<Grid Grid.Row="0" Grid.ColumnSpan="2">
+			<cc:Title Text="Audio Out Settings"/>
+		</Grid>
+		<TextBlock Grid.Row="1" Grid.Column="0" Text="Audio Device:" VerticalAlignment="Center"/>
+		<ComboBox Grid.Row="1" Grid.Column="1" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding AudioOutDevices}" SelectedValue="{Binding Settings.AudioOutDevice}"  DisplayMemberPath="DisplayName" SelectedValuePath="DisplayName"/>
+
+		<!-- Joystick settings -->
+		<Grid Grid.Row="3" Grid.ColumnSpan="2">
+			<cc:Title Text="Audio Input Settings"/>
+		</Grid>
+
+	</Grid>
+</tec:SetupPageBase>
+

@@ -1,14 +1,14 @@
-﻿using Models.Z80Emulator;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
-using TVCHardware;
+using YATE.Emulator.TVCHardware;
+using YATE.Emulator.Z80CPU;
 
-namespace TVCEmu.Controls
+namespace YATE.Controls
 {
-	public class ExecutionControl : IDisposable
+  public class ExecutionControl : IDisposable
 	{
 		#region · Constants · 
 		private int DebugEventPeriod = 200; // Debug event preiod in ms

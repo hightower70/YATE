@@ -2,21 +2,21 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using TVCEmu.Controls;
-using TVCEmu.Dialogs;
-using TVCEmu.Helpers;
-using TVCEmu.Models.TVCFiles;
-using TVCEmu.Settings;
-using TVCEmuCommon.ExpansionManager;
-using TVCEmuCommon.Settings;
-using TVCHardware;
+using YATE.Controls;
+using YATE.Dialogs;
+using YATE.Drivers;
+using YATE.Emulator.TVCFiles;
+using YATE.Emulator.TVCHardware;
+using YATE.Settings;
+using YATECommon.ExpansionManager;
+using YATECommon.Settings;
 
-namespace TVCEmu.Forms
+namespace YATE.Forms
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow : Window
+  /// <summary>
+  /// Interaction logic for MainWindow.xaml
+  /// </summary>
+  public partial class MainWindow : Window
 	{
 		private WriteableBitmap m_image_source = null;
 		private Int32Rect m_refresh_rect;
@@ -47,8 +47,8 @@ namespace TVCEmu.Forms
 			DataContext = this;
 
 			// load modules
-			ExpansionManager.Default.AddMainModule(typeof(ModuleInterface));
-			ExpansionManager.Default.LoadExpansions();
+			ExpansionManager.Default.AddMainModule(typeof(MainModule));
+      ExpansionManager.Default.LoadExpansions();
       ExpansionManager.Default.InstallExpansions(ExecutionControl.TVC);
 
       InitializeComponent();
@@ -205,8 +205,9 @@ namespace TVCEmu.Forms
 					SettingsFile.Default.Save();
 
 					// reload modules
-					ExpansionManager.Default.LoadExpansions();
-          ExpansionManager.Default.InstallExpansions(ExecutionControl.TVC);
+          //TODO:javitani
+					//ExpansionManager.Default.LoadExpansions();
+          //ExpansionManager.Default.InstallExpansions(ExecutionControl.TVC);
         }
       }
 		}

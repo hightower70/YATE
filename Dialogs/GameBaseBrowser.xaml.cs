@@ -4,10 +4,10 @@ using System.Data.OleDb;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using TVCEmu.Settings;
-using TVCEmuCommon.Settings;
+using YATE.Settings;
+using YATECommon.Settings;
 
-namespace TVCEmu.Dialogs
+namespace YATE.Dialogs
 {
   /// <summary>
   /// Interaction logic for GameBaseBrowser.xaml

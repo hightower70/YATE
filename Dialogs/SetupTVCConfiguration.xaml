@@ -1,0 +1,43 @@
+﻿<tec:SetupPageBase x:Class="YATE.Dialogs.SetupTVCConfiguration"
+						 xmlns:cc="clr-namespace:CustomControls;assembly=CustomControls"
+						 xmlns:tec="clr-namespace:YATECommon.SetupPage;assembly=YATECommon"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+	<Grid Margin="5">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="35"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="49*"/>
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="100"/>
+			<ColumnDefinition Width="1*"/>
+			<ColumnDefinition Width="50"/>
+		</Grid.ColumnDefinitions>
+
+		<Grid Grid.Row="0" Grid.ColumnSpan="3">
+			<cc:Title Text="Hardware Configuration"/>
+		</Grid>
+		
+		<TextBlock Grid.Row="1" Grid.Column="0" Text="Hardware version:" VerticalAlignment="Center"/>
+		<ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding HardwareVersionList}" SelectedIndex="{Binding Settings.HardwareVersion}" />
+
+		<TextBlock Grid.Row="2" Grid.Column="0" Text="ROM version:" VerticalAlignment="Center"/>
+		<ComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding ROMVersionList}" SelectedIndex="{Binding Settings.ROMVersion}" />
+
+		<TextBlock Grid.Row="3" Grid.Column="0" Text="Custom Sys ROM:" VerticalAlignment="Center"/>
+		<TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ROMPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
+		<Button Grid.Row="3" Grid.Column="2" Margin="3" Content="..." />
+
+		<TextBlock Grid.Row="4" Grid.Column="0" Text="Custom Ext ROM:" VerticalAlignment="Center"/>
+		<TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ExtROMPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
+		<Button Grid.Row="4" Grid.Column="2" Margin="3" Content="..." />
+	</Grid>
+</tec:SetupPageBase>

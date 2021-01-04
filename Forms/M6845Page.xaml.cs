@@ -3,15 +3,15 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using TVCEmu.Controls;
-using TVCHardware;
+using YATE.Controls;
+using YATE.Emulator.TVCHardware;
 
-namespace TVCEmu.Forms
+namespace YATE.Forms
 {
-	/// <summary>
-	/// Interaction logic for VideoPage.xaml
-	/// </summary>
-	public partial class M6845Page : UserControl, INotifyPropertyChanged
+  /// <summary>
+  /// Interaction logic for VideoPage.xaml
+  /// </summary>
+  public partial class M6845Page : UserControl, INotifyPropertyChanged
 	{
 		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionControl), typeof(M6845Page), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
 

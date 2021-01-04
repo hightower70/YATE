@@ -1,18 +1,17 @@
 ﻿using System.IO;
 using System.Reflection;
-using TVCEmuCommon.Settings;
 
-namespace TVCEmu.Settings
+namespace YATECommon.Settings
 {
-	public class MainGeneralSettings : BaseSettings
-	{
+  public class MainGeneralSettings : SettingsBase
+  {
 		// Path settings
 		public string ModulesPath { set; get; }
 
 		// Main window settings
 		public WindowPosSettings MainWindowPos;
 		
-		public MainGeneralSettings()	: base("Main","General")
+		public MainGeneralSettings()	: base(SettingsCategory.Emulator, "General")
 		{
 			MainWindowPos = new WindowPosSettings();
 			SetDefaultValues();

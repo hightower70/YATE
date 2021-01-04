@@ -1,9 +1,9 @@
 ﻿using System.Windows;
-using TVCEmu.Settings;
-using TVCEmuCommon.Settings;
-using TVCEmuCommon.SetupPage;
+using YATE.Settings;
+using YATECommon.Settings;
+using YATECommon.SetupPage;
 
-namespace TVCEmu.Dialogs
+namespace YATE.Dialogs
 {
 	/// <summary>
 	/// Interaction logic for SetupPath.xaml

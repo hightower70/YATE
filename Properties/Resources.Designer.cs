@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TVCEmu.Properties {
+namespace YATE.Properties {
     using System;
     
     

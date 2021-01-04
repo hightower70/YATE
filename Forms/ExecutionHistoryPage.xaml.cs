@@ -1,15 +1,15 @@
-﻿using Models.Z80Emulator;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using TVCEmu.Controls;
-using TVCHardware;
+using YATE.Controls;
+using YATE.Emulator.TVCHardware;
+using YATE.Emulator.Z80CPU;
 
-namespace TVCEmu.Forms
+namespace YATE.Forms
 {
-	/// <summary>
-	/// Interaction logic for ExecutionHistoryPage.xaml
-	/// </summary>
-	public partial class ExecutionHistoryPage : UserControl
+  /// <summary>
+  /// Interaction logic for ExecutionHistoryPage.xaml
+  /// </summary>
+  public partial class ExecutionHistoryPage : UserControl
 	{
 
 		private void DebuggerBreakEventDelegate(TVComputer in_sender)
