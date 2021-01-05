@@ -26,6 +26,9 @@ namespace HBF
 {
   public class HBFCardSettings : CardSettingsBase
   {
+    public int ROMType { get; set; }
+    public string ROMFileName { get; set; }
+
     public HBFCardSettings() : base(SettingsCategory.TVC, ExpansionMain.ModuleName)
     {
       SetDefaultValues();
@@ -34,6 +37,9 @@ namespace HBF
     override public void SetDefaultValues()
     {
       base.SetDefaultValues();
+
+      ROMType = 3;
+      ROMFileName = "";
     }
   }
 }

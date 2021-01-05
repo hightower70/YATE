@@ -20,14 +20,19 @@
 // ----------------
 // MultiCart configuration
 ///////////////////////////////////////////////////////////////////////////////
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using YATECommon.Settings;
 
 namespace MultiCart
 {
-  public class MultiCartSettings : ExpansionSettingsBase
+  public class MultiCartSettings : ExpansionSettingsBase, INotifyPropertyChanged
   {
-    public string ROM1FileName { get; set; }
-    public string ROM2FileName { get; set; }
+    private string m_ROM1_file_name;
+    private string m_ROM2_file_name;
+
+    public string ROM1FileName { get { return m_ROM1_file_name; } set { m_ROM1_file_name = value; OnPropertyChanged(); } }
+    public string ROM2FileName { get { return m_ROM2_file_name; } set { m_ROM2_file_name = value; OnPropertyChanged(); } }
 
     public MultiCartSettings() : base(SettingsCategory.TVC, ExpansionMain.ModuleName)
     {
@@ -41,5 +46,16 @@ namespace MultiCart
       ROM1FileName = "";
       ROM2FileName = "";
     }
+
+    #region · INotifyPropertyChanged Members ·
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string  propertyName = null)
+    {
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    #endregion
   }
 }

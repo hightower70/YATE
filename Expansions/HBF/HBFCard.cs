@@ -1,189 +1,190 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using YATECommon;
 using YATECommon.Helpers;
 
 namespace HBF
 {
-	public class HBFCard : ITVCCard
-	{
-		private const int NumberOfDrives = 4;
-		private const int InvalidDriveIndex = -1;
+  public class HBFCard : ITVCCard
+  {
+    private const int NumberOfDrives = 4;
+    private const int InvalidDriveIndex = -1;
 
-		private readonly int IndexPulsePeriod = 200000; // Index pulse period in microsec
-		private readonly int IndexPulseWidth = 4000; // Index pulse width in microsec
+    private readonly int IndexPulsePeriod = 200000; // Index pulse period in microsec
+    private readonly int IndexPulseWidth = 4000; // Index pulse width in microsec
 
-		private readonly ulong DataTransferSpeed = 250000; // data transfer speed in byte/sec
+    private readonly ulong DataTransferSpeed = 250000; // data transfer speed in byte/sec
 
-		private const int AddressLength = 6;
+    private const int AddressLength = 6;
 
-		// Register addresses
-		private const int PORT_COMMAND = 0;
-		private const int PORT_STATUS = 0;
-		private const int PORT_TRACK = 1;
-		private const int PORT_SECTOR = 2;
-		private const int PORT_DATA = 3;
-		private const int PORT_HWSTATUS = 4;
-		private const int PORT_PARAM = 4;
-		private const int PORT_PAGE = 8;
+    // Register addresses
+    private const int PORT_COMMAND = 0;
+    private const int PORT_STATUS = 0;
+    private const int PORT_TRACK = 1;
+    private const int PORT_SECTOR = 2;
+    private const int PORT_DATA = 3;
+    private const int PORT_HWSTATUS = 4;
+    private const int PORT_PARAM = 4;
+    private const int PORT_PAGE = 8;
 
-		private readonly int[] SteppingDelays = { 6, 12, 20, 30 };
+    private readonly int[] SteppingDelays = { 6, 12, 20, 30 };
 
-		private readonly byte[] m_address_buffer = new byte[AddressLength];
-					
+    private readonly byte[] m_address_buffer = new byte[AddressLength];
+
     /// <summary>
     /// Internal operation status
     /// </summary>
-		private enum OperationState
-		{
-			None,
+    private enum OperationState
+    {
+      None,
 
-			Seek,
+      Seek,
 
-			// ID field read
-			IDReadWaitForIndex,
-			IDRead,
+      // ID field read
+      IDReadWaitForIndex,
+      IDRead,
 
-			// Sector read
-			SectorRead,
+      // Sector read
+      SectorRead,
 
-			// Track write
-			TrackWriteWaitForIndex,
-			TrackWriteIDMark1,
-			TrackWriteIDMark2,
-			TrackWriteIDMark3,
-			TrackWriteIDMark,
-			TrackWriteTrack,
-			TrackWriteSide,
-			WriteSector
+      // Track write
+      TrackWriteWaitForIndex,
+      TrackWriteIDMark1,
+      TrackWriteIDMark2,
+      TrackWriteIDMark3,
+      TrackWriteIDMark,
+      TrackWriteTrack,
+      TrackWriteSide,
+      WriteSector
 
-		}
+    }
 
-		[Flags]
-		enum CommandFlags : byte
-		{
-			DELMARK = 0x01,
-			SIDECOMP = 0x02,
-			STEPRATE = 0x03,
-			VERIFY = 0x04,
-			WAIT15MS = 0x04,
-			LOADHEAD = 0x08,
-			SIDE = 0x08,
-			IRQ = 0x08,
-			SETTRACK = 0x10,
-			MULTIREC = 0x10
-		}
+    [Flags]
+    enum CommandFlags : byte
+    {
+      DELMARK = 0x01,
+      SIDECOMP = 0x02,
+      STEPRATE = 0x03,
+      VERIFY = 0x04,
+      WAIT15MS = 0x04,
+      LOADHEAD = 0x08,
+      SIDE = 0x08,
+      IRQ = 0x08,
+      SETTRACK = 0x10,
+      MULTIREC = 0x10
+    }
 
-		/// <summary>
-		/// Hardware status flag (external flag pins register)
-		/// </summary>
-		[Flags]
-		enum HardwareFlags : byte
-		{
-			DRQ = 0x80,          // Data request flag
-			INT = 0x01           // Interrupt flag
-		}
-          
+    /// <summary>
+    /// Hardware status flag (external flag pins register)
+    /// </summary>
+    [Flags]
+    enum HardwareFlags : byte
+    {
+      DRQ = 0x80,          // Data request flag
+      INT = 0x01           // Interrupt flag
+    }
+
     /// <summary>
     /// Parameter register bits
     /// </summary>
     [Flags]
-		enum ParametersFlags: byte
-		{
-			DriveSelect0 = 0x01,
-			DriveSelect1 = 0x02,
-			DriveSelect2 = 0x04,
-			DriveSelect3 = 0x08,
+    enum ParametersFlags : byte
+    {
+      DriveSelect0 = 0x01,
+      DriveSelect1 = 0x02,
+      DriveSelect2 = 0x04,
+      DriveSelect3 = 0x08,
 
-			DriveSelectMask = DriveSelect0 | DriveSelect1 | DriveSelect2 | DriveSelect3,
+      DriveSelectMask = DriveSelect0 | DriveSelect1 | DriveSelect2 | DriveSelect3,
 
-			HeadLoad = 0x10,
-			DoubleDensityEnabled = 0x20,
-			MotorOn = 0x40,
-			SideSelect = 0x80
-		}
+      HeadLoad = 0x10,
+      DoubleDensityEnabled = 0x20,
+      MotorOn = 0x40,
+      SideSelect = 0x80
+    }
 
-		/// <summary>
-		/// Internal status register bits
-		/// </summary>
-		[Flags]
-		enum StatusFlags : byte
-		{
-			// Common status bits:
-			BUSY = 0x01,          // Controller is executing a command
-			WRITEPROTECT = 0x40,  // The disk is write-protected
-			NOTREADY = 0x80,      // The drive is not ready
+    /// <summary>
+    /// Internal status register bits
+    /// </summary>
+    [Flags]
+    enum StatusFlags : byte
+    {
+      // Common status bits:
+      BUSY = 0x01,          // Controller is executing a command
+      WRITEPROTECT = 0x40,  // The disk is write-protected
+      NOTREADY = 0x80,      // The drive is not ready
 
-			// Type-1 command status:
-			INDEX = 0x02,         // Index mark detected
-			TRACK0 = 0x04,        // Head positioned at track #0
-			CRCERR = 0x08,        // CRC error in ID field
-			SEEKERR = 0x10,       // Seek error, track not verified
-			HEADLOAD = 0x20,      // Head loaded
+      // Type-1 command status:
+      INDEX = 0x02,         // Index mark detected
+      TRACK0 = 0x04,        // Head positioned at track #0
+      CRCERR = 0x08,        // CRC error in ID field
+      SEEKERR = 0x10,       // Seek error, track not verified
+      HEADLOAD = 0x20,      // Head loaded
 
-			// Type-2 and Type-3 command status:
-			DRQ = 0x02,           // Data request pending
-			LOSTDATA = 0x04,      // Data has been lost (missed DRQ)
-			ERRCODE = 0x18,       // Error code bits:
-			BADDATA = 0x08,       // 1 = bad data CRC
-			NOTFOUND = 0x10,      // 2 = sector not found
-			BADID = 0x18,         // 3 = bad ID field CRC
-			DELETED = 0x20,       // Deleted data mark (when reading)
-			WRFAULT = 0x20        // Write fault (when writing)
-		}
+      // Type-2 and Type-3 command status:
+      DRQ = 0x02,           // Data request pending
+      LOSTDATA = 0x04,      // Data has been lost (missed DRQ)
+      ERRCODE = 0x18,       // Error code bits:
+      BADDATA = 0x08,       // 1 = bad data CRC
+      NOTFOUND = 0x10,      // 2 = sector not found
+      BADID = 0x18,         // 3 = bad ID field CRC
+      DELETED = 0x20,       // Deleted data mark (when reading)
+      WRFAULT = 0x20        // Write fault (when writing)
+    }
 
-		private ITVComputer m_tvcomputer;
+    private ITVComputer m_tvcomputer;
 
-		// CRC calculator
-		private CRC16 m_crc_generator;
+    // CRC calculator
+    private CRC16 m_crc_generator;
 
-		// Timing values
-		private ulong m_index_pulse_period;
-		private ulong m_index_pulse_width;
+    // Timing values
+    private ulong m_index_pulse_period;
+    private ulong m_index_pulse_width;
 
-		/// <summary>FD1793 registers</summary>
-		private StatusFlags m_fdc_status;
-		private byte m_fdc_status_mode = 0;
-		private byte m_fdc_command;
-		private byte m_fdc_track;
-		private byte m_fdc_sector;
-		private byte m_fdc_data;
-		private bool m_fdc_reset_state;
-		private byte m_fdc_last_step_direction;
-		private bool m_prev_index_pulse_state;
+    /// <summary>FD1793 registers</summary>
+    private StatusFlags m_fdc_status;
+    private byte m_fdc_status_mode = 0;
+    private byte m_fdc_command;
+    private byte m_fdc_track;
+    private byte m_fdc_sector;
+    private byte m_fdc_data;
+    private bool m_fdc_reset_state;
+    private byte m_fdc_last_step_direction;
+    private bool m_prev_index_pulse_state;
 
-		/// <summary>HBU card registers</summary>
-		private HardwareFlags m_reg_hw_status;
-		private ParametersFlags m_reg_param;
-		private byte m_reg_page;
+    /// <summary>HBU card registers</summary>
+    private HardwareFlags m_reg_hw_status;
+    private ParametersFlags m_reg_param;
+    private byte m_reg_page;
 
-		/// <summary>Virtual disk images</summary>
-		private DiskDrive[] m_disk_drives;
-		private int m_current_drive_index;
+    /// <summary>Virtual disk images</summary>
+    private DiskDrive[] m_disk_drives;
+    private int m_current_drive_index;
 
-		/// <summary>Pending status data</summary>
-		private ulong m_pending_delay = 0;
-		private ulong m_operation_start_tick = 0;
-		private StatusFlags m_pending_status = 0;
-		private HardwareFlags m_pending_hw_status = 0;
-		private byte m_pending_track = 0;
+    /// <summary>Pending status data</summary>
+    private ulong m_pending_delay = 0;
+    private ulong m_operation_start_tick = 0;
+    private StatusFlags m_pending_status = 0;
+    private HardwareFlags m_pending_hw_status = 0;
+    private byte m_pending_track = 0;
 
-		private OperationState m_operation_state;
-		
-		private int m_data_count = 0;
-		private int m_data_length = 0;
+    private OperationState m_operation_state;
 
-		private bool m_fast_operation = false;
+    private int m_data_count = 0;
+    private int m_data_length = 0;
 
-		private byte[] m_card_rom;
-		private byte[] m_card_ram;
+    private bool m_fast_operation = false;
 
-		private const int CardROMSize = 16384;
-		private const int CardRAMSize = 4096;
-		private const int CardROMPageSize = 4096;
+    private byte[] m_card_rom;
+    private byte[] m_card_ram;
 
-		private bool m_head_loaded;
+    private const int CardROMSize = 16384;
+    private const int CardRAMSize = 4096;
+    private const int CardROMPageSize = 4096;
+
+    private bool m_head_loaded;
 
     private HBFCardSettings m_settings;
 
@@ -202,32 +203,28 @@ namespace HBF
 
 
     public HBFCard()
-		{
-			Reset();
+    {
+      Reset();
 
-			// CRC calculator init
-			m_crc_generator = new CRC16(0x1021, 0xffff);
+      // CRC calculator init
+      m_crc_generator = new CRC16(0x1021, 0xffff);
 
-			// reserve memory
-			m_card_ram = new byte[CardRAMSize];
-			m_card_rom = new byte[CardROMSize];
+      // reserve memory
+      m_card_ram = new byte[CardRAMSize];
+      m_card_rom = new byte[CardROMSize];
 
-			// create disk drives
-			m_disk_drives = new DiskDrive[NumberOfDrives];
+      // create disk drives
+      m_disk_drives = new DiskDrive[NumberOfDrives];
 
-			for (int i = 0; i < NumberOfDrives; i++)
-			{
-				m_disk_drives[i] = new DiskDrive();
-			}
-
-      LoadCardRom(@"..\..\roms\VT-DOS12-DISK.ROM");
-      //LoadCardRom(@"..\..\roms\UPM-DISK.ROM");
-
+      for (int i = 0; i < NumberOfDrives; i++)
+      {
+        m_disk_drives[i] = new DiskDrive();
+      }
 
       m_disk_drives[0] = new DiskDrive();
-			m_disk_drives[0].Geometry.NumberOfTracks = 80;
-			m_disk_drives[0].Geometry.NumberOfSides = 1;
-			m_disk_drives[0].Geometry.SectorPerTrack = 9;
+      m_disk_drives[0].Geometry.NumberOfTracks = 80;
+      m_disk_drives[0].Geometry.NumberOfSides = 1;
+      m_disk_drives[0].Geometry.SectorPerTrack = 9;
       //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
       m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
       //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_TEST.dsk");
@@ -238,20 +235,43 @@ namespace HBF
     public void SetSettings(HBFCardSettings in_settings)
     {
       m_settings = in_settings;
+
+      // load ROM content
+      switch (m_settings.ROMType)
+      {
+        // customn version
+        case 0:
+          break;
+
+        // UPM
+        case 1:
+          LoadCardRomFromResource("HBF.Resources.UPM-DISK.ROM");
+          break;
+
+        // VT-DOS 1.1
+        case 2:
+          LoadCardRomFromResource("HBF.Resources.VT-DOS11-DISK.ROM");
+          break;
+
+        // VT-DOS 1.2
+        case 3:
+          LoadCardRomFromResource("HBF.Resources.VT-DOS12-DISK.ROM");
+          break;
+      }
     }
-      
+
     /// <summary>
     /// Installs HBF card to the system
     /// </summary>
     /// <param name="in_tvcomputer"></param>
     public void Install(ITVComputer in_tvcomputer)
-		{
-			m_tvcomputer = in_tvcomputer;
+    {
+      m_tvcomputer = in_tvcomputer;
 
       // set timing
       m_index_pulse_period = in_tvcomputer.MicrosecToCPUTicks(IndexPulsePeriod);
-			m_index_pulse_width = in_tvcomputer.MicrosecToCPUTicks(IndexPulseWidth);
-		}
+      m_index_pulse_width = in_tvcomputer.MicrosecToCPUTicks(IndexPulseWidth);
+    }
 
     /// <summary>
     /// Removes card from the system
@@ -266,11 +286,36 @@ namespace HBF
     /// </summary>
     /// <param name="in_file_name">File name containing the binary rom content</param>
 		public void LoadCardRom(string in_file_name)
-		{
-			byte[] data = File.ReadAllBytes(in_file_name);
+    {
+      byte[] data = File.ReadAllBytes(in_file_name);
 
-			Array.Copy(data, 0, m_card_rom, 0, data.Length);
-		}
+      Array.Copy(data, 0, m_card_rom, 0, data.Length);
+    }
+
+    /// <summary>
+    /// Loads card ROM content from the given resource file
+    /// </summary>
+    /// <param name="in_resource_name"></param>
+    public void LoadCardRomFromResource(string in_resource_name)
+    {
+      // load default key mapping
+      Assembly assembly = Assembly.GetExecutingAssembly();
+
+      using (Stream stream = assembly.GetManifestResourceStream(in_resource_name))
+      {
+        using (BinaryReader binary_reader = new BinaryReader(stream))
+        {
+          byte[] data = binary_reader.ReadBytes((int)stream.Length);
+
+          int byte_to_copy = data.Length;
+
+          if (byte_to_copy > m_card_rom.Length)
+            byte_to_copy = m_card_rom.Length;
+
+          Array.Copy(data, 0, m_card_rom, 0, byte_to_copy);
+        }
+      }
+    }
 
     /// <summary>
     /// Memory read function for card mamory
@@ -278,12 +323,12 @@ namespace HBF
     /// <param name="in_address">Address of the memory</param>
     /// <returns>Byte from the card memory</returns>
 		public byte MemoryRead(ushort in_address)
-		{
-			if (in_address < CardROMPageSize)
-				return m_card_rom[in_address + ((m_reg_page >> 4) & 0x03) * CardROMPageSize];
-			else
-				return m_card_ram[in_address - CardROMPageSize];
-		}
+    {
+      if (in_address < CardROMPageSize)
+        return m_card_rom[in_address + ((m_reg_page >> 4) & 0x03) * CardROMPageSize];
+      else
+        return m_card_ram[in_address - CardROMPageSize];
+    }
 
     /// <summary>
     /// Writes card memory
@@ -291,277 +336,277 @@ namespace HBF
     /// <param name="in_address">Addres of the memory</param>
     /// <param name="in_byte">Data to write</param>
 		public void MemoryWrite(ushort in_address, byte in_byte)
-		{
-			if (in_address < CardROMPageSize)
-				return; // no ROM write
-			else
-				m_card_ram[in_address - CardROMPageSize] = in_byte;
-		}
+    {
+      if (in_address < CardROMPageSize)
+        return; // no ROM write
+      else
+        m_card_ram[in_address - CardROMPageSize] = in_byte;
+    }
 
     /// <summary>
     /// Gets ID byte of the card
     /// </summary>
     /// <returns></returns>
 		public byte GetID()
-		{
-			return 0x02;
-		}
+    {
+      return 0x02;
+    }
 
     /// <summary>
     /// Hardware reset of the card
     /// </summary>
 		public void Reset()
-		{
-			// reset card
-			m_reg_page = 0;
-			m_reg_param = 0;
-			m_fdc_reset_state = true;
-			m_current_drive_index = 0;
+    {
+      // reset card
+      m_reg_page = 0;
+      m_reg_param = 0;
+      m_fdc_reset_state = true;
+      m_current_drive_index = 0;
 
-			// reset FDC1793
-			m_fdc_status = 0;
-			m_fdc_status_mode = 1;
-			m_fdc_command = 0;
-			m_fdc_track = 0;
-			m_fdc_sector = 0;
-			m_fdc_data = 0;
-			m_fdc_last_step_direction = 0;
+      // reset FDC1793
+      m_fdc_status = 0;
+      m_fdc_status_mode = 1;
+      m_fdc_command = 0;
+      m_fdc_track = 0;
+      m_fdc_sector = 0;
+      m_fdc_data = 0;
+      m_fdc_last_step_direction = 0;
 
-			m_head_loaded = false;
-			
-			m_data_count = 0;
-			m_data_length = 0;
+      m_head_loaded = false;
 
-			m_operation_state = OperationState.None;
-		}
+      m_data_count = 0;
+      m_data_length = 0;
 
-	/** Read1793() ***********************************************/
-	/** Read value from a WD1793 register A. Returns read data  **/
-	/** on success or 0xFF on failure (bad register address).   **/
-	/*************************************************************/
-	public void PortRead(ushort in_address, ref byte inout_data)
-		{
-			switch (in_address & 0x0f)
-			{
-				// read status register
-				case PORT_STATUS:
-					if (m_fdc_reset_state)
-						return;
+      m_operation_state = OperationState.None;
+    }
 
-					// If no disk present, NOTREADY
-					if (IsDriveReady())
-						m_fdc_status &= ~StatusFlags.NOTREADY;
-					else
-						m_fdc_status |= StatusFlags.NOTREADY;
+    /** Read1793() ***********************************************/
+    /** Read value from a WD1793 register A. Returns read data  **/
+    /** on success or 0xFF on failure (bad register address).   **/
+    /*************************************************************/
+    public void PortRead(ushort in_address, ref byte inout_data)
+    {
+      switch (in_address & 0x0f)
+      {
+        // read status register
+        case PORT_STATUS:
+          if (m_fdc_reset_state)
+            return;
 
-					// When reading status, clear interrupt
-					m_reg_hw_status &= ~(HardwareFlags.INT);
+          // If no disk present, NOTREADY
+          if (IsDriveReady())
+            m_fdc_status &= ~StatusFlags.NOTREADY;
+          else
+            m_fdc_status |= StatusFlags.NOTREADY;
 
-					// in status mode 0 handle index pulses
-					switch (m_fdc_status_mode)
-					{
-						// Status mode I
-						case 1:
-							{
-								// index pulse
-								if (IsIndexPulse())
-									m_fdc_status |= StatusFlags.INDEX;
-								else
-									m_fdc_status &= ~StatusFlags.INDEX;
+          // When reading status, clear interrupt
+          m_reg_hw_status &= ~(HardwareFlags.INT);
 
-								// track 0 bit 
-								if (m_current_drive_index == InvalidDriveIndex)
-								{
-									m_fdc_status &= ~StatusFlags.TRACK0;
-								}
-								else
-								{
-									if (m_disk_drives[m_current_drive_index].Track == 0)
-										m_fdc_status |= StatusFlags.TRACK0;
-									else
-										m_fdc_status &= ~StatusFlags.TRACK0;
-								}
+          // in status mode 0 handle index pulses
+          switch (m_fdc_status_mode)
+          {
+            // Status mode I
+            case 1:
+              {
+                // index pulse
+                if (IsIndexPulse())
+                  m_fdc_status |= StatusFlags.INDEX;
+                else
+                  m_fdc_status &= ~StatusFlags.INDEX;
 
-								// head loaded bit
-								if (m_head_loaded)
-									m_fdc_status |= StatusFlags.HEADLOAD;
-								else
-									m_fdc_status &= ~StatusFlags.HEADLOAD;
-							}
-							break;
+                // track 0 bit 
+                if (m_current_drive_index == InvalidDriveIndex)
+                {
+                  m_fdc_status &= ~StatusFlags.TRACK0;
+                }
+                else
+                {
+                  if (m_disk_drives[m_current_drive_index].Track == 0)
+                    m_fdc_status |= StatusFlags.TRACK0;
+                  else
+                    m_fdc_status &= ~StatusFlags.TRACK0;
+                }
+
+                // head loaded bit
+                if (m_head_loaded)
+                  m_fdc_status |= StatusFlags.HEADLOAD;
+                else
+                  m_fdc_status &= ~StatusFlags.HEADLOAD;
+              }
+              break;
 
 
-						// Status mode II
-						case 2:
-							{
-								// update hw status register
-								UpdateHardwareStatus();
+            // Status mode II
+            case 2:
+              {
+                // update hw status register
+                UpdateHardwareStatus();
 
-								// copy DRQ bit from HW register
-								if ((m_reg_hw_status & HardwareFlags.DRQ) != 0)
-									m_fdc_status |= StatusFlags.DRQ;
-								else
-									m_fdc_status &= ~StatusFlags.DRQ;
-							}
-							break;
+                // copy DRQ bit from HW register
+                if ((m_reg_hw_status & HardwareFlags.DRQ) != 0)
+                  m_fdc_status |= StatusFlags.DRQ;
+                else
+                  m_fdc_status &= ~StatusFlags.DRQ;
+              }
+              break;
 
-						// Status mode III
-						case 3:
-							{
-								// update hw status register
-								UpdateHardwareStatus();
+            // Status mode III
+            case 3:
+              {
+                // update hw status register
+                UpdateHardwareStatus();
 
-								// copy DRQ bit from HW register
-								if ((m_reg_hw_status & HardwareFlags.DRQ) != 0)
-									m_fdc_status |= StatusFlags.DRQ;
-								else
-									m_fdc_status &= ~StatusFlags.DRQ;
-							}
-							break;
-					}
+                // copy DRQ bit from HW register
+                if ((m_reg_hw_status & HardwareFlags.DRQ) != 0)
+                  m_fdc_status |= StatusFlags.DRQ;
+                else
+                  m_fdc_status &= ~StatusFlags.DRQ;
+              }
+              break;
+          }
 
           // return status
-					inout_data = (byte)m_fdc_status;
+          inout_data = (byte)m_fdc_status;
 
-					return;
+          return;
 
-				// return track register
-				case PORT_TRACK:
-					if (m_fdc_reset_state)
-						return;
+        // return track register
+        case PORT_TRACK:
+          if (m_fdc_reset_state)
+            return;
 
-					inout_data = m_fdc_track;
+          inout_data = m_fdc_track;
 
-					return;
+          return;
 
-				// return sector register
-				case PORT_SECTOR:
-					if (m_fdc_reset_state)
-						return;
+        // return sector register
+        case PORT_SECTOR:
+          if (m_fdc_reset_state)
+            return;
 
-					inout_data = m_fdc_sector;
+          inout_data = m_fdc_sector;
 
-					return;
+          return;
 
-				case PORT_DATA:
-					switch(m_operation_state)
-					{
-						case OperationState.IDRead:
-						case OperationState.SectorRead:
-							m_reg_hw_status &= ~HardwareFlags.DRQ;
-							break;
-					}
+        case PORT_DATA:
+          switch (m_operation_state)
+          {
+            case OperationState.IDRead:
+            case OperationState.SectorRead:
+              m_reg_hw_status &= ~HardwareFlags.DRQ;
+              break;
+          }
 
-					inout_data = m_fdc_data;
+          inout_data = m_fdc_data;
 
-					return;
+          return;
 
-				case PORT_HWSTATUS:
-					UpdateHardwareStatus();
-					inout_data = (byte)m_reg_hw_status;
-					return;
-			}
-		}
+        case PORT_HWSTATUS:
+          UpdateHardwareStatus();
+          inout_data = (byte)m_reg_hw_status;
+          return;
+      }
+    }
 
-		/** Write1793() **********************************************/
-		/** Write value V into WD1793 register A. Returns DRQ/IRQ   **/
-		/** values.                                                 **/
-		/*************************************************************/
-		public void PortWrite(ushort in_address, byte in_value)
-		{
-			if ((in_address & 0x0f) != 8)
-				Debug.Write((in_address & 0x0f).ToString("X2") + ":" + in_value.ToString("X2") + " = ");
+    /** Write1793() **********************************************/
+    /** Write value V into WD1793 register A. Returns DRQ/IRQ   **/
+    /** values.                                                 **/
+    /*************************************************************/
+    public void PortWrite(ushort in_address, byte in_value)
+    {
+      if ((in_address & 0x0f) != 8)
+        Debug.Write((in_address & 0x0f).ToString("X2") + ":" + in_value.ToString("X2") + " = ");
 
-			switch (in_address & 0x0f)
-			{
-				// command address
-				case PORT_COMMAND:
-					m_fdc_command = in_value;
+      switch (in_address & 0x0f)
+      {
+        // command address
+        case PORT_COMMAND:
+          m_fdc_command = in_value;
 
-					// Reset interrupt request
-					m_reg_hw_status &= ~(HardwareFlags.INT);
+          // Reset interrupt request
+          m_reg_hw_status &= ~(HardwareFlags.INT);
 
-					// If it is FORCE-IRQ command...
-					if ((in_value & 0xF0) == 0xD0)
-					{
-						// Reset any executing command
-						m_data_length = 0;
-						m_data_count = 0;
+          // If it is FORCE-IRQ command...
+          if ((in_value & 0xF0) == 0xD0)
+          {
+            // Reset any executing command
+            m_data_length = 0;
+            m_data_count = 0;
 
-						// Either reset BUSY flag or reset all flags if BUSY=0
-						if ((m_fdc_status & StatusFlags.BUSY) != 0)
-							m_fdc_status &= ~StatusFlags.BUSY;
-						else
-							m_fdc_status = m_disk_drives[m_current_drive_index].Track == 0 ? StatusFlags.TRACK0 : 0;
+            // Either reset BUSY flag or reset all flags if BUSY=0
+            if ((m_fdc_status & StatusFlags.BUSY) != 0)
+              m_fdc_status &= ~StatusFlags.BUSY;
+            else
+              m_fdc_status = m_disk_drives[m_current_drive_index].Track == 0 ? StatusFlags.TRACK0 : 0;
 
-						// Cause immediate interrupt if requested
-						if ((in_value & (byte)CommandFlags.IRQ) != 0)
-							m_reg_hw_status = HardwareFlags.INT;
+            // Cause immediate interrupt if requested
+            if ((in_value & (byte)CommandFlags.IRQ) != 0)
+              m_reg_hw_status = HardwareFlags.INT;
 
-						// Done
-						return;
-					}
+            // Done
+            return;
+          }
 
-					// If busy, drop out
-					if ((m_fdc_status & StatusFlags.BUSY) != 0)
-						break;
+          // If busy, drop out
+          if ((m_fdc_status & StatusFlags.BUSY) != 0)
+            break;
 
-					// Reset status register
-					m_fdc_status = 0x00;
-					m_reg_hw_status = 0x00;
+          // Reset status register
+          m_fdc_status = 0x00;
+          m_reg_hw_status = 0x00;
 
-					// Depending on the command...
-					switch (in_value & 0xF0)
-					{
-						// RESTORE (seek track 0)
-						case 0x00:
-							Debug.WriteLine("Restore");
+          // Depending on the command...
+          switch (in_value & 0xF0)
+          {
+            // RESTORE (seek track 0)
+            case 0x00:
+              Debug.WriteLine("Restore");
 
-							// command group I
-							m_fdc_status_mode = 1;
+              // command group I
+              m_fdc_status_mode = 1;
 
               // set head load
               m_head_loaded = ((in_value & (byte)CommandFlags.LOADHEAD) != 0);
 
-							// if already at track zero
-							if (m_disk_drives[m_current_drive_index].Track == 0)
-							{
-								m_fdc_status |= StatusFlags.TRACK0;
-								m_reg_hw_status |= HardwareFlags.INT;
-								m_fdc_track = 0;
-								m_operation_state = OperationState.None;
-							}
-							else
-							{
-								// not on the first track -> start operation
-								StartOperation((m_disk_drives[m_current_drive_index].Geometry.NumberOfTracks / 2) * SteppingDelays[in_value & (byte)CommandFlags.STEPRATE], StatusFlags.TRACK0 | (StatusFlags)(((in_value & (byte)CommandFlags.LOADHEAD) != 0) ? StatusFlags.HEADLOAD : 0), HardwareFlags.INT, 0);
-							}
-							break;
+              // if already at track zero
+              if (m_disk_drives[m_current_drive_index].Track == 0)
+              {
+                m_fdc_status |= StatusFlags.TRACK0;
+                m_reg_hw_status |= HardwareFlags.INT;
+                m_fdc_track = 0;
+                m_operation_state = OperationState.None;
+              }
+              else
+              {
+                // not on the first track -> start operation
+                StartOperation((m_disk_drives[m_current_drive_index].Geometry.NumberOfTracks / 2) * SteppingDelays[in_value & (byte)CommandFlags.STEPRATE], StatusFlags.TRACK0 | (StatusFlags)(((in_value & (byte)CommandFlags.LOADHEAD) != 0) ? StatusFlags.HEADLOAD : 0), HardwareFlags.INT, 0);
+              }
+              break;
 
-						// SEEK command
-						case 0x10:
-							Debug.WriteLine("Seek: {0:x2}", m_fdc_data);
+            // SEEK command
+            case 0x10:
+              Debug.WriteLine("Seek: {0:x2}", m_fdc_data);
 
-							// command group I
-							m_fdc_status_mode = 1;
+              // command group I
+              m_fdc_status_mode = 1;
 
               // set head load
               m_head_loaded = ((in_value & (byte)CommandFlags.LOADHEAD) != 0);
 
               // Reset any executing command
               m_data_count = 0;
-							m_data_length = 0;
+              m_data_length = 0;
 
-							StartOperation(Math.Abs( (int)m_fdc_data - (int)m_fdc_track) * SteppingDelays[in_value & (byte)CommandFlags.STEPRATE], (StatusFlags)(((in_value & (byte)CommandFlags.LOADHEAD) != 0) ? StatusFlags.HEADLOAD : 0), HardwareFlags.INT, m_fdc_data);
-							break;
+              StartOperation(Math.Abs((int)m_fdc_data - (int)m_fdc_track) * SteppingDelays[in_value & (byte)CommandFlags.STEPRATE], (StatusFlags)(((in_value & (byte)CommandFlags.LOADHEAD) != 0) ? StatusFlags.HEADLOAD : 0), HardwareFlags.INT, m_fdc_data);
+              break;
 
-						case 0x20: // STEP
-						case 0x30: // STEP-AND-UPDATE
-						case 0x40: // STEP-IN
-						case 0x50: // STEP-IN-AND-UPDATE
-						case 0x60: // STEP-OUT
-						case 0x70: // STEP-OUT-AND-UPDATE
-							{
+            case 0x20: // STEP
+            case 0x30: // STEP-AND-UPDATE
+            case 0x40: // STEP-IN
+            case 0x50: // STEP-IN-AND-UPDATE
+            case 0x60: // STEP-OUT
+            case 0x70: // STEP-OUT-AND-UPDATE
+              {
                 Debug.WriteLine("Step");
 
                 // command group I
@@ -572,89 +617,89 @@ namespace HBF
 
                 // Either store or fetch step direction
                 if ((in_value & 0x40) != 0)
-									m_fdc_last_step_direction = (byte)(in_value & 0x20);
-								else
-									in_value = (byte)((in_value & ~0x20) | m_fdc_last_step_direction);
+                  m_fdc_last_step_direction = (byte)(in_value & 0x20);
+                else
+                  in_value = (byte)((in_value & ~0x20) | m_fdc_last_step_direction);
 
-								// Step the head, update track register if requested 
-								byte target_track = m_disk_drives[m_current_drive_index].Track;
-								if ((in_value & 0x20) != 0)
-								{
-									if (m_disk_drives[m_current_drive_index].Track > 0)
-										target_track--;
-								}
-								else
-								{
-									 target_track++;
-								}
+                // Step the head, update track register if requested 
+                byte target_track = m_disk_drives[m_current_drive_index].Track;
+                if ((in_value & 0x20) != 0)
+                {
+                  if (m_disk_drives[m_current_drive_index].Track > 0)
+                    target_track--;
+                }
+                else
+                {
+                  target_track++;
+                }
 
-								m_disk_drives[m_current_drive_index].Track = target_track;
+                m_disk_drives[m_current_drive_index].Track = target_track;
 
-								// Update track register if requested
-								StatusFlags new_status = 0;
-								if ((in_value & (byte)CommandFlags.SETTRACK) != 0)
-								{
-									if (target_track >= m_disk_drives[m_current_drive_index].Geometry.NumberOfTracks)
-										new_status = StatusFlags.SEEKERR;
+                // Update track register if requested
+                StatusFlags new_status = 0;
+                if ((in_value & (byte)CommandFlags.SETTRACK) != 0)
+                {
+                  if (target_track >= m_disk_drives[m_current_drive_index].Geometry.NumberOfTracks)
+                    new_status = StatusFlags.SEEKERR;
 
-										m_fdc_track = m_disk_drives[m_current_drive_index].Track;
-								}
+                  m_fdc_track = m_disk_drives[m_current_drive_index].Track;
+                }
 
-								StartOperation(SteppingDelays[in_value & (byte)CommandFlags.STEPRATE], new_status, HardwareFlags.INT, target_track);
-							}
-							break;
+                StartOperation(SteppingDelays[in_value & (byte)CommandFlags.STEPRATE], new_status, HardwareFlags.INT, target_track);
+              }
+              break;
 
-						// WRITE-TRACK
-						case 0xF0:
-							// command group III
-							m_fdc_status_mode = 3;
+            // WRITE-TRACK
+            case 0xF0:
+              // command group III
+              m_fdc_status_mode = 3;
 
-							m_operation_start_tick = m_tvcomputer.GetCPUTicks();
-							m_operation_state = OperationState.TrackWriteWaitForIndex;
-							m_prev_index_pulse_state = IsIndexPulse();
+              m_operation_start_tick = m_tvcomputer.GetCPUTicks();
+              m_operation_state = OperationState.TrackWriteWaitForIndex;
+              m_prev_index_pulse_state = IsIndexPulse();
 
-							m_fdc_status = StatusFlags.BUSY;
-							m_reg_hw_status = HardwareFlags.DRQ;
+              m_fdc_status = StatusFlags.BUSY;
+              m_reg_hw_status = HardwareFlags.DRQ;
 
-							break;
+              break;
 
-						// Sector read
-						case 0x80:	// single sector read
-						case 0x90:  // multiple sector read
-							Debug.WriteLine("Sector read, T:{0:d}, S:{1:d}, H:{2:d}", m_fdc_track, m_fdc_sector, GetCurrentDriveSide());
+            // Sector read
+            case 0x80:  // single sector read
+            case 0x90:  // multiple sector read
+              Debug.WriteLine("Sector read, T:{0:d}, S:{1:d}, H:{2:d}", m_fdc_track, m_fdc_sector, GetCurrentDriveSide());
 
-							// check drive
-							if (m_current_drive_index == InvalidDriveIndex || !m_disk_drives[m_current_drive_index].IsDiskPresent())
-							{
-								m_fdc_status = StatusFlags.NOTREADY;
-							}
-							else
-							{
-								// check sector and track address
-								if (m_fdc_track != m_disk_drives[m_current_drive_index].Track || m_fdc_sector < 1 || m_fdc_sector > m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack)
-								{
-									m_fdc_status = StatusFlags.NOTFOUND;
-									m_reg_hw_status = HardwareFlags.INT;
-									m_operation_state = OperationState.None;
-									m_fdc_status_mode = 2;
-									m_data_length = 0;
-								}
-								else
-								{
-									m_disk_drives[m_current_drive_index].Track = m_fdc_track;
+              // check drive
+              if (m_current_drive_index == InvalidDriveIndex || !m_disk_drives[m_current_drive_index].IsDiskPresent())
+              {
+                m_fdc_status = StatusFlags.NOTREADY;
+              }
+              else
+              {
+                // check sector and track address
+                if (m_fdc_track != m_disk_drives[m_current_drive_index].Track || m_fdc_sector < 1 || m_fdc_sector > m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack)
+                {
+                  m_fdc_status = StatusFlags.NOTFOUND;
+                  m_reg_hw_status = HardwareFlags.INT;
+                  m_operation_state = OperationState.None;
+                  m_fdc_status_mode = 2;
+                  m_data_length = 0;
+                }
+                else
+                {
+                  m_disk_drives[m_current_drive_index].Track = m_fdc_track;
 
-									m_data_count = 0;
-									m_data_length = m_disk_drives[m_current_drive_index].Geometry.SectorLength * (((in_value & 0x10) != 0) ? m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack - m_fdc_sector + 1 : 1);
-									m_operation_start_tick = m_tvcomputer.GetCPUTicks();
-									m_operation_state = OperationState.SectorRead;
+                  m_data_count = 0;
+                  m_data_length = m_disk_drives[m_current_drive_index].Geometry.SectorLength * (((in_value & 0x10) != 0) ? m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack - m_fdc_sector + 1 : 1);
+                  m_operation_start_tick = m_tvcomputer.GetCPUTicks();
+                  m_operation_state = OperationState.SectorRead;
                   m_fdc_status = StatusFlags.BUSY;
                   m_fdc_status_mode = 2;
                   m_head_loaded = true;
 
                   m_disk_drives[m_current_drive_index].SeekSector(m_fdc_sector, GetCurrentDriveSide());
-								}
-							}
-							break;
+                }
+              }
+              break;
 #if false
 						case 0xA0:
 						case 0xB0: /* WRITE-SECTORS */
@@ -681,27 +726,27 @@ namespace HBF
 							}
 							break;
 #endif
-						// Read address
-						case 0xC0:
-							Debug.WriteLine("Read address", in_value);
+            // Read address
+            case 0xC0:
+              Debug.WriteLine("Read address", in_value);
 
-							m_crc_generator.Reset();
-							m_address_buffer[0] = GetCurrentDriveTrack();
-							m_address_buffer[1] = GetCurrentDriveSide();
-							m_address_buffer[2] = 1;
-							m_address_buffer[3] = GetCurrentSectorLength();
-							m_crc_generator.Add(m_address_buffer, 4);
-							m_address_buffer[4] = m_crc_generator.CRCLow;
-							m_address_buffer[5] = m_crc_generator.CRCHigh;
-							m_data_count = 0;
-							m_data_length = 6;
-							m_fdc_sector = GetCurrentDriveTrack();
+              m_crc_generator.Reset();
+              m_address_buffer[0] = GetCurrentDriveTrack();
+              m_address_buffer[1] = GetCurrentDriveSide();
+              m_address_buffer[2] = 1;
+              m_address_buffer[3] = GetCurrentSectorLength();
+              m_crc_generator.Add(m_address_buffer, 4);
+              m_address_buffer[4] = m_crc_generator.CRCLow;
+              m_address_buffer[5] = m_crc_generator.CRCHigh;
+              m_data_count = 0;
+              m_data_length = 6;
+              m_fdc_sector = GetCurrentDriveTrack();
 
-							m_prev_index_pulse_state = IsIndexPulse();
-							m_operation_state = OperationState.IDReadWaitForIndex;
-							m_fdc_status_mode = 3;
-							m_head_loaded = true;
-							break;
+              m_prev_index_pulse_state = IsIndexPulse();
+              m_operation_state = OperationState.IDReadWaitForIndex;
+              m_fdc_status_mode = 3;
+              m_head_loaded = true;
+              break;
 
 
 #if false
@@ -750,22 +795,22 @@ namespace HBF
           }
           break;
 
-				// track register
-				case PORT_TRACK:
-					Debug.WriteLine("Track register set: {0:x2}", in_value);
-					if ((m_fdc_status & StatusFlags.BUSY) == 0 && !m_fdc_reset_state)
-						m_fdc_track = in_value;
-					break;
+        // track register
+        case PORT_TRACK:
+          Debug.WriteLine("Track register set: {0:x2}", in_value);
+          if ((m_fdc_status & StatusFlags.BUSY) == 0 && !m_fdc_reset_state)
+            m_fdc_track = in_value;
+          break;
 
-				// sector register
-				case PORT_SECTOR:
-					Debug.WriteLine("Sector register set: {0:x2}", in_value);
-					if ((m_fdc_status & StatusFlags.BUSY) == 0 && !m_fdc_reset_state)
-						m_fdc_sector = in_value;
-					break;
+        // sector register
+        case PORT_SECTOR:
+          Debug.WriteLine("Sector register set: {0:x2}", in_value);
+          if ((m_fdc_status & StatusFlags.BUSY) == 0 && !m_fdc_reset_state)
+            m_fdc_sector = in_value;
+          break;
 
-				case PORT_DATA:
-					m_fdc_data = in_value;
+        case PORT_DATA:
+          m_fdc_data = in_value;
 #if false
 					// check track write mode
 					if (m_read_write_mode != ReadWriteMode.TrackWrite)
@@ -806,45 +851,45 @@ namespace HBF
 					// Save last written value
 					m_fdc_data = in_value;
 #endif
-					break;
+          break;
 
-				// parameter register
-				case PORT_PARAM:
-					//Debug.WriteLine("Param register set: {0:x2}", in_value);
-					m_reg_param = (ParametersFlags)in_value;
+        // parameter register
+        case PORT_PARAM:
+          //Debug.WriteLine("Param register set: {0:x2}", in_value);
+          m_reg_param = (ParametersFlags)in_value;
 
-					switch (m_reg_param & ParametersFlags.DriveSelectMask)
-					{
-						case ParametersFlags.DriveSelect0:
-							m_current_drive_index = 0;
-							break;
+          switch (m_reg_param & ParametersFlags.DriveSelectMask)
+          {
+            case ParametersFlags.DriveSelect0:
+              m_current_drive_index = 0;
+              break;
 
-						case ParametersFlags.DriveSelect1:
-							m_current_drive_index = 1;
-							break;
+            case ParametersFlags.DriveSelect1:
+              m_current_drive_index = 1;
+              break;
 
-						case ParametersFlags.DriveSelect2:
-							m_current_drive_index = 2;
-							break;
+            case ParametersFlags.DriveSelect2:
+              m_current_drive_index = 2;
+              break;
 
-						case ParametersFlags.DriveSelect3:
-							m_current_drive_index = 3;
-							break;
+            case ParametersFlags.DriveSelect3:
+              m_current_drive_index = 3;
+              break;
 
-						default:
-							m_current_drive_index = InvalidDriveIndex;
-							break;
-					}
-					break;
+            default:
+              m_current_drive_index = InvalidDriveIndex;
+              break;
+          }
+          break;
 
-				// page register
-				case PORT_PAGE:
-					m_reg_page = in_value;
-					m_fdc_reset_state = false;
+        // page register
+        case PORT_PAGE:
+          m_reg_page = in_value;
+          m_fdc_reset_state = false;
 
-					break;
-			}
-		}
+          break;
+      }
+    }
 
     /// <summary>
     /// Starts head moving operaton in emulated speed (lengthty) or fast mode (immediate).
@@ -854,234 +899,234 @@ namespace HBF
     /// <param name="in_new_hardware_flags">New hardware status flag after the operation is complete</param>
     /// <param name="in_new_track">Track register value after the operation is complete</param>
 		private void StartOperation(int in_delay_us, StatusFlags in_new_status_flags, HardwareFlags in_new_hardware_flags, byte in_new_track)
-		{
-			if(m_fast_operation)
-			{
-				// no delay -> immediatelly execute the operation
-				m_fdc_status = in_new_status_flags;
-				m_reg_hw_status = in_new_hardware_flags;
-				m_fdc_track = in_new_track;
+    {
+      if (m_fast_operation)
+      {
+        // no delay -> immediatelly execute the operation
+        m_fdc_status = in_new_status_flags;
+        m_reg_hw_status = in_new_hardware_flags;
+        m_fdc_track = in_new_track;
 
-				m_operation_state = OperationState.None;
-			}
-			else
-			{
-				// start delaying operation
-				m_fdc_status |= StatusFlags.BUSY;
+        m_operation_state = OperationState.None;
+      }
+      else
+      {
+        // start delaying operation
+        m_fdc_status |= StatusFlags.BUSY;
 
-				m_pending_status = in_new_status_flags;
-				m_pending_hw_status = in_new_hardware_flags;
-				m_pending_track = in_new_track;
+        m_pending_status = in_new_status_flags;
+        m_pending_hw_status = in_new_hardware_flags;
+        m_pending_track = in_new_track;
 
-				m_pending_delay = m_tvcomputer.MicrosecToCPUTicks(in_delay_us);
+        m_pending_delay = m_tvcomputer.MicrosecToCPUTicks(in_delay_us);
 
-				m_operation_state = OperationState.Seek;
-			}
-		}
+        m_operation_state = OperationState.Seek;
+      }
+    }
 
-		public void PeriodicCallback(ulong in_cpu_tick)
-		{
-			switch (m_operation_state)
-			{
-				// Type I operation (seek)
-				case OperationState.Seek:
-					if (m_tvcomputer.GetTicksSince(m_operation_start_tick) > m_pending_delay)
-					{
-						// operation delay time is expired
-						m_fdc_status = m_pending_status;
-						m_reg_hw_status = m_pending_hw_status;
-						m_fdc_track = m_pending_track;
+    public void PeriodicCallback(ulong in_cpu_tick)
+    {
+      switch (m_operation_state)
+      {
+        // Type I operation (seek)
+        case OperationState.Seek:
+          if (m_tvcomputer.GetTicksSince(m_operation_start_tick) > m_pending_delay)
+          {
+            // operation delay time is expired
+            m_fdc_status = m_pending_status;
+            m_reg_hw_status = m_pending_hw_status;
+            m_fdc_track = m_pending_track;
 
-						m_disk_drives[m_current_drive_index].Track = m_pending_track;
+            m_disk_drives[m_current_drive_index].Track = m_pending_track;
 
-						m_operation_state = OperationState.None;
-					}
-					break;
-			}
-		}
+            m_operation_state = OperationState.None;
+          }
+          break;
+      }
+    }
 
-		private bool IsDriveReady()
-		{
-			return m_current_drive_index != InvalidDriveIndex && m_disk_drives[m_current_drive_index].IsDiskPresent();
-		}
+    private bool IsDriveReady()
+    {
+      return m_current_drive_index != InvalidDriveIndex && m_disk_drives[m_current_drive_index].IsDiskPresent();
+    }
 
-		private bool IsIndexPulse()
-		{
-			// index pulse
-			ulong index_ticks = m_tvcomputer.GetCPUTicks() % m_index_pulse_period;
+    private bool IsIndexPulse()
+    {
+      // index pulse
+      ulong index_ticks = m_tvcomputer.GetCPUTicks() % m_index_pulse_period;
 
-			return index_ticks > m_index_pulse_width;
-		}
+      return index_ticks > m_index_pulse_width;
+    }
 
-		private void UpdateHardwareStatus()
-		{
-			switch (m_operation_state)
-			{
-				case OperationState.TrackWriteWaitForIndex:
-					{
-						bool index_pulse_state;
+    private void UpdateHardwareStatus()
+    {
+      switch (m_operation_state)
+      {
+        case OperationState.TrackWriteWaitForIndex:
+          {
+            bool index_pulse_state;
 
-						index_pulse_state = IsIndexPulse();
+            index_pulse_state = IsIndexPulse();
 
-						if (m_prev_index_pulse_state == false && index_pulse_state == true)
-						{
-							// index pulse rising edge
-							m_operation_state = OperationState.TrackWriteIDMark1;
-						}
-						m_prev_index_pulse_state = index_pulse_state;
-						m_operation_start_tick = m_tvcomputer.GetCPUTicks();
-						//m_wr_length = 0;
-					}
-					break;
+            if (m_prev_index_pulse_state == false && index_pulse_state == true)
+            {
+              // index pulse rising edge
+              m_operation_state = OperationState.TrackWriteIDMark1;
+            }
+            m_prev_index_pulse_state = index_pulse_state;
+            m_operation_start_tick = m_tvcomputer.GetCPUTicks();
+            //m_wr_length = 0;
+          }
+          break;
 
-				case OperationState.SectorRead:
-					{
-						int byte_index = TickToByteIndex(m_tvcomputer.GetTicksSince(m_operation_start_tick));
+        case OperationState.SectorRead:
+          {
+            int byte_index = TickToByteIndex(m_tvcomputer.GetTicksSince(m_operation_start_tick));
 
-						if (byte_index > m_data_length)
-						{
-							// stop operation
-							m_data_length = 0;
-							m_operation_state = OperationState.None;
+            if (byte_index > m_data_length)
+            {
+              // stop operation
+              m_data_length = 0;
+              m_operation_state = OperationState.None;
               m_fdc_status &= ~StatusFlags.BUSY;
               m_reg_hw_status |= HardwareFlags.INT;
-						}
-						else
-						{
-							if (byte_index > m_data_count)
-							{
-								m_fdc_data = m_disk_drives[m_current_drive_index].ReadByte();
-								m_data_count++;
-								m_reg_hw_status |= HardwareFlags.DRQ;
-							}
-						}
-					}
-					break;
+            }
+            else
+            {
+              if (byte_index > m_data_count)
+              {
+                m_fdc_data = m_disk_drives[m_current_drive_index].ReadByte();
+                m_data_count++;
+                m_reg_hw_status |= HardwareFlags.DRQ;
+              }
+            }
+          }
+          break;
 
-				case OperationState.IDReadWaitForIndex:
-					{
-						bool index_pulse_state = IsIndexPulse();
+        case OperationState.IDReadWaitForIndex:
+          {
+            bool index_pulse_state = IsIndexPulse();
 
-						if (m_prev_index_pulse_state == false && index_pulse_state == true)
-						{
-							// index pulse rising edge
-							m_operation_state = OperationState.IDRead;
-							m_operation_start_tick = m_tvcomputer.GetCPUTicks();
-						}
+            if (m_prev_index_pulse_state == false && index_pulse_state == true)
+            {
+              // index pulse rising edge
+              m_operation_state = OperationState.IDRead;
+              m_operation_start_tick = m_tvcomputer.GetCPUTicks();
+            }
 
-						m_prev_index_pulse_state = index_pulse_state;
-					}
-					break;
+            m_prev_index_pulse_state = index_pulse_state;
+          }
+          break;
 
-				case OperationState.IDRead:
-					if (m_data_count < m_data_length)
-					{
-						m_fdc_data = m_address_buffer[m_data_count];
-						m_data_count++;
-						m_reg_hw_status |= HardwareFlags.DRQ;
-					}
-					else
-					{
-						m_operation_state = OperationState.None;
-						m_reg_hw_status |= HardwareFlags.INT;
-					}
-					break;
+        case OperationState.IDRead:
+          if (m_data_count < m_data_length)
+          {
+            m_fdc_data = m_address_buffer[m_data_count];
+            m_data_count++;
+            m_reg_hw_status |= HardwareFlags.DRQ;
+          }
+          else
+          {
+            m_operation_state = OperationState.None;
+            m_reg_hw_status |= HardwareFlags.INT;
+          }
+          break;
 
-				default:
-					{
-						//int by
-					}
-					break;
-			}
-		}
+        default:
+          {
+            //int by
+          }
+          break;
+      }
+    }
 
-		private void TrackWriteData(byte in_data)
-		{
-			// check DRQ status
-			if((m_reg_hw_status & HardwareFlags.DRQ) == 0)
-			{
-				// data overrun occured
-				m_reg_hw_status = HardwareFlags.INT;
-				m_fdc_status |= StatusFlags.LOSTDATA;
-				m_operation_state = OperationState.None;
+    private void TrackWriteData(byte in_data)
+    {
+      // check DRQ status
+      if ((m_reg_hw_status & HardwareFlags.DRQ) == 0)
+      {
+        // data overrun occured
+        m_reg_hw_status = HardwareFlags.INT;
+        m_fdc_status |= StatusFlags.LOSTDATA;
+        m_operation_state = OperationState.None;
 
-				return;
-			}
+        return;
+      }
 
-			m_reg_hw_status &= ~HardwareFlags.DRQ;
+      m_reg_hw_status &= ~HardwareFlags.DRQ;
 
-			switch (m_operation_state)
-			{
-				case OperationState.TrackWriteIDMark1:
-					if (in_data == 0xa1)
-						m_operation_state = m_operation_state + 1;
-					else
-						m_operation_state = OperationState.TrackWriteIDMark1;
-					break;
+      switch (m_operation_state)
+      {
+        case OperationState.TrackWriteIDMark1:
+          if (in_data == 0xa1)
+            m_operation_state = m_operation_state + 1;
+          else
+            m_operation_state = OperationState.TrackWriteIDMark1;
+          break;
 
-				case OperationState.TrackWriteIDMark:
-					if(in_data == 0xfe)
-						m_operation_state = OperationState.TrackWriteTrack;
-					else
-						m_operation_state = OperationState.TrackWriteIDMark1;
-					break;
-			}
-		}
+        case OperationState.TrackWriteIDMark:
+          if (in_data == 0xfe)
+            m_operation_state = OperationState.TrackWriteTrack;
+          else
+            m_operation_state = OperationState.TrackWriteIDMark1;
+          break;
+      }
+    }
 
-		private int TickToByteIndex(ulong in_tick_count)
-		{
-			return (int)(in_tick_count * DataTransferSpeed / 8ul / (ulong)m_tvcomputer.CPUClock);
-		}
+    private int TickToByteIndex(ulong in_tick_count)
+    {
+      return (int)(in_tick_count * DataTransferSpeed / 8ul / (ulong)m_tvcomputer.CPUClock);
+    }
 
     /// <summary>
     /// Gets the selected side of the current drive
     /// </summary>
     /// <returns>Selected side: 0 or 1</returns>
 		private byte GetCurrentDriveSide()
-		{
-			return (byte)((m_reg_param & ParametersFlags.SideSelect) != 0 ? 1 : 0);
-		}
+    {
+      return (byte)((m_reg_param & ParametersFlags.SideSelect) != 0 ? 1 : 0);
+    }
 
     /// <summary>
     /// Gets the head position (track) of the currently selected drive
     /// </summary>
     /// <returns></returns>
 		private byte GetCurrentDriveTrack()
-		{
-			if (m_current_drive_index == InvalidDriveIndex)
-				return 0;
-			else
-				return m_disk_drives[m_current_drive_index].Track;
-		}
+    {
+      if (m_current_drive_index == InvalidDriveIndex)
+        return 0;
+      else
+        return m_disk_drives[m_current_drive_index].Track;
+    }
 
     /// <summary>
     /// Gets the physical sector length of the current drive
     /// </summary>
     /// <returns></returns>
 		private byte GetCurrentSectorLength()
-		{
-			int sector_length = 512;
+    {
+      int sector_length = 512;
 
-			if (m_current_drive_index != -1)
-				sector_length = m_disk_drives[m_current_drive_index].Geometry.SectorLength;
+      if (m_current_drive_index != -1)
+        sector_length = m_disk_drives[m_current_drive_index].Geometry.SectorLength;
 
-			switch (sector_length)
-			{
-				case 1024:
-					return 3;
+      switch (sector_length)
+      {
+        case 1024:
+          return 3;
 
-				case 512:
-					return 2;
+        case 512:
+          return 2;
 
-				case 256:
-					return 1;
+        case 256:
+          return 1;
 
-				case 128:
-					return 0;
+        case 128:
+          return 0;
 
-				default:
-					return 0;
-			}
-		}
-	}
+        default:
+          return 0;
+      }
+    }
+  }
 }

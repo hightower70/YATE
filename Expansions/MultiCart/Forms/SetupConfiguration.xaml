@@ -36,7 +36,7 @@
 					<ColumnDefinition Width="30"/>
 				</Grid.ColumnDefinitions>
 				<TextBox  Grid.Column="0" Text="{Binding Settings.ROM1FileName}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-				<Button Grid.Column="1" Margin="3" Content="..." Width="22"/>
+				<Button x:Name="bROM1Browse" Grid.Column="1" Margin="3" Content="..." Width="22" Click="BROM1Browse_Click"/>
 			</Grid>
 			<TextBlock Grid.Row="2" Grid.Column="0" Text="ROM2 File:" VerticalAlignment="Center"/>
 			<Grid Grid.Row="2" Grid.Column="1" >
@@ -45,7 +45,7 @@
 					<ColumnDefinition Width="30"/>
 				</Grid.ColumnDefinitions>
 				<TextBox  Grid.Column="0" Text="{Binding Settings.ROM2FileName}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-				<Button Grid.Column="1" Margin="3" Content="..." Width="22"/>
+				<Button x:Name="bROM2Browse" Grid.Column="1" Margin="4,3,4,0" Content="..." Width="22" Height="24" VerticalAlignment="Top" Click="BROM2Browse_Click"/>
 			</Grid>
 		</Grid>
 	</Grid>

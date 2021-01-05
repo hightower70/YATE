@@ -12,6 +12,34 @@
 		<ResourceDictionary Source="pack://application:,,,/DarkSkin;component/MetroDarkStyle.xaml" />
 	</UserControl.Resources>
 	<Grid>
+		<Grid Margin="5">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="35"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="35"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="49*"/>
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="80"/>
+				<ColumnDefinition Width="1*"/>
+			</Grid.ColumnDefinitions>
 
+			<!-- EPROM settings -->
+			<cc:Title Grid.Row="0" Grid.ColumnSpan="2" Text="Floppy Interface Settings"/>
+			<TextBlock Grid.Row="1" Grid.Column="0" Text="ROM type:" VerticalAlignment="Center"/>
+			<ComboBox x:Name="cbType" Grid.Row="1" Grid.Column="1" Margin="5,3,5,3" VerticalContentAlignment="Center" SelectedIndex="{Binding Settings.ROMType}" ItemsSource="{Binding ROMTypeList}"/>
+			<TextBlock Grid.Row="2" Grid.Column="0" Text="ROM File:" VerticalAlignment="Center"/>
+			<Grid Grid.Row="2" Grid.Column="1" >
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition/>
+					<ColumnDefinition Width="30"/>
+				</Grid.ColumnDefinitions>
+				<TextBox  Grid.Column="0" Text="{Binding Settings.ROMFileName}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
+				<Button Grid.Column="1" Margin="3" Content="..." Width="22"/>
+			</Grid>
+		</Grid>
 	</Grid>
 </sp:SetupPageBase>
