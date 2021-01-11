@@ -1,4 +1,26 @@
-﻿using System;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2021 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// Keyboard low level hook for capturing system keys
+///////////////////////////////////////////////////////////////////////////////
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
@@ -24,13 +46,15 @@ namespace YATE.Drivers
 		private IntPtr m_hook_id = IntPtr.Zero;
 		private LowLevelKeyboardProc m_hook_proc = null;
 		private KeyDownProc m_key_down_proc = null;
-		#endregion
+    #endregion
 
-		/// <summary>
-		/// Enables keyboard hook
-		/// </summary>
-		/// <param name="in_key_down_proc">Key down event handler</param>
-		public void EnableHook(KeyDownProc in_key_down_proc)
+    #region · Public members ·
+
+    /// <summary>
+    /// Enables keyboard hook
+    /// </summary>
+    /// <param name="in_key_down_proc">Key down event handler</param>
+    public void EnableHook(KeyDownProc in_key_down_proc)
 		{
 			// hook only once
 			if (m_hook_id != IntPtr.Zero)
@@ -59,14 +83,18 @@ namespace YATE.Drivers
 			m_hook_proc = null;
 		}
 
-		/// <summary>
-		/// Internal keyboard hook procedure
-		/// </summary>
-		/// <param name="nCode"></param>
-		/// <param name="wParam"></param>
-		/// <param name="lParam"></param>
-		/// <returns></returns>
-		private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    #endregion
+
+    #region · Private members ·
+
+    /// <summary>
+    /// Internal keyboard hook procedure
+    /// </summary>
+    /// <param name="nCode"></param>
+    /// <param name="wParam"></param>
+    /// <param name="lParam"></param>
+    /// <returns></returns>
+    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
 		{
 			if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
 			{
@@ -79,7 +107,6 @@ namespace YATE.Drivers
 
 				if (key == Key.Escape && control)
 				{
-					//KeyEventArgs e = new KeyEventArgs(Keyboard.PrimaryDevice, Keyboard.PrimaryDevice.ActiveSource, 0, key);
 					KeyEventArgs e = new KeyEventArgs(Keyboard.PrimaryDevice, Keyboard.PrimaryDevice.ActiveSource, 0, key)
 					{
 						RoutedEvent = Keyboard.PreviewKeyDownEvent
@@ -93,10 +120,11 @@ namespace YATE.Drivers
 
 			return CallNextHookEx(m_hook_id, nCode, wParam, lParam);
 		}
+    #endregion
 
-		#region · Native functions ·
+    #region · Native functions ·
 
-		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
 
 		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]

@@ -24,6 +24,9 @@ namespace YATE.Forms
 		public ExecutionControl ExecutionControl { get; }
 		public TVCCartridgeControl CartridgeControl { get; }
 
+    public AudioControl AudioControl { get; }
+
+
 		private KeyboardHook m_keyboard_hook = new KeyboardHook();
 
 		public MainWindow()
@@ -31,32 +34,44 @@ namespace YATE.Forms
 			// load config file and get settings
 			SettingsFile.Default.Load();
 
-			m_keyboard_hook.EnableHook(Window_KeyDown);
+      // setup execution control
+      ExecutionControl = new ExecutionControl(this);
+      ExecutionControl.Initialize();
+      ExecutionControl.TVC.Video.FrameReady += FrameReady;
 
-			// setup execution control
-			ExecutionControl = new ExecutionControl(this);
+      // Create Cartridge contol
+      CartridgeControl = new TVCCartridgeControl();
 
-			ExecutionControl.Initialize();
-			ExecutionControl.TVC.Video.FrameReady += FrameReady;
+      // Create Audio control
+      AudioControl = new AudioControl(this);
 
-			// setup cartridge control
-			CartridgeControl = new TVCCartridgeControl();
-			CartridgeControl.Initialize(this, ExecutionControl);
+      // setup data context for data binding
+      DataContext = this;
 
-			// setup data context for data binding
-			DataContext = this;
+      InitializeComponent();
+		}
 
-			// load modules
-			ExpansionManager.Default.AddMainModule(typeof(MainModule));
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+      m_keyboard_hook.EnableHook(Window_KeyDown);
+
+      // setup cartridge control
+      CartridgeControl.Initialize(this, ExecutionControl);
+
+      // load modules
+      ExpansionManager.Default.AddMainModule(typeof(MainModule));
       ExpansionManager.Default.LoadExpansions();
       ExpansionManager.Default.InstallExpansions(ExecutionControl.TVC);
 
-      InitializeComponent();
+      //  Start Audio control
+      AudioControl.Start();
 
-			ExecutionControl.Start();
-		}
+      // Start emulator
+      ExecutionControl.Start();
+    }
 
-		private void FrameReady(object sender, TVCVideo.FrameReadyEventparam in_event_param)
+    private void FrameReady(object sender, TVCVideo.FrameReadyEventparam in_event_param)
 		{
 			// reallocate bitmap if needed
 			if (m_image_source == null || in_event_param.Width != m_image_source.Width || in_event_param.Height != m_image_source.Height)
@@ -75,6 +90,7 @@ namespace YATE.Forms
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
+      AudioControl.Stop();
 			ExecutionControl.Stop();
 			m_keyboard_hook.ReleaseHook();
 
@@ -211,5 +227,5 @@ namespace YATE.Forms
         }
       }
 		}
-	}
+  }
 }

@@ -126,8 +126,14 @@ namespace YATE.Emulator.TVCHardware
           LoadMemoryContentFromResource("YATE.Resources.ext_1_2_ru.bin", 0, m_mem_ext);
           break;
 
-        // BASIC 2.2
+        // BASIC 2.1
         case 3:
+          LoadMemoryContentFromResource("YATE.Resources.rom_2_1.bin", 0, m_mem_sys);
+          LoadMemoryContentFromResource("YATE.Resources.ext_2_1.bin", 0, m_mem_ext);
+          break;
+          
+        // BASIC 2.2
+        case 4:
           LoadMemoryContentFromResource("YATE.Resources.rom_2_2.bin", 0, m_mem_sys);
           LoadMemoryContentFromResource("YATE.Resources.ext_2_2.bin", 0, m_mem_ext);
           break;

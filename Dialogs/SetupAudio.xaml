@@ -27,7 +27,7 @@
 			<cc:Title Text="Audio Out Settings"/>
 		</Grid>
 		<TextBlock Grid.Row="1" Grid.Column="0" Text="Audio Device:" VerticalAlignment="Center"/>
-		<ComboBox Grid.Row="1" Grid.Column="1" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding AudioOutDevices}" SelectedValue="{Binding Settings.AudioOutDevice}"  DisplayMemberPath="DisplayName" SelectedValuePath="DisplayName"/>
+		<ComboBox Grid.Row="1" Grid.Column="1" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding AudioOutDevices}" SelectedIndex="{Binding Settings.AudioOutDevice}"  DisplayMemberPath="DisplayName" SelectedValuePath="DisplayName"/>
 
 		<!-- Joystick settings -->
 		<Grid Grid.Row="3" Grid.ColumnSpan="2">

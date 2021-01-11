@@ -26,7 +26,7 @@ namespace YATE.Settings
 {
 	public class SetupAudioSettings : SettingsBase
 	{
-		public string AudioOutDevice { get; set; }
+		public int AudioOutDevice { get; set; }
 
 		public SetupAudioSettings() : base(SettingsCategory.Emulator, "Audio")
 		{
@@ -35,7 +35,7 @@ namespace YATE.Settings
 
 		override public void SetDefaultValues()
 		{
-      AudioOutDevice = "";
+      AudioOutDevice = 0;
 		}
 	}
 }

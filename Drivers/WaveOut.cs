@@ -1,250 +1,401 @@
-﻿using System;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2021 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// Wave out device handler class
+///////////////////////////////////////////////////////////////////////////////
+using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace YATE.Drivers
 {
-  internal class WaveOutHelper
+  /// <summary>
+  /// Waveout device handler class
+  /// </summary>
+  public class WaveOut : IDisposable
   {
-    public static void Try(int err)
+    #region · Types ·
+
+    /// <summary>
+    /// Wave out buffer class
+    /// </summary>
+    class WaveOutBuffer : IDisposable
     {
-      if (err != WaveNative.MMSYSERR_NOERROR)
-        throw new Exception(err.ToString());
-    }
-  }
+      public bool Free;
+      public short[] Data;
+      public WaveNative.WaveHdr Header;
 
-  public delegate void BufferFillEventHandler(IntPtr data, int size);
+      private GCHandle m_header_handle;
+      private GCHandle m_data_handle;
+      private GCHandle m_this;
+      internal int BufferIndex { get; }
+      internal WaveOut Parent { get; private set; }
 
-  internal class WaveOutBuffer : IDisposable
-  {
-    public WaveOutBuffer NextBuffer;
-
-    private AutoResetEvent m_PlayEvent = new AutoResetEvent(false);
-    private IntPtr m_WaveOut;
-
-    private WaveNative.WaveHdr m_Header;
-    private byte[] m_HeaderData;
-    private GCHandle m_HeaderHandle;
-    private GCHandle m_HeaderDataHandle;
-
-    private bool m_Playing;
-
-    internal static void WaveOutProc(IntPtr hdrvr, int uMsg, int dwUser, ref WaveNative.WaveHdr wavhdr, int dwParam2)
-    {
-      if (uMsg == WaveNative.MM_WOM_DONE)
+      /// <summary>
+      /// Waveout buffer default constructor
+      /// </summary>
+      /// <param name="in_parent">Parent Waveout class</param>
+      /// <param name="in_buffer_index">NUmber of the wave buffer</param>
+      public WaveOutBuffer(WaveOut in_parent, int in_buffer_index)
       {
-        try
+        Parent = in_parent;
+
+        BufferIndex = in_buffer_index;
+        Free = true;
+        Header = new WaveNative.WaveHdr();
+        Data = new short[in_parent.BufferSampleCount];
+
+        m_this = GCHandle.Alloc(this);
+        m_header_handle = GCHandle.Alloc(Header, GCHandleType.Pinned);
+        m_data_handle = GCHandle.Alloc(Data, GCHandleType.Pinned);
+
+        Header.lpData = m_data_handle.AddrOfPinnedObject();
+        Header.dwBufferLength = sizeof(short) * Parent.BufferSampleCount;
+        Header.dwUser = (IntPtr)m_this;
+
+        // prepare header
+        WaveNative.Try(WaveNative.waveOutPrepareHeader(Parent.Handle, m_header_handle.AddrOfPinnedObject(), Marshal.SizeOf(Header)));
+      }
+
+      /// <summary>
+      /// Clears data buffer
+      /// </summary>
+      public void ClearBuffer()
+      {
+        for (int i = 0; i < Data.Length; i++)
         {
-          GCHandle h = (GCHandle)wavhdr.dwUser;
-          WaveOutBuffer buf = (WaveOutBuffer)h.Target;
-          buf.OnCompleted();
+          Data[i] = 0;
         }
-        catch
+      }
+
+      /// <summary>
+      /// Enqueues buffer for playback
+      /// </summary>
+      public void Enqueue()
+      {
+        Free = false;
+
+        // write header
+        WaveNative.Try(WaveNative.waveOutWrite(Parent.Handle, m_header_handle.AddrOfPinnedObject(), Marshal.SizeOf(Header)));
+      }
+
+      /// <summary>
+      /// Dequeues buffer after playing it
+      /// </summary>
+      public void Dequeue()
+      {
+        Free = true;
+        Header.dwFlags &= ~WaveNative.WaveHdrFlags.WHDR_DONE;
+      }
+
+      /// <summary>
+      /// Destructor
+      /// </summary>
+      ~WaveOutBuffer()
+      {
+        Dispose();
+      }
+
+      /// <summary>
+      /// Dispose of non managed resources
+      /// </summary>
+      public void Dispose()
+      {
+        if (Parent != null)
         {
+          // release header
+          WaveNative.Try(WaveNative.waveOutUnprepareHeader(Parent.Handle, m_header_handle.AddrOfPinnedObject(), Marshal.SizeOf(Header)));
+
+          Parent = null;
         }
+
+        if (m_header_handle.IsAllocated)
+          m_header_handle.Free();
+
+        if (m_data_handle.IsAllocated)
+          m_data_handle.Free();
+
+        if (m_this.IsAllocated)
+          m_this.Free();
+
+        Data = null;
       }
     }
 
-    public WaveOutBuffer(IntPtr waveOutHandle, int size)
-    {
-      m_WaveOut = waveOutHandle;
+    #endregion
 
-      m_HeaderHandle = GCHandle.Alloc(m_Header, GCHandleType.Pinned);
-      m_Header.dwUser = (IntPtr)GCHandle.Alloc(this);
-      m_HeaderData = new byte[size];
-      m_HeaderDataHandle = GCHandle.Alloc(m_HeaderData, GCHandleType.Pinned);
-      m_Header.lpData = m_HeaderDataHandle.AddrOfPinnedObject();
-      m_Header.dwBufferLength = size;
-      WaveOutHelper.Try(WaveNative.waveOutPrepareHeader(m_WaveOut, ref m_Header, Marshal.SizeOf(m_Header)));
+    #region · Data members ·
+
+    // buffers
+    private WaveOutBuffer[] m_wave_out_buffers;
+
+    // Class configuration
+    private int m_sample_rate;
+    private int m_device_id;
+
+    // Wave settings
+    private WaveNative.WaveFormat m_wave_out_format;
+    private IntPtr m_wave_out_device_handle;
+
+    // thread variables
+    private Thread m_thread;
+    private AutoResetEvent m_thread_event;
+    private bool m_thread_running;
+    private WaveOutBuffer m_finished_buffer;
+
+    private readonly WaveNative.WaveOutDelegate m_buffer_proc = new WaveNative.WaveOutDelegate(WaveOutProc);
+
+    #endregion
+
+    #region · Properties ·
+
+    /// <summary>
+    /// Number of buffers
+    /// </summary>
+    public int BufferCount { get; private set; }
+
+    /// <summary>
+    /// Number of samples in one buffer
+    /// </summary>
+    public int BufferSampleCount { get; private set; }
+
+    /// <summary>
+    /// WaveOut device handle
+    /// </summary>
+    public IntPtr Handle
+    {
+      get { return m_wave_out_device_handle; }
     }
 
-    ~WaveOutBuffer()
+    #endregion
+
+    #region · Public members ·
+
+    /// <summary>
+    /// Open wave out device for playback
+    /// </summary>
+    /// <param name="in_device_id">Device ID to use for playback</param>
+    /// <param name="in_sample_rate">Sample rate</param>
+    /// <param name="in_buffer_count">Number of buffers to use</param>
+    /// <param name="in_buffer_sample_count">Length of one buffer in samples</param>
+    public void Open(int in_device_id, int in_sample_rate, int in_buffer_count, int in_buffer_sample_count)
     {
-      Dispose();
+      // init class
+      m_wave_out_device_handle = IntPtr.Zero;
+
+      // store class settings
+      m_device_id = in_device_id;
+      m_sample_rate = in_sample_rate;
+      BufferCount = in_buffer_count;
+      BufferSampleCount = in_buffer_sample_count;
     }
 
-    public void Dispose()
+    /// <summary>
+    /// Starts wave out device
+    /// </summary>
+    /// <returns></returns>
+    public bool Start()
     {
-      if (m_Header.lpData != IntPtr.Zero)
+      WaveNative.MMRESULT error;
+
+      m_finished_buffer = null;
+
+      // create thread event
+      m_thread_event = new AutoResetEvent(false);
+
+      m_wave_out_format = new WaveNative.WaveFormat(m_sample_rate, 16, 2);
+
+      // open wave device
+      error = WaveNative.waveOutOpen(out m_wave_out_device_handle, m_device_id, m_wave_out_format, m_buffer_proc, 0, (uint)WaveNative.WaveInOutOpenFlags.CALLBACK_FUNCTION);
+      if (error == WaveNative.MMRESULT.MMSYSERR_NOERROR)
       {
-        WaveNative.waveOutUnprepareHeader(m_WaveOut, ref m_Header, Marshal.SizeOf(m_Header));
-        m_HeaderHandle.Free();
-        m_Header.lpData = IntPtr.Zero;
-      }
-      m_PlayEvent.Close();
-      if (m_HeaderDataHandle.IsAllocated)
-        m_HeaderDataHandle.Free();
-      GC.SuppressFinalize(this);
-    }
-
-    public int Size
-    {
-      get { return m_Header.dwBufferLength; }
-    }
-
-    public IntPtr Data
-    {
-      get { return m_Header.lpData; }
-    }
-
-    public bool Play()
-    {
-      lock (this)
-      {
-        m_PlayEvent.Reset();
-        m_Playing = WaveNative.waveOutWrite(m_WaveOut, ref m_Header, Marshal.SizeOf(m_Header)) == WaveNative.MMSYSERR_NOERROR;
-        return m_Playing;
-      }
-    }
-    public void WaitFor()
-    {
-      if (m_Playing)
-      {
-        m_Playing = m_PlayEvent.WaitOne();
+        // start thread
+        m_thread_running = true;
+        m_thread = new Thread(new ThreadStart(ThreadProc));
+        m_thread.Priority = ThreadPriority.AboveNormal;
+        m_thread.Start();
       }
       else
       {
-        Thread.Sleep(0);
+        m_thread_event.Dispose();
+        m_thread_event = null;
+        m_wave_out_format = null;
+        m_thread = null;
+        m_thread_running = false;
+      }
+
+      return error == WaveNative.MMRESULT.MMSYSERR_NOERROR;
+    }
+
+    /// <summary>
+    /// Stops waveout playback
+    /// </summary>
+    public void Stop()
+    {
+      if (m_wave_out_device_handle != IntPtr.Zero)
+      {
+        m_thread_running = false;
+        m_thread_event.Set();
+
+        m_thread.Join();
       }
     }
-    public void OnCompleted()
+
+    #endregion
+
+    #region · Private members ·
+
+    /// <summary>
+    /// Waveout thread procedure
+    /// </summary>
+    private void ThreadProc()
     {
-      m_PlayEvent.Set();
-      m_Playing = false;
+      WaveOutBuffer buffer;
+
+      // create buffers
+      m_wave_out_buffers = new WaveOutBuffer[BufferCount];
+      for (int i = 0; i < BufferCount; i++)
+      {
+        m_wave_out_buffers[i] = new WaveOutBuffer(this, i);
+        m_wave_out_buffers[i].ClearBuffer();
+      }
+
+      // queue buffers
+      for (int i = 0; i < BufferCount; i++)
+      {
+        m_wave_out_buffers[i].Enqueue();
+      }
+
+      // thread loop
+      while (m_thread_running)
+      {
+        m_thread_event.WaitOne();
+        buffer = m_finished_buffer;
+        m_finished_buffer = null;
+
+        if (buffer != null)
+        {
+          buffer.Dequeue();
+          buffer.Enqueue();
+        }
+
+        // find finished buffer and dequeue
+        for (int i = 0; i < BufferCount; i++)
+        {
+          if (m_wave_out_buffers[i].Free)
+          {
+            if (m_thread_running)
+            {
+              //m_wave_out_buffers[i].Enqueue();
+            }
+            break;
+          }
+        }
+      }
+
+      WaveNative.waveOutReset(m_wave_out_device_handle);
+
+      for (int i = 0; i < BufferCount; i++)
+        m_wave_out_buffers[i].Dispose();
+
+      WaveNative.waveOutClose(m_wave_out_device_handle);
+
+      m_wave_out_buffers = null;
+
+      m_wave_out_device_handle = IntPtr.Zero;
+      m_thread = null;
+      m_thread_event.Dispose();
+      m_thread_event = null;
     }
-  }
 
-  public class WaveOut : IDisposable
-  {
-    private IntPtr m_WaveOut;
-    private WaveOutBuffer m_Buffers; // linked list
-    private WaveOutBuffer m_CurrentBuffer;
-    private Thread m_Thread;
-    private BufferFillEventHandler m_FillProc;
-    private bool m_Finished;
-    private byte m_zero;
-
-    private WaveNative.WaveDelegate m_BufferProc = new WaveNative.WaveDelegate(WaveOutBuffer.WaveOutProc);
-
-    public static int DeviceCount
+    /// <summary>
+    /// Buffer finished callback. Called by static callback.
+    /// </summary>
+    /// <param name="in_buffer"></param>
+    private void BufferFinished(WaveOutBuffer in_buffer)
     {
-      get { return WaveNative.waveOutGetNumDevs(); }
+      Interlocked.CompareExchange(ref m_finished_buffer, in_buffer, null);
+      
+      m_thread_event.Set();
     }
 
-    public WaveOut(int device, WaveFormat format, int bufferSize, int bufferCount, BufferFillEventHandler fillProc)
+    /// <summary>
+    /// Static callback function. Called by windows.
+    /// </summary>
+    /// <param name="hdrvr"></param>
+    /// <param name="uMsg"></param>
+    /// <param name="dwUser"></param>
+    /// <param name="wavhdr"></param>
+    /// <param name="dwParam2"></param>
+    internal static void WaveOutProc(IntPtr hdrvr, WaveNative.WaveMessage uMsg, int dwUser, WaveNative.WaveHdr wavhdr, int dwParam2)
     {
-      m_zero = format.wBitsPerSample == 8 ? (byte)128 : (byte)0;
-      m_FillProc = fillProc;
-      WaveOutHelper.Try(WaveNative.waveOutOpen(out m_WaveOut, device, format, m_BufferProc, 0, WaveNative.CALLBACK_FUNCTION));
-      AllocateBuffers(bufferSize, bufferCount);
-      m_Thread = new Thread(new ThreadStart(ThreadProc));
-      m_Thread.Start();
+      try
+      {
+        if (uMsg == WaveNative.WaveMessage.WOM_DONE)
+        {
+          //Debug.WriteLine(uMsg.ToString() + " " + wavhdr.dwUser.ToString());
+
+          GCHandle hBuffer = (GCHandle)wavhdr.dwUser;
+          WaveOutBuffer buffer = (WaveOutBuffer)hBuffer.Target;
+
+          buffer.Free = true;
+          buffer.Parent.BufferFinished(buffer);
+        }
+      }
+      catch
+      {
+
+      }
     }
 
+    /// <summary>
+    /// Destructor
+    /// </summary>
     ~WaveOut()
     {
       Dispose();
     }
 
+    /// <summary>
+    /// Dispose. Cleans up all non managed resources.
+    /// </summary>
     public void Dispose()
     {
-      if (m_Thread != null)
-        try
+      Stop();
+
+      if (m_wave_out_buffers != null)
+      {
+        for (int i = 0; i < m_wave_out_buffers.Length; i++)
         {
-          m_Finished = true;
-          if (m_WaveOut != IntPtr.Zero)
-            WaveNative.waveOutReset(m_WaveOut);
-          m_Thread.Join();
-          m_FillProc = null;
-          FreeBuffers();
-          if (m_WaveOut != IntPtr.Zero)
-            WaveNative.waveOutClose(m_WaveOut);
+          m_wave_out_buffers[i].Dispose();
+          m_wave_out_buffers[i] = null;
         }
-        finally
-        {
-          m_Thread = null;
-          m_WaveOut = IntPtr.Zero;
-        }
+
+        m_wave_out_buffers = null;
+      }
+
       GC.SuppressFinalize(this);
     }
+    #endregion
 
-    private void ThreadProc()
-    {
-      while (!m_Finished)
-      {
-        Advance();
-        if (m_FillProc != null && !m_Finished)
-          m_FillProc(m_CurrentBuffer.Data, m_CurrentBuffer.Size);
-        else
-        {
-          // zero out buffer
-          byte v = m_zero;
-          byte[] b = new byte[m_CurrentBuffer.Size];
-          for (int i = 0; i < b.Length; i++)
-            b[i] = v;
-          Marshal.Copy(b, 0, m_CurrentBuffer.Data, b.Length);
-
-        }
-        m_CurrentBuffer.Play();
-      }
-      WaitForAllBuffers();
-    }
-    private void AllocateBuffers(int bufferSize, int bufferCount)
-    {
-      FreeBuffers();
-      if (bufferCount > 0)
-      {
-        m_Buffers = new WaveOutBuffer(m_WaveOut, bufferSize);
-        WaveOutBuffer Prev = m_Buffers;
-        try
-        {
-          for (int i = 1; i < bufferCount; i++)
-          {
-            WaveOutBuffer Buf = new WaveOutBuffer(m_WaveOut, bufferSize);
-            Prev.NextBuffer = Buf;
-            Prev = Buf;
-          }
-        }
-        finally
-        {
-          Prev.NextBuffer = m_Buffers;
-        }
-      }
-    }
-
-    private void FreeBuffers()
-    {
-      m_CurrentBuffer = null;
-      if (m_Buffers != null)
-      {
-        WaveOutBuffer First = m_Buffers;
-        m_Buffers = null;
-
-        WaveOutBuffer Current = First;
-        do
-        {
-          WaveOutBuffer Next = Current.NextBuffer;
-          Current.Dispose();
-          Current = Next;
-        } while (Current != First);
-      }
-    }
-
-    private void Advance()
-    {
-      m_CurrentBuffer = m_CurrentBuffer == null ? m_Buffers : m_CurrentBuffer.NextBuffer;
-      m_CurrentBuffer.WaitFor();
-    }
-
-    private void WaitForAllBuffers()
-    {
-      WaveOutBuffer Buf = m_Buffers;
-      while (Buf.NextBuffer != m_Buffers)
-      {
-        Buf.WaitFor();
-        Buf = Buf.NextBuffer;
-      }
-    }
+    #region · Wave out device enumeration ·
 
     public class WaveOutDeviceInfo
     {
@@ -252,7 +403,7 @@ namespace YATE.Drivers
       public Guid Guid { get; set; }
     }
 
-                                 
+
     private static bool EnumCallback(IntPtr lpGuid, IntPtr lpcstrDescription, IntPtr lpcstrModule, IntPtr lpContext)
     {
       // get directsound device info
@@ -276,32 +427,40 @@ namespace YATE.Drivers
       // replace truncated devices names with full name
       WaveOutDeviceInfo[] devices = ((GCHandle)lpContext).Target as WaveOutDeviceInfo[];
 
-      for (int i=0;i<devices.Length;i++)
+      if (string.IsNullOrEmpty(device.ModuleName))
       {
-        if (devices[i].DisplayName != device.Description && device.Description.StartsWith(devices[i].DisplayName))
+        devices[0].DisplayName = device.Description;
+        devices[0].Guid = device.Guid;
+      }
+      else
+      {
+        for (int i = 1; i < devices.Length; i++)
         {
-          devices[i].DisplayName = device.Description;
-          devices[i].Guid = device.Guid;
-          break;
+          if (devices[i].DisplayName != device.Description && device.Description.StartsWith(devices[i].DisplayName))
+          {
+            devices[i].DisplayName = device.Description;
+            devices[i].Guid = device.Guid;
+            break;
+          }
         }
       }
-
       return true;
     }
 
-                                   
     public static WaveOutDeviceInfo[] GetWaveOutDevices()
     {
       // enumerate WaveOut devices
-      int devices = WaveNative.waveOutGetNumDevs();
-      WaveOutDeviceInfo[] result = new WaveOutDeviceInfo[devices];
+      int device_count = WaveNative.waveOutGetNumDevs();
+      WaveOutDeviceInfo[] result = new WaveOutDeviceInfo[device_count + 1];
       WaveNative.WAVEOUTCAPS caps = new WaveNative.WAVEOUTCAPS();
 
-      for (int i = 0; i < devices; i++)
+      result[0] = new WaveOutDeviceInfo();
+
+      for (int i = 0; i < device_count; i++)
       {
         WaveNative.waveOutGetDevCaps((IntPtr)i, ref caps, (uint)Marshal.SizeOf(caps));
-        result[i] = new WaveOutDeviceInfo();
-        result[i].DisplayName = caps.szPname;
+        result[i + 1] = new WaveOutDeviceInfo();
+        result[i + 1].DisplayName = caps.szPname;
       }
 
       // expand names
@@ -309,7 +468,12 @@ namespace YATE.Drivers
       WaveNative.DirectSoundEnumerate(new WaveNative.DSEnumCallback(EnumCallback), (IntPtr)result_handle);
       result_handle.Free();
 
+      if (string.IsNullOrEmpty(result[0].DisplayName))
+        result[0].DisplayName = "(default)";
+
       return result;
     }
+
+    #endregion
   }
 }

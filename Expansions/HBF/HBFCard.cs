@@ -9,6 +9,22 @@ namespace HBF
 {
   public class HBFCard : ITVCCard
   {
+    private struct TrackReadElements
+    {
+      public byte Count;
+      public byte Data;
+
+      public TrackReadElements(byte in_count, byte in_data)
+      {
+        Count = in_count;
+        Data = in_data;
+      }
+    }
+
+    private const int CardROMSize = 16384;
+    private const int CardRAMSize = 4096;
+    private const int CardROMPageSize = 4096;
+
     private const int NumberOfDrives = 4;
     private const int InvalidDriveIndex = -1;
 
@@ -18,6 +34,9 @@ namespace HBF
     private readonly ulong DataTransferSpeed = 250000; // data transfer speed in byte/sec
 
     private const int AddressLength = 6;
+
+    private const UInt32 TrackIDADDMark = 0xf5f5f5fe;   // Address mark for track write command
+    private const UInt32 TrackDATAMark = 0xf5f5f5fb;    // Data mark for track write command
 
     // Register addresses
     private const int PORT_COMMAND = 0;
@@ -30,6 +49,35 @@ namespace HBF
     private const int PORT_PAGE = 8;
 
     private readonly int[] SteppingDelays = { 6, 12, 20, 30 };
+
+    private readonly TrackReadElements[] m_track_read_elements =
+    {
+      new TrackReadElements(80, 0x4e), // GAP
+      new TrackReadElements(12, 0x00), // SYNC
+      new TrackReadElements( 3, 0xc2), // IAM
+      new TrackReadElements( 1, 0xfc), // IAM
+      new TrackReadElements(50, 0x4e), // GAP1
+
+      new TrackReadElements(12, 0x00), // SYNC
+      new TrackReadElements( 3, 0xa1), // IDAM
+      new TrackReadElements( 1, 0xfe), // IDAM
+      new TrackReadElements( 0, 0x01), // CYL
+      new TrackReadElements( 0, 0x02), // HD
+      new TrackReadElements( 0, 0x03), // SEC
+      new TrackReadElements( 0, 0x04), // LEN
+      new TrackReadElements( 0, 0x10), // CRC1
+      new TrackReadElements( 0, 0x11), // CRC2
+      new TrackReadElements(22, 0x4e), // GAP2
+      new TrackReadElements(12, 0x00), // SYNC
+      new TrackReadElements( 3, 0xa1), // DAM
+      new TrackReadElements( 1, 0xFB), // DAM
+      new TrackReadElements( 0, 0x20), // DATA
+      new TrackReadElements( 0, 0x10), // CRC1
+      new TrackReadElements( 0, 0x11), // CRC2
+      new TrackReadElements(80, 0x4e), // GAP
+
+      new TrackReadElements(0,0)
+    };
 
     private readonly byte[] m_address_buffer = new byte[AddressLength];
 
@@ -51,12 +99,11 @@ namespace HBF
 
       // Track write
       TrackWriteWaitForIndex,
-      TrackWriteIDMark1,
-      TrackWriteIDMark2,
-      TrackWriteIDMark3,
-      TrackWriteIDMark,
-      TrackWriteTrack,
-      TrackWriteSide,
+      TrackWriteGap,
+      TrackWriteIDADDR,
+      TrackWriteData,
+
+      // Sector write
       WriteSector
 
     }
@@ -85,6 +132,19 @@ namespace HBF
       DRQ = 0x80,          // Data request flag
       INT = 0x01           // Interrupt flag
     }
+
+    /// <summary>
+    /// Force interrupt command flags
+    /// </summary>
+    [Flags]
+    enum ForceInterruptFlags: byte
+    {
+      NOT_READY_TO_READY = 0x01,
+      READY_TO_NOT_READY = 0x02,
+      INDEX_PULSE = 0x04,
+      IMMEDIATE_INTERRUPT = 0x08
+    }
+
 
     /// <summary>
     /// Parameter register bits
@@ -175,30 +235,24 @@ namespace HBF
     private int m_data_count = 0;
     private int m_data_length = 0;
 
+    /// <summary>Track write wariables</summary>
+    private UInt32 m_track_write_id_buffer;
+
+    /// <summary>Force interrupt mode</summary>
+    private ForceInterruptFlags m_force_interrupt;
+
+    /// <summary>Pending status data</summary>
     private bool m_fast_operation = false;
 
+    // Card memory
     private byte[] m_card_rom;
     private byte[] m_card_ram;
-
-    private const int CardROMSize = 16384;
-    private const int CardRAMSize = 4096;
-    private const int CardROMPageSize = 4096;
 
     private bool m_head_loaded;
 
     private HBFCardSettings m_settings;
 
     #region · Properties ·
-    public int SlotIndex
-    {
-      get
-      {
-        if (m_settings != null)
-          return m_settings.SlotIndex;
-        else
-          return -1;
-      }
-    }
     #endregion
 
 
@@ -221,16 +275,31 @@ namespace HBF
         m_disk_drives[i] = new DiskDrive();
       }
 
-      m_disk_drives[0] = new DiskDrive();
+      //m_disk_drives[0] = new DiskDrive();
       m_disk_drives[0].Geometry.NumberOfTracks = 80;
-      m_disk_drives[0].Geometry.NumberOfSides = 1;
+      m_disk_drives[0].Geometry.NumberOfSides = 2;
       m_disk_drives[0].Geometry.SectorPerTrack = 9;
       //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
-      m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\test.dsk");
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_TEST.dsk");
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_test1.xdi");
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\nautilus.dsk");
+      m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\upmlemez.img");
+
+      //m_disk_drives[1] = new DiskDrive();
+      m_disk_drives[1].Geometry.NumberOfTracks = 40;
+      m_disk_drives[1].Geometry.NumberOfSides = 2;
+      m_disk_drives[1].Geometry.SectorPerTrack = 9;
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
+      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
+      m_disk_drives[1].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\test.dsk");
       //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_TEST.dsk");
       //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_test1.xdi");
       //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\nautilus.dsk");
     }
+
+
 
     public void SetSettings(HBFCardSettings in_settings)
     {
@@ -488,6 +557,7 @@ namespace HBF
 
           return;
 
+        // return data register
         case PORT_DATA:
           switch (m_operation_state)
           {
@@ -501,6 +571,7 @@ namespace HBF
 
           return;
 
+        // return HW stzatus register
         case PORT_HWSTATUS:
           UpdateHardwareStatus();
           inout_data = (byte)m_reg_hw_status;
@@ -515,7 +586,16 @@ namespace HBF
     public void PortWrite(ushort in_address, byte in_value)
     {
       if ((in_address & 0x0f) != 8)
-        Debug.Write((in_address & 0x0f).ToString("X2") + ":" + in_value.ToString("X2") + " = ");
+      {
+        if ((in_address & 0x0f) == 3)
+        {
+          //Debug.Write(in_value.ToString("X2") + " ");
+        }
+        else
+        {
+          Debug.Write((in_address & 0x0f).ToString("X2") + ":" + in_value.ToString("X2") + " = ");
+        }
+      }
 
       switch (in_address & 0x0f)
       {
@@ -529,15 +609,23 @@ namespace HBF
           // If it is FORCE-IRQ command...
           if ((in_value & 0xF0) == 0xD0)
           {
+            m_force_interrupt = (ForceInterruptFlags)(in_value & 0x0f);
+
+            Debug.WriteLine("Force interrupt: {0}", m_force_interrupt);
+
             // Reset any executing command
             m_data_length = 0;
             m_data_count = 0;
+            m_operation_state = OperationState.None;
 
             // Either reset BUSY flag or reset all flags if BUSY=0
             if ((m_fdc_status & StatusFlags.BUSY) != 0)
               m_fdc_status &= ~StatusFlags.BUSY;
             else
+            {
               m_fdc_status = m_disk_drives[m_current_drive_index].Track == 0 ? StatusFlags.TRACK0 : 0;
+              m_fdc_status_mode = 1;
+            }
 
             // Cause immediate interrupt if requested
             if ((in_value & (byte)CommandFlags.IRQ) != 0)
@@ -568,6 +656,8 @@ namespace HBF
               // set head load
               m_head_loaded = ((in_value & (byte)CommandFlags.LOADHEAD) != 0);
 
+              m_fdc_last_step_direction = 0;
+
               // if already at track zero
               if (m_disk_drives[m_current_drive_index].Track == 0)
               {
@@ -593,6 +683,11 @@ namespace HBF
               // set head load
               m_head_loaded = ((in_value & (byte)CommandFlags.LOADHEAD) != 0);
 
+              if (m_fdc_data > m_fdc_track)
+                m_fdc_last_step_direction = 0;
+              else
+                m_fdc_last_step_direction = 0x20;
+
               // Reset any executing command
               m_data_count = 0;
               m_data_length = 0;
@@ -607,7 +702,7 @@ namespace HBF
             case 0x60: // STEP-OUT
             case 0x70: // STEP-OUT-AND-UPDATE
               {
-                Debug.WriteLine("Step");
+                Debug.Write(string.Format("Step: {0:x2}", (in_value & 0xF0)));
 
                 // command group I
                 m_fdc_status_mode = 1;
@@ -630,10 +725,12 @@ namespace HBF
                 }
                 else
                 {
-                  target_track++;
+                  if (target_track < m_disk_drives[m_current_drive_index].Geometry.NumberOfTracks - 1)
+                    target_track++;
                 }
+                Debug.WriteLine(" Track: {0}", target_track);
 
-                m_disk_drives[m_current_drive_index].Track = target_track;
+                //m_disk_drives[m_current_drive_index].Track = target_track;
 
                 // Update track register if requested
                 StatusFlags new_status = 0;
@@ -649,8 +746,9 @@ namespace HBF
               }
               break;
 
-            // WRITE-TRACK
+            // Track write
             case 0xF0:
+              Debug.Write("TrackWrite ");
               // command group III
               m_fdc_status_mode = 3;
 
@@ -748,7 +846,6 @@ namespace HBF
               m_head_loaded = true;
               break;
 
-
 #if false
 							/* Read first sector address from the track */
 							if (!D->Disk[D->Drive]) D->Ptr = 0;
@@ -811,6 +908,31 @@ namespace HBF
 
         case PORT_DATA:
           m_fdc_data = in_value;
+
+          switch (m_operation_state)
+          {
+            case OperationState.TrackWriteGap:
+              m_track_write_id_buffer = (m_track_write_id_buffer << 8) | in_value;
+              break;
+          }
+
+          m_reg_hw_status &= ~HardwareFlags.DRQ;
+
+          /*
+              if ((m_reg_hw_status & HardwareFlags.DRQ) == 0)
+              {
+                m_track_write_id_buffer = (m_track_write_id_buffer << 8) | in_value;
+              }
+              else
+              {
+                // data overrun occured
+                m_reg_hw_status = HardwareFlags.INT;
+                m_fdc_status |= StatusFlags.LOSTDATA;
+                m_operation_state = OperationState.None;
+              }
+          */
+          break;
+
 #if false
 					// check track write mode
 					if (m_read_write_mode != ReadWriteMode.TrackWrite)
@@ -821,7 +943,7 @@ namespace HBF
 					{
 
 						/* When writing data, store value to disk */
-						if (m_wr_length > 0)
+          if (m_wr_length > 0)
 						{
 							Debug.WriteLine(string.Format("WD1793: EXTRA DATA WRITE (%02Xh)\n", in_value));
 						}
@@ -851,11 +973,11 @@ namespace HBF
 					// Save last written value
 					m_fdc_data = in_value;
 #endif
-          break;
+
 
         // parameter register
         case PORT_PARAM:
-          //Debug.WriteLine("Param register set: {0:x2}", in_value);
+          Debug.WriteLine("Param register set: {0}", (ParametersFlags)in_value);
           m_reg_param = (ParametersFlags)in_value;
 
           switch (m_reg_param & ParametersFlags.DriveSelectMask)
@@ -902,7 +1024,7 @@ namespace HBF
     {
       if (m_fast_operation)
       {
-        // no delay -> immediatelly execute the operation
+        // no delay -> immediately execute the operation
         m_fdc_status = in_new_status_flags;
         m_reg_hw_status = in_new_hardware_flags;
         m_fdc_track = in_new_track;
@@ -971,11 +1093,67 @@ namespace HBF
             if (m_prev_index_pulse_state == false && index_pulse_state == true)
             {
               // index pulse rising edge
-              m_operation_state = OperationState.TrackWriteIDMark1;
+              m_operation_state = OperationState.TrackWriteGap;
+              m_operation_start_tick = m_tvcomputer.GetCPUTicks();
+              m_data_count = 0;
+              m_reg_hw_status |= HardwareFlags.DRQ;
             }
             m_prev_index_pulse_state = index_pulse_state;
-            m_operation_start_tick = m_tvcomputer.GetCPUTicks();
-            //m_wr_length = 0;
+          }
+          break;
+
+        case OperationState.TrackWriteGap:
+          {
+            if(TrackWriteByteProcess())
+            {
+              switch(m_track_write_id_buffer)
+              {
+                case TrackIDADDMark:
+                  m_data_length = m_data_count;
+                  m_operation_state = OperationState.TrackWriteIDADDR;
+                  break;
+
+                case TrackDATAMark:
+                  m_data_length = m_data_count;
+                  m_operation_state = OperationState.TrackWriteData;
+                  break;
+              }
+            }
+          }
+          break;
+
+        case OperationState.TrackWriteIDADDR:
+          {
+            if(TrackWriteByteProcess())
+            {
+              switch (m_data_count - m_data_length)
+              {
+                // sector value
+                case 3:
+                  m_disk_drives[m_current_drive_index].SeekSector(m_fdc_data, GetCurrentDriveSide());
+                  break;
+
+                case 5:
+                  m_operation_state = OperationState.TrackWriteGap;
+                  break;
+              }
+            }
+          }
+          break;
+
+        case OperationState.TrackWriteData:
+          {
+            if (TrackWriteByteProcess())
+            {
+              if (m_data_count - m_data_length <= m_disk_drives[m_current_drive_index].Geometry.SectorLength)
+              {
+                m_disk_drives[m_current_drive_index].WriteByte(m_fdc_data);
+              }
+              else
+              {
+                m_operation_state = OperationState.TrackWriteGap;
+              }
+            }
           }
           break;
 
@@ -983,21 +1161,20 @@ namespace HBF
           {
             int byte_index = TickToByteIndex(m_tvcomputer.GetTicksSince(m_operation_start_tick));
 
-            if (byte_index > m_data_length)
+            if (byte_index > m_data_count)
             {
-              // stop operation
-              m_data_length = 0;
-              m_operation_state = OperationState.None;
-              m_fdc_status &= ~StatusFlags.BUSY;
-              m_reg_hw_status |= HardwareFlags.INT;
-            }
-            else
-            {
-              if (byte_index > m_data_count)
+              m_fdc_data = m_disk_drives[m_current_drive_index].ReadByte();
+              m_data_count++;
+              m_reg_hw_status |= HardwareFlags.DRQ;
+
+              if (m_data_count > m_data_length)
               {
-                m_fdc_data = m_disk_drives[m_current_drive_index].ReadByte();
-                m_data_count++;
-                m_reg_hw_status |= HardwareFlags.DRQ;
+                // stop operation
+                m_data_length = 0;
+                m_operation_state = OperationState.None;
+                m_fdc_status &= ~StatusFlags.BUSY;
+                m_reg_hw_status |= HardwareFlags.INT;
+                //m_fdc_status_mode = 1;
               }
             }
           }
@@ -1040,39 +1217,38 @@ namespace HBF
       }
     }
 
-    private void TrackWriteData(byte in_data)
+    private bool TrackWriteByteProcess()
     {
-      // check DRQ status
-      if ((m_reg_hw_status & HardwareFlags.DRQ) == 0)
+      // stop operation at the next index pulse 
+      bool index_pulse_state = IsIndexPulse();
+      if (index_pulse_state != m_prev_index_pulse_state && index_pulse_state)
       {
-        // data overrun occured
-        m_reg_hw_status = HardwareFlags.INT;
-        m_fdc_status |= StatusFlags.LOSTDATA;
         m_operation_state = OperationState.None;
-
-        return;
+        m_fdc_status &= ~StatusFlags.BUSY;
+        m_reg_hw_status |= HardwareFlags.INT;
+        //m_fdc_status_mode = 1;
+        Debug.WriteLine(" END");
       }
+      m_prev_index_pulse_state = index_pulse_state;
 
-      m_reg_hw_status &= ~HardwareFlags.DRQ;
+      int byte_count = TickToByteIndex(m_tvcomputer.GetTicksSince(m_operation_start_tick));
 
-      switch (m_operation_state)
+      if (byte_count > m_data_count)
       {
-        case OperationState.TrackWriteIDMark1:
-          if (in_data == 0xa1)
-            m_operation_state = m_operation_state + 1;
-          else
-            m_operation_state = OperationState.TrackWriteIDMark1;
-          break;
+        m_data_count++;
+        m_reg_hw_status |= HardwareFlags.DRQ;
 
-        case OperationState.TrackWriteIDMark:
-          if (in_data == 0xfe)
-            m_operation_state = OperationState.TrackWriteTrack;
-          else
-            m_operation_state = OperationState.TrackWriteIDMark1;
-          break;
+        return true;
       }
+
+      return false;
     }
 
+    /// <summary>
+    /// Converts CPU tick count to transferred byte count
+    /// </summary>
+    /// <param name="in_tick_count"></param>
+    /// <returns></returns>
     private int TickToByteIndex(ulong in_tick_count)
     {
       return (int)(in_tick_count * DataTransferSpeed / 8ul / (ulong)m_tvcomputer.CPUClock);
@@ -1090,7 +1266,7 @@ namespace HBF
     /// <summary>
     /// Gets the head position (track) of the currently selected drive
     /// </summary>
-    /// <returns></returns>
+    /// <returns>Track number</returns>
 		private byte GetCurrentDriveTrack()
     {
       if (m_current_drive_index == InvalidDriveIndex)
@@ -1100,9 +1276,9 @@ namespace HBF
     }
 
     /// <summary>
-    /// Gets the physical sector length of the current drive
+    /// Gets the physical sector length code of the current drive
     /// </summary>
-    /// <returns></returns>
+    /// <returns>Sector length code</returns>
 		private byte GetCurrentSectorLength()
     {
       int sector_length = 512;

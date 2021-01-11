@@ -40,7 +40,7 @@ namespace YATE.Settings
       //InstalledJoysticks = m_joystick.FindJoysticks();
 
       HardwareVersionList = new string[] { "TVC 32k", "TVC 64k", "TVC 64 & Ram Paging", "TVC 64k+" };
-      ROMVersionList = new string[] { "(custom)", "BASIC 1.2", "BASIC 1.2 (RU)", "BASIC 2.2" };
+      ROMVersionList = new string[] { "(custom)", "BASIC 1.2", "BASIC 1.2 (RU)", "BASIC 2.1", "BASIC 2.2" };
 
       Load();
     }

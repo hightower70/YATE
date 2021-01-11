@@ -36,6 +36,7 @@ namespace YATE.Settings
       {
         new ExpansionSetupPageInfo("TVComputer", typeof(SetupTVCConfiguration)),
         new ExpansionSetupPageInfo("Input", typeof(SetupInput)),
+        new ExpansionSetupPageInfo("Audio", typeof(SetupAudio)),
         new ExpansionSetupPageInfo("Gamebase", typeof(SetupGamebase)),
         new ExpansionSetupPageInfo("General", typeof(SetupGeneral))
       };

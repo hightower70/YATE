@@ -47,6 +47,9 @@
   <ItemGroup>
     <Compile Include="DiskDrive.cs" />
     <Compile Include="ExpansionMain.cs" />
+    <Compile Include="Forms\DriveDiskSettings.xaml.cs">
+      <DependentUpon>DriveDiskSettings.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Forms\SetupAbout.xaml.cs">
       <DependentUpon>SetupAbout.xaml</DependentUpon>
     </Compile>
@@ -76,6 +79,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Forms\DriveDiskSettings.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Forms\SetupAbout.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

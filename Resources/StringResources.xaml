@@ -3,4 +3,5 @@
 										xmlns:system="clr-namespace:System;assembly=mscorlib">
 	<system:String x:Key="srError">Error</system:String>
 	<system:String x:Key="srFileLoadError">File can't be loaded</system:String>
+
 </ResourceDictionary>

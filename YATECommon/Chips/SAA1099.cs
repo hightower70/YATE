@@ -2,7 +2,7 @@
 
 namespace YATECommon.Chips
 {
-	/***************************************************************************
+  /***************************************************************************
 
 			Philips SAA1099 Sound driver
 
@@ -66,155 +66,155 @@ namespace YATECommon.Chips
 			0x1c | ---- --x- | Synch & Reset generators
 
 	***************************************************************************/
-	public class SAA1099
-	{
-		#region · Types ·
+  public class SAA1099
+  {
+    #region · Types ·
 
-		/* this structure defines a channel */
-		class SAA1099Channel
-		{
-			public int Frequency;                 /* frequency (0x00..0xff) */
-			public int FreqEnable;                /* frequency enable */
-			public int NoiseEnable;               /* noise enable */
-			public int Octave;                    /* octave (0x00..0x07) */
-			public int[] Amplitude = new int[2];  /* amplitude (0x00..0x0f) */
-			public int[] Envelope = new int[2];   /* envelope (0x00..0x0f or 0x10 == off) */
+    /* this structure defines a channel */
+    class SAA1099Channel
+    {
+      public int Frequency;                 /* frequency (0x00..0xff) */
+      public int FreqEnable;                /* frequency enable */
+      public int NoiseEnable;               /* noise enable */
+      public int Octave;                    /* octave (0x00..0x07) */
+      public int[] Amplitude = new int[2];  /* amplitude (0x00..0x0f) */
+      public int[] Envelope = new int[2];   /* envelope (0x00..0x0f or 0x10 == off) */
 
-			/* vars to simulate the square wave */
-			public double Counter;
-			public double Freq;
-			public int Level;
-		};
+      /* vars to simulate the square wave */
+      public double Counter;
+      public double Freq;
+      public int Level;
+    };
 
-		/* this structure defines a noise channel */
-		class SAA1099Noise
-		{
-			/* vars to simulate the noise generator output */
-			public double Counter;
-			public double Freq;
-			public int Level;            /* noise polynomal shifter */
-		};
-
-
-		#region · Constant ·
-
-		private const int LEFT = 0x00;
-		private const int RIGHT = 0x01;
+    /* this structure defines a noise channel */
+    class SAA1099Noise
+    {
+      /* vars to simulate the noise generator output */
+      public double Counter;
+      public double Freq;
+      public int Level;            /* noise polynomal shifter */
+    };
 
 
-		static readonly int[] amplitude_lookup = {
-	 0*32767/16,  1*32767/16,  2*32767/16,  3*32767/16,
-	 4*32767/16,  5*32767/16,  6*32767/16,  7*32767/16,
-	 8*32767/16,  9*32767/16, 10*32767/16, 11*32767/16,
-	12*32767/16, 13*32767/16, 14*32767/16, 15*32767/16
-		};
+    #region · Constant ·
 
-		static readonly byte[][] envelope = {
+    private const int LEFT = 0x00;
+    private const int RIGHT = 0x01;
+
+
+    static readonly int[] amplitude_lookup = {
+   0*32767/16,  1*32767/16,  2*32767/16,  3*32767/16,
+   4*32767/16,  5*32767/16,  6*32767/16,  7*32767/16,
+   8*32767/16,  9*32767/16, 10*32767/16, 11*32767/16,
+  12*32767/16, 13*32767/16, 14*32767/16, 15*32767/16
+    };
+
+    static readonly byte[][] envelope = {
 	/* zero amplitude */
 	new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	/* maximum amplitude */
    new byte[] {15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-	 15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-	 15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-		 15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15, },
+   15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
+   15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
+     15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15, },
 	/* single decay */
 	new byte[] {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	/* repetitive decay */
 	new byte[] {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
-	 15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
-	 15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
-	 15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 },
+   15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+   15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+   15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 },
 	/* single triangular */
 	new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
-	 15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+   15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	/* repetitive triangular */
 	new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
-	 15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
-	 15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 },
+   15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
+   15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 },
 	/* single attack */
     new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	/* repetitive attack */
     new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
-			0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15 }
-		};
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15 }
+    };
 
-		#endregion
+    #endregion
 
-		#endregion
+    #endregion
 
-		#region · Data members ·
-		private int[] noise_params = new int[2];      /* noise generators parameters */
-		private int[] env_enable = new int[2];        /* envelope generators enable */
-		private int[] env_reverse_right = new int[2];   /* envelope reversed for right channel */
-		private int[] env_mode = new int[2];        /* envelope generators mode */
-		private int[] env_bits = new int[2];        /* non zero = 3 bits resolution */
-		private int[] env_clock = new int[2];       /* envelope clock mode (non-zero external) */
-		private int[] env_step = new int[2];                /* current envelope step */
-		private int all_ch_enable;        /* all channels enable */
-		private int sync_state;         /* sync all channels */
-		private int selected_reg;       /* selected register */
-		private SAA1099Channel[] channels = new SAA1099Channel[6];    /* channels */
-		private SAA1099Noise[] noise = new SAA1099Noise[2]; /* noise generators */
-		double sample_rate;
+    #region · Data members ·
+    private int[] noise_params = new int[2];      /* noise generators parameters */
+    private int[] env_enable = new int[2];        /* envelope generators enable */
+    private int[] env_reverse_right = new int[2];   /* envelope reversed for right channel */
+    private int[] env_mode = new int[2];        /* envelope generators mode */
+    private int[] env_bits = new int[2];        /* non zero = 3 bits resolution */
+    private int[] env_clock = new int[2];       /* envelope clock mode (non-zero external) */
+    private int[] env_step = new int[2];                /* current envelope step */
+    private int all_ch_enable;        /* all channels enable */
+    private int sync_state;         /* sync all channels */
+    private int selected_reg;       /* selected register */
+    private SAA1099Channel[] channels = new SAA1099Channel[6];    /* channels */
+    private SAA1099Noise[] noise = new SAA1099Noise[2]; /* noise generators */
+    double sample_rate;
 
-		#endregion
+    #endregion
 
 
-		private void saa1099_envelope(int ch)
-		{
-			if (env_enable[ch] != 0)
-			{
-				int step, mode, mask;
-				mode = env_mode[ch];
-				/* step from 0..63 and then loop in steps 32..63 */
-				step = env_step[ch] = ((env_step[ch] + 1) & 0x3f) | (env_step[ch] & 0x20);
+    private void saa1099_envelope(int ch)
+    {
+      if (env_enable[ch] != 0)
+      {
+        int step, mode, mask;
+        mode = env_mode[ch];
+        /* step from 0..63 and then loop in steps 32..63 */
+        step = env_step[ch] = ((env_step[ch] + 1) & 0x3f) | (env_step[ch] & 0x20);
 
-				mask = 15;
-				if (env_bits[ch] != 0)
-					mask &= ~1;   /* 3 bit resolution, mask LSB */
+        mask = 15;
+        if (env_bits[ch] != 0)
+          mask &= ~1;   /* 3 bit resolution, mask LSB */
 
-				channels[ch * 3 + 0].Envelope[LEFT] =
-				channels[ch * 3 + 1].Envelope[LEFT] =
-				channels[ch * 3 + 2].Envelope[LEFT] = envelope[mode][step] & mask;
+        channels[ch * 3 + 0].Envelope[LEFT] =
+        channels[ch * 3 + 1].Envelope[LEFT] =
+        channels[ch * 3 + 2].Envelope[LEFT] = envelope[mode][step] & mask;
 
-				if ((env_reverse_right[ch] & 0x01) != 0)
-				{
-					channels[ch * 3 + 0].Envelope[RIGHT] =
-					channels[ch * 3 + 1].Envelope[RIGHT] =
-					channels[ch * 3 + 2].Envelope[RIGHT] = (15 - envelope[mode][step]) & mask;
-				}
-				else
-				{
-					channels[ch * 3 + 0].Envelope[RIGHT] =
-					channels[ch * 3 + 1].Envelope[RIGHT] =
-					channels[ch * 3 + 2].Envelope[RIGHT] = envelope[mode][step] & mask;
-				}
-			}
-			else
-			{
-				/* envelope mode off, set all envelope factors to 16 */
-				channels[ch * 3 + 0].Envelope[LEFT] =
-				channels[ch * 3 + 1].Envelope[LEFT] =
-				channels[ch * 3 + 2].Envelope[LEFT] =
-				channels[ch * 3 + 0].Envelope[RIGHT] =
-				channels[ch * 3 + 1].Envelope[RIGHT] =
-				channels[ch * 3 + 2].Envelope[RIGHT] = 16;
-			}
-		}
+        if ((env_reverse_right[ch] & 0x01) != 0)
+        {
+          channels[ch * 3 + 0].Envelope[RIGHT] =
+          channels[ch * 3 + 1].Envelope[RIGHT] =
+          channels[ch * 3 + 2].Envelope[RIGHT] = (15 - envelope[mode][step]) & mask;
+        }
+        else
+        {
+          channels[ch * 3 + 0].Envelope[RIGHT] =
+          channels[ch * 3 + 1].Envelope[RIGHT] =
+          channels[ch * 3 + 2].Envelope[RIGHT] = envelope[mode][step] & mask;
+        }
+      }
+      else
+      {
+        /* envelope mode off, set all envelope factors to 16 */
+        channels[ch * 3 + 0].Envelope[LEFT] =
+        channels[ch * 3 + 1].Envelope[LEFT] =
+        channels[ch * 3 + 2].Envelope[LEFT] =
+        channels[ch * 3 + 0].Envelope[RIGHT] =
+        channels[ch * 3 + 1].Envelope[RIGHT] =
+        channels[ch * 3 + 2].Envelope[RIGHT] = 16;
+      }
+    }
 
 
 #if false
@@ -235,223 +235,224 @@ saa->sample_rate = clock / 256;
 }
 #endif
 
-		public void saa1099_control_port_w(int reg, int data)
-		{
-			if ((data & 0xff) > 0x1c)
-			{
-				/* Error! */
-				Debug.WriteLine("SAA1099: Unknown register selected");
-			}
+    public void saa1099_control_port_w(int reg, int data)
+    {
+      if ((data & 0xff) > 0x1c)
+      {
+        /* Error! */
+        Debug.WriteLine("SAA1099: Unknown register selected");
+      }
 
-			selected_reg = data & 0x1f;
-			if (selected_reg == 0x18 || selected_reg == 0x19)
-			{
-				/* clock the envelope channels */
-				if (env_clock[0] != 0)
-					saa1099_envelope(0);
-				if (env_clock[1] != 0)
-					saa1099_envelope(1);
-			}
-		}
-
-
-		public void saa1099_write_port_w(int offset, int data)
-		{
-			int ch;
-
-			/* first update the stream to this point in time */
-			//stream_update(saa->stream);
-
-			switch (selected_reg)
-			{
-				/* channel i amplitude */
-				case 0x00:
-				case 0x01:
-				case 0x02:
-				case 0x03:
-				case 0x04:
-				case 0x05:
-					ch = selected_reg & 7;
-					channels[ch].Amplitude[LEFT] = amplitude_lookup[data & 0x0f];
-					channels[ch].Amplitude[RIGHT] = amplitude_lookup[(data >> 4) & 0x0f];
-					break;
-
-				/* channel i frequency */
-				case 0x08:
-				case 0x09:
-				case 0x0a:
-				case 0x0b:
-				case 0x0c:
-				case 0x0d:
-					ch = selected_reg & 7;
-					channels[ch].Frequency = data & 0xff;
-					break;
-
-				/* channel i octave */
-				case 0x10:
-				case 0x11:
-				case 0x12:
-					ch = (selected_reg - 0x10) << 1;
-					channels[ch + 0].Octave = data & 0x07;
-					channels[ch + 1].Octave = (data >> 4) & 0x07;
-					break;
-
-				/* channel i frequency enable */
-				case 0x14:
-					channels[0].FreqEnable = data & 0x01;
-					channels[1].FreqEnable = data & 0x02;
-					channels[2].FreqEnable = data & 0x04;
-					channels[3].FreqEnable = data & 0x08;
-					channels[4].FreqEnable = data & 0x10;
-					channels[5].FreqEnable = data & 0x20;
-					break;
-
-				/* channel i noise enable */
-				case 0x15:
-					channels[0].NoiseEnable = data & 0x01;
-					channels[1].NoiseEnable = data & 0x02;
-					channels[2].NoiseEnable = data & 0x04;
-					channels[3].NoiseEnable = data & 0x08;
-					channels[4].NoiseEnable = data & 0x10;
-					channels[5].NoiseEnable = data & 0x20;
-					break;
-
-				/* noise generators parameters */
-				case 0x16:
-					noise_params[0] = data & 0x03;
-					noise_params[1] = (data >> 4) & 0x03;
-					break;
-
-				/* envelope generators parameters */
-				case 0x18:
-				case 0x19:
-					ch = selected_reg - 0x18;
-					env_reverse_right[ch] = data & 0x01;
-					env_mode[ch] = (data >> 1) & 0x07;
-					env_bits[ch] = data & 0x10;
-					env_clock[ch] = data & 0x20;
-					env_enable[ch] = data & 0x80;
-					/* reset the envelope */
-					env_step[ch] = 0;
-					break;
-
-				/* channels enable & reset generators */
-				case 0x1c:
-					all_ch_enable = data & 0x01;
-					sync_state = data & 0x02;
-					if ((data & 0x02) != 0)
-					{
-						int i;
-
-						/* Synch & Reset generators */
-						for (i = 0; i < 6; i++)
-						{
-							channels[i].Level = 0;
-							channels[i].Counter = 0.0;
-						}
-					}
-					break;
-
-				default:  /* Error! */
-					Debug.WriteLine("SAA1099: Unknown operation");
-					break;
-			}
-		}
+      selected_reg = data & 0x1f;
+      if (selected_reg == 0x18 || selected_reg == 0x19)
+      {
+        /* clock the envelope channels */
+        if (env_clock[0] != 0)
+          saa1099_envelope(0);
+        if (env_clock[1] != 0)
+          saa1099_envelope(1);
+      }
+    }
 
 
-		private void saa1099_update(out int out_left, out int out_right)
-		{
-			int ch;
+    public void saa1099_write_port_w(int offset, int data)
+    {
+      int ch;
 
-			/* if the channels are disabled we're done */
-			if (all_ch_enable == 0)
-			{
-				/* init output data */
-				out_left = 0;
-				out_right = 0;
-				
-				return;
-			}
+      /* first update the stream to this point in time */
+      //stream_update(saa->stream);
 
-			for (ch = 0; ch < 2; ch++)
-			{
-				switch (noise_params[ch])
-				{
-					case 0: noise[ch].Freq = 31250.0 * 2; break;
-					case 1: noise[ch].Freq = 15625.0 * 2; break;
-					case 2: noise[ch].Freq = 7812.5 * 2; break;
-					case 3: noise[ch].Freq = channels[ch * 3].Freq; break;
-				}
-			}
+      switch (selected_reg)
+      {
+        /* channel i amplitude */
+        case 0x00:
+        case 0x01:
+        case 0x02:
+        case 0x03:
+        case 0x04:
+        case 0x05:
+          ch = selected_reg & 7;
+          channels[ch].Amplitude[LEFT] = amplitude_lookup[data & 0x0f];
+          channels[ch].Amplitude[RIGHT] = amplitude_lookup[(data >> 4) & 0x0f];
+          break;
 
-			/* fill all data needed */
-			int output_l = 0, output_r = 0;
+        /* channel i frequency */
+        case 0x08:
+        case 0x09:
+        case 0x0a:
+        case 0x0b:
+        case 0x0c:
+        case 0x0d:
+          ch = selected_reg & 7;
+          channels[ch].Frequency = data & 0xff;
+          break;
 
-			/* for each channel */
-			for (ch = 0; ch < 6; ch++)
-			{
-				if (channels[ch].Freq == 0.0)
-					channels[ch].Freq = (double)((2 * 15625) << channels[ch].Octave) / (511.0 - (double)channels[ch].Frequency);
+        /* channel i octave */
+        case 0x10:
+        case 0x11:
+        case 0x12:
+          ch = (selected_reg - 0x10) << 1;
+          channels[ch + 0].Octave = data & 0x07;
+          channels[ch + 1].Octave = (data >> 4) & 0x07;
+          break;
 
-				/* check the actual position in the square wave */
-				channels[ch].Counter -= channels[ch].Freq;
-				while (channels[ch].Counter < 0)
-				{
-					/* calculate new frequency now after the half wave is updated */
-					channels[ch].Freq = (double)((2 * 15625) << channels[ch].Octave) / (511.0 - (double)channels[ch].Frequency);
+        /* channel i frequency enable */
+        case 0x14:
+          channels[0].FreqEnable = data & 0x01;
+          channels[1].FreqEnable = data & 0x02;
+          channels[2].FreqEnable = data & 0x04;
+          channels[3].FreqEnable = data & 0x08;
+          channels[4].FreqEnable = data & 0x10;
+          channels[5].FreqEnable = data & 0x20;
+          break;
 
-					channels[ch].Counter += sample_rate;
-					channels[ch].Level ^= 1;
+        /* channel i noise enable */
+        case 0x15:
+          channels[0].NoiseEnable = data & 0x01;
+          channels[1].NoiseEnable = data & 0x02;
+          channels[2].NoiseEnable = data & 0x04;
+          channels[3].NoiseEnable = data & 0x08;
+          channels[4].NoiseEnable = data & 0x10;
+          channels[5].NoiseEnable = data & 0x20;
+          break;
 
-					/* eventually clock the envelope counters */
-					if (ch == 1 && env_clock[0] == 0)
-						saa1099_envelope(0);
-					if (ch == 4 && env_clock[1] == 0)
-						saa1099_envelope(1);
-				} }
+        /* noise generators parameters */
+        case 0x16:
+          noise_params[0] = data & 0x03;
+          noise_params[1] = (data >> 4) & 0x03;
+          break;
 
-			/* if the noise is enabled */
-			if (channels[ch].NoiseEnable != 0)
-			{
-				/* if the noise level is high (noise 0: chan 0-2, noise 1: chan 3-5) */
-				if ((noise[ch / 3].Level & 1) != 0)
-				{
-					/* subtract to avoid overflows, also use only half amplitude */
-					output_l -= channels[ch].Amplitude[LEFT] * channels[ch].Envelope[LEFT] / 16 / 2;
-					output_r -= channels[ch].Amplitude[RIGHT] * channels[ch].Envelope[RIGHT] / 16 / 2;
-				}
-			}
+        /* envelope generators parameters */
+        case 0x18:
+        case 0x19:
+          ch = selected_reg - 0x18;
+          env_reverse_right[ch] = data & 0x01;
+          env_mode[ch] = (data >> 1) & 0x07;
+          env_bits[ch] = data & 0x10;
+          env_clock[ch] = data & 0x20;
+          env_enable[ch] = data & 0x80;
+          /* reset the envelope */
+          env_step[ch] = 0;
+          break;
 
-			/* if the square wave is enabled */
-			if (channels[ch].FreqEnable != 0)
-			{
-				/* if the channel level is high */
-				if ((channels[ch].Level & 1) != 0)
-				{
-					output_l += channels[ch].Amplitude[LEFT] * channels[ch].Envelope[LEFT] / 16;
-					output_r += channels[ch].Amplitude[RIGHT] * channels[ch].Envelope[RIGHT] / 16;
-				}
-			}
+        /* channels enable & reset generators */
+        case 0x1c:
+          all_ch_enable = data & 0x01;
+          sync_state = data & 0x02;
+          if ((data & 0x02) != 0)
+          {
+            int i;
 
-			for (ch = 0; ch < 2; ch++)
-			{
-				/* check the actual position in noise generator */
-				noise[ch].Counter -= noise[ch].Freq;
-				while (noise[ch].Counter < 0)
-				{
-					noise[ch].Counter += sample_rate;
-					if (((noise[ch].Level & 0x4000) == 0) == ((noise[ch].Level & 0x0040) == 0))
-						noise[ch].Level = (noise[ch].Level << 1) | 1;
-					else
-						noise[ch].Level <<= 1;
-				}
-			}
+            /* Synch & Reset generators */
+            for (i = 0; i < 6; i++)
+            {
+              channels[i].Level = 0;
+              channels[i].Counter = 0.0;
+            }
+          }
+          break;
 
-			/* write sound data to the buffer */
-			out_left = output_l / 6;
-			out_right = output_r / 6;
-		}
-	}
+        default:  /* Error! */
+          Debug.WriteLine("SAA1099: Unknown operation");
+          break;
+      }
+    }
+
+
+    private void saa1099_update(out int out_left, out int out_right)
+    {
+      int ch;
+
+      /* if the channels are disabled we're done */
+      if (all_ch_enable == 0)
+      {
+        /* init output data */
+        out_left = 0;
+        out_right = 0;
+
+        return;
+      }
+
+      for (ch = 0; ch < 2; ch++)
+      {
+        switch (noise_params[ch])
+        {
+          case 0: noise[ch].Freq = 31250.0 * 2; break;
+          case 1: noise[ch].Freq = 15625.0 * 2; break;
+          case 2: noise[ch].Freq = 7812.5 * 2; break;
+          case 3: noise[ch].Freq = channels[ch * 3].Freq; break;
+        }
+      }
+
+      /* fill all data needed */
+      int output_l = 0, output_r = 0;
+
+      /* for each channel */
+      for (ch = 0; ch < 6; ch++)
+      {
+        if (channels[ch].Freq == 0.0)
+          channels[ch].Freq = (double)((2 * 15625) << channels[ch].Octave) / (511.0 - (double)channels[ch].Frequency);
+
+        /* check the actual position in the square wave */
+        channels[ch].Counter -= channels[ch].Freq;
+        while (channels[ch].Counter < 0)
+        {
+          /* calculate new frequency now after the half wave is updated */
+          channels[ch].Freq = (double)((2 * 15625) << channels[ch].Octave) / (511.0 - (double)channels[ch].Frequency);
+
+          channels[ch].Counter += sample_rate;
+          channels[ch].Level ^= 1;
+
+          /* eventually clock the envelope counters */
+          if (ch == 1 && env_clock[0] == 0)
+            saa1099_envelope(0);
+          if (ch == 4 && env_clock[1] == 0)
+            saa1099_envelope(1);
+        }
+      }
+
+      /* if the noise is enabled */
+      if (channels[ch].NoiseEnable != 0)
+      {
+        /* if the noise level is high (noise 0: chan 0-2, noise 1: chan 3-5) */
+        if ((noise[ch / 3].Level & 1) != 0)
+        {
+          /* subtract to avoid overflows, also use only half amplitude */
+          output_l -= channels[ch].Amplitude[LEFT] * channels[ch].Envelope[LEFT] / 16 / 2;
+          output_r -= channels[ch].Amplitude[RIGHT] * channels[ch].Envelope[RIGHT] / 16 / 2;
+        }
+      }
+
+      /* if the square wave is enabled */
+      if (channels[ch].FreqEnable != 0)
+      {
+        /* if the channel level is high */
+        if ((channels[ch].Level & 1) != 0)
+        {
+          output_l += channels[ch].Amplitude[LEFT] * channels[ch].Envelope[LEFT] / 16;
+          output_r += channels[ch].Amplitude[RIGHT] * channels[ch].Envelope[RIGHT] / 16;
+        }
+      }
+
+      for (ch = 0; ch < 2; ch++)
+      {
+        /* check the actual position in noise generator */
+        noise[ch].Counter -= noise[ch].Freq;
+        while (noise[ch].Counter < 0)
+        {
+          noise[ch].Counter += sample_rate;
+          if (((noise[ch].Level & 0x4000) == 0) == ((noise[ch].Level & 0x0040) == 0))
+            noise[ch].Level = (noise[ch].Level << 1) | 1;
+          else
+            noise[ch].Level <<= 1;
+        }
+      }
+
+      /* write sound data to the buffer */
+      out_left = output_l / 6;
+      out_right = output_r / 6;
+    }
+  }
 }
 
 #if false
