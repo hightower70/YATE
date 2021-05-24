@@ -27,7 +27,7 @@
 		
 		<TextBlock Grid.Row="1" Grid.Column="0" Text="Modules path:" VerticalAlignment="Center"/>
 		<TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ModulesPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-		<Button Grid.Row="1" Grid.Column="2" Margin="3" Content="..." />
+		<Button Grid.Row="1" Grid.Column="2" Margin="3" Content="..." Click="Button_Click" />
 
 		<TextBlock Grid.Row="2" Grid.Column="0" Text="Forms path:" VerticalAlignment="Center"/>
 		<TextBox Grid.Row="2" Grid.Column="1" Text="{Binding FormsPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>

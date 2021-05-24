@@ -29,5 +29,9 @@ namespace YATE.Dialogs
       SettingsFile.Editing.SetSettings(m_data_provider);
 		}
 
-	}
+    private void Button_Click(object sender, RoutedEventArgs e)
+    {
+
+    }
+  }
 }

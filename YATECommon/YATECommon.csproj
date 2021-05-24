@@ -51,16 +51,21 @@
     <Compile Include="Chips\I8255.cs" />
     <Compile Include="Chips\SAA1099.cs" />
     <Compile Include="Chips\SN76489.cs" />
-    <Compile Include="ExpansionManager\ExpansionBase.cs" />
-    <Compile Include="ExpansionManager\ExpansionInfo.cs" />
-    <Compile Include="ExpansionManager\ExpansionManager.cs" />
-    <Compile Include="ExpansionManager\ExpansionSetupPageInfo.cs" />
-    <Compile Include="ExpansionManager\ExpansionSetupCardInfo.cs" />
-    <Compile Include="ExpansionManager\ExpansionSetupTreeInfo.cs" />
-    <Compile Include="ExpansionManager\LoadedExpansionInfo.cs" />
+    <Compile Include="Expansions\ExpansionBase.cs" />
+    <Compile Include="Expansions\ExpansionInfo.cs" />
+    <Compile Include="Expansions\ExpansionManager.cs" />
+    <Compile Include="Expansions\ExpansionSetupPageInfo.cs" />
+    <Compile Include="Expansions\ExpansionSetupCardInfo.cs" />
+    <Compile Include="Expansions\ExpansionSetupTreeInfo.cs" />
+    <Compile Include="Expansions\LoadedExpansionInfo.cs" />
+    <Compile Include="Files\WavFile.cs" />
+    <Compile Include="Helpers\BinaryFileStructHelper.cs" />
     <Compile Include="Helpers\CRC16.cs" />
     <Compile Include="Helpers\HashCodeHelper.cs" />
     <Compile Include="Helpers\TinyIoC.cs" />
+    <Compile Include="IAudioManager.cs" />
+    <Compile Include="ICartridgeManager.cs" />
+    <Compile Include="IExecutionManager.cs" />
     <Compile Include="ITVCCartridge.cs" />
     <Compile Include="ITVCCard.cs" />
     <Compile Include="ITVComputer.cs" />
@@ -72,6 +77,9 @@
     <Compile Include="Settings\SettingsFile.cs" />
     <Compile Include="Settings\WindowPosSettings.cs" />
     <Compile Include="SetupPage\SetupPageBase.cs" />
+    <Compile Include="TVCCharacterCodePage.cs" />
+    <Compile Include="Files\TVCFiles.cs" />
+    <Compile Include="TVCManagers.cs" />
     <Compile Include="TVComputerConstants.cs" />
   </ItemGroup>
   <ItemGroup>

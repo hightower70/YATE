@@ -21,7 +21,8 @@
 // System Setup Dialog
 ///////////////////////////////////////////////////////////////////////////////
 using System.Windows;
-using YATECommon.ExpansionManager;
+using YATECommon;
+using YATECommon.Expansions;
 using YATECommon.Settings;
 using YATECommon.SetupPage;
 
@@ -40,7 +41,7 @@ namespace YATE.Dialogs
       SettingsFile.Editing.CopySettingsFrom(SettingsFile.Default);
 
 			// copy current module information
-			m_current_expansion_manager = new ExpansionManager(ExpansionManager.Default, SettingsFile.Editing);
+			m_current_expansion_manager = new ExpansionManager(TVCManagers.Default.ExpansionManager, SettingsFile.Editing);
 
 			InitializeComponent();
 		}

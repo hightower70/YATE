@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using YATE.Controls;
+using YATE.Managers;
 using YATE.Emulator.TVCHardware;
 
 namespace YATE.Forms
@@ -13,27 +13,27 @@ namespace YATE.Forms
   /// </summary>
   public partial class M6845Page : UserControl, INotifyPropertyChanged
 	{
-		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionControl), typeof(M6845Page), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
+		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionManager), typeof(M6845Page), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
 
 		private static void OnExecutionControlPropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
 		{
-			((M6845Page)sender).RegisterDebugEventHandler((ExecutionControl)e.NewValue);
+			((M6845Page)sender).RegisterDebugEventHandler((ExecutionManager)e.NewValue);
 		}
 
-		public ExecutionControl ExecutionControl
+		public ExecutionManager ExecutionControl
 		{
-			get { return (ExecutionControl)GetValue(ExecutionControlProperty); }
+			get { return (ExecutionManager)GetValue(ExecutionControlProperty); }
 			set { SetValue(ExecutionControlProperty, value); }
 		}
 
-		private void RegisterDebugEventHandler(ExecutionControl in_execution_control)
+		private void RegisterDebugEventHandler(ExecutionManager in_execution_control)
 		{
 			in_execution_control.DebuggerBreakEvent += DebuggerBreakEventDelegate;
 			m_execution_control = in_execution_control;
 			DataContext = this;
 		}
 
-		private ExecutionControl m_execution_control;
+		private ExecutionManager m_execution_control;
 
 		private void DebuggerBreakEventDelegate(TVComputer in_sender)
 		{

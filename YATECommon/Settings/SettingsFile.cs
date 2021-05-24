@@ -398,7 +398,7 @@ namespace YATECommon.Settings
         XmlAttribute attr = m_xml_doc.CreateAttribute("Active");
         attr.Value = "true";
         tvc_settings.Attributes.Append(attr);
-        top_level_parent_node.AppendChild(main_settings);
+        top_level_parent_node.AppendChild(tvc_settings);
       }
 
       return success;

@@ -1,0 +1,10 @@
+       MACRO PSTR str
+       BYTE .endstr-.startstr
+.startstr
+       BYTE str
+.endstr
+       ENDM
+
+       PSTR "Hello"
+
+       END

@@ -34,6 +34,8 @@
         <ResourceDictionary Source="ComboBoxStyles.xaml"/>
         <ResourceDictionary Source="GroupBoxStyles.xaml"/>-->
 		<!--<ResourceDictionary Source="AppTreeStyle.xaml"/>-->
+
+		<ResourceDictionary Source="HexEditorStyles.xaml"/>
 	</ResourceDictionary.MergedDictionaries>
 
 	<Style TargetType="Window" BasedOn="{StaticResource WindowStyle}"/>
@@ -65,5 +67,6 @@
     -->
 
 	<Style TargetType="c:RadioMenuItem" BasedOn="{StaticResource RadioMenuItem}"/>
+	<Style TargetType="c:HexEditor" BasedOn="{StaticResource StandardHexEditor}"/>
 
 </ResourceDictionary>

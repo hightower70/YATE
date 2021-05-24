@@ -22,7 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 using System.Windows;
 using System.Windows.Controls;
-using YATECommon.ExpansionManager;
+using YATECommon.Expansions;
 
 namespace YATECommon.SetupPage
 {

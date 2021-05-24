@@ -1,8 +1,9 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using YATE.Controls;
+using YATE.Managers;
 using YATE.Emulator.TVCHardware;
 using YATE.Emulator.Z80CPU;
+using System.Diagnostics;
 
 namespace YATE.Forms
 {
@@ -18,7 +19,7 @@ namespace YATE.Forms
 		}
 
 		private Z80Disassembler m_disassembler;
-		private ExecutionControl m_execution_control;
+		private ExecutionManager m_execution_control;
 
 
 		public ExecutionHistoryPage()
@@ -30,16 +31,16 @@ namespace YATE.Forms
 
 		#region · ExecutionControl dependency property ·
 
-		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionControl), typeof(ExecutionHistoryPage), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
+		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionManager), typeof(ExecutionHistoryPage), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
 
 		private static void OnExecutionControlPropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
 		{
-			((ExecutionHistoryPage)sender).RegisterDebugEventHandler((ExecutionControl)e.NewValue);
+			((ExecutionHistoryPage)sender).RegisterDebugEventHandler((ExecutionManager)e.NewValue);
 		}
 
-		public ExecutionControl ExecutionControl
+		public ExecutionManager ExecutionControl
 		{
-			get { return (ExecutionControl)GetValue(ExecutionControlProperty); }
+			get { return (ExecutionManager)GetValue(ExecutionControlProperty); }
 			set { SetValue(ExecutionControlProperty, value); }
 		}
 
@@ -239,7 +240,7 @@ namespace YATE.Forms
 			}
 		}
 
-		private void RegisterDebugEventHandler(ExecutionControl in_execution_control)
+		private void RegisterDebugEventHandler(ExecutionManager in_execution_control)
 		{
 			in_execution_control.DebuggerBreakEvent += DebuggerBreakEventDelegate;
 			m_execution_control = in_execution_control;

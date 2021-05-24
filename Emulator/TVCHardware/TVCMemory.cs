@@ -189,6 +189,10 @@ namespace YATE.Emulator.TVCHardware
 		{
 		}
 
+    public byte[] DebugUserMemory
+    {
+      get { return m_mem_user; }
+    }
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte DebugUserMemoryReadByte(int in_address)

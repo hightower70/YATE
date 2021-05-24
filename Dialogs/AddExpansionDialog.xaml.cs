@@ -1,7 +1,7 @@
 ﻿using System.Media;
 using System.Windows;
 using System.Windows.Input;
-using YATECommon.ExpansionManager;
+using YATECommon.Expansions;
 
 namespace YATE.Dialogs
 {

@@ -8,6 +8,7 @@
 				xmlns:effects="clr-namespace:YATE.Effects"
         mc:Ignorable="d"
         Title="YATE" Height="800" Width="1250"
+				Icon="/YATE;component/Resources/MainIcon.png"
 				Style="{DynamicResource WindowStyle}" Loaded="Window_Loaded" Closing="Window_Closing" PreviewKeyDown="Window_KeyDown" PreviewKeyUp="Window_KeyUp">
 	<Window.Resources>
 		<Style TargetType="TextBlock" x:Key="LabelStyle">
@@ -89,7 +90,11 @@
 				</MenuItem>
 				<MenuItem Header="Source List Load"  />
 			</MenuItem>
-			
+
+			<MenuItem Header="_View" x:Name="miView">
+				<MenuItem x:Name="miHexEdit" Header="New Hex Editor" Click="MiHexEditor_Click"  />
+			</MenuItem>
+
 			<MenuItem Header="_Expansions" x:Name="miExpansions">
 			</MenuItem>
 
@@ -321,41 +326,7 @@
 		<TextBlock Style="{StaticResource MainTitleStyle}" Text="CPU Status"/>
 
 			<TextBlock Style="{StaticResource TitleStyle}" Text="Flags"/>
-			<Grid Margin="5">
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="30"/>
-					<ColumnDefinition Width="20"/>
-					<ColumnDefinition Width="20"/>
-					<ColumnDefinition Width="20"/>
-					<ColumnDefinition Width="20"/>
-					<ColumnDefinition Width="20"/>
-					<ColumnDefinition Width="20"/>
-					<ColumnDefinition Width="20"/>
-					<ColumnDefinition Width="20"/>
-				</Grid.ColumnDefinitions>
-				<Grid.RowDefinitions>
-					<RowDefinition Height="18"/>
-					<RowDefinition Height="18"/>
-				</Grid.RowDefinitions>
-				<TextBlock Grid.Column="0" Grid.RowSpan="2" Text="F" Style="{StaticResource LabelStyle}" FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-				<TextBlock Grid.Column="1" Text="S" Style="{StaticResource LabelStyle}"/>
-				<TextBlock Grid.Column="2" Text="Z" Style="{StaticResource LabelStyle}" />
-				<TextBlock Grid.Column="3" Text="5" Style="{StaticResource LabelStyle}" />
-				<TextBlock Grid.Column="4" Text="H" Style="{StaticResource LabelStyle}" />
-				<TextBlock Grid.Column="5" Text="3" Style="{StaticResource LabelStyle}" />
-				<TextBlock Grid.Column="6" Text="PV" Style="{StaticResource LabelStyle}" />
-				<TextBlock Grid.Column="7" Text="N" Style="{StaticResource LabelStyle}" />
-				<TextBlock Grid.Column="8" Text="C" Style="{StaticResource LabelStyle}" />
-
-				<TextBlock Grid.Column="1" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
-				<TextBlock Grid.Column="2" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
-				<TextBlock Grid.Column="3" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
-				<TextBlock Grid.Column="4" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
-				<TextBlock Grid.Column="5" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
-				<TextBlock Grid.Column="6" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
-				<TextBlock Grid.Column="7" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
-				<TextBlock Grid.Column="8" Grid.Row="1" Text="0" Style="{StaticResource ValueStyle}" />
-			</Grid>
+			<local:FlagsPage ExecutionControl="{Binding ExecutionControl}"/>
 
 			<Separator />
 			<TextBlock Style="{StaticResource TitleStyle}" Text="Registers"/>
@@ -371,6 +342,9 @@
 			<TextBlock Style="{StaticResource MainTitleStyle}" Text="Memory Status"/>
 			<local:MemoryStatusPage x:Name="mspMemoryStatus" ExecutionControl="{Binding ExecutionControl}" />
 
+			<TextBlock Style="{StaticResource MainTitleStyle}" Text="Breakpoint"/>
+			<local:DebugPage x:Name="dpBreakpoint" ExecutionControl="{Binding ExecutionControl}" />
+			
 		</StackPanel>
 	
 		<StackPanel Grid.Column="2" Grid.Row="2" Margin="5,0,0,0">

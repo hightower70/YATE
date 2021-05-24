@@ -1,0 +1,128 @@
+BLOCKIO_HANDLER:
+            JP      p,BLOCK_OUT 
+            CALL    OPEN_FILE_4READ_CHECK
+            RET     z
+BLOCKREAD_LOOP:
+            PUSH BC
+            push DE
+            call CHARGET_NOCHECK
+            POP  DE
+            jr nz,CHARGET_FAILED
+            ld a,c
+            ld (de),a
+            inc de
+            pop bc
+            dec bc
+            ld a,b
+            or c
+            jr nz,BLOCKREAD_LOOP
+            xor A
+            ret
+CHARGET_FAILED:
+            pop BC
+            PUSH DE
+            PUSH BC
+            ld c,a
+            EX AF,AF'
+            call print_hex_byte
+            ld hl,BC_STR
+            call PRINT_STRING
+            pop hl              ; BC in HL
+            PUSH HL
+            call print_16bit_decimal_number
+            ld hl,DE_STR
+            call PRINT_STRING
+            POP BC   
+            pop HL
+            call print_16bit_decimal_number
+            EX DE,HL
+            EX AF,AF'
+            OR A
+            ret
+            
+; ==========================================================
+
+BLOCK_OUT:
+            CALL    OPEN_FILE_4WRITE_CHECK
+            RET     z
+            
+FULL_DATA_SEND_CYCLE:
+            PUSH DE
+            PUSH BC
+INNER_DATA_SEND_CYCLE:            
+            push DE
+            ld H,B
+            ld L,C      ; BC -> HL
+            ld DE,64
+            xor A       ; clear C
+            SBC HL,DE   ; HL=BC-64
+            pop DE
+            jr c,LAST_BLOCK
+            ld B,64
+            jr SKIP_BLOCK_SET
+LAST_BLOCK:
+            ld HL,$0000 ; no more data to send
+            ld B,C      ; BC is less than 64, C contains the remaining bytes
+            ld A,B
+            or A        ; is there anything at all?
+            jr z, WRITE_CYCLE_OK ; no need to send anything!
+SKIP_BLOCK_SET:
+            ld a,(BORDER_COLOR)
+            add A,4
+            OUT ($00),A
+
+            ld C,(IX+0)
+            ld A,SDISK_NANO_CMD_PUTDATA
+            OUT (C),A       ; send Command
+            call WAIT_39T
+            OUT (C),B       ; size of BLOCK
+            CALL WAIT_39T
+            IN A,(C)        ; let's drop the first response
+            CALL WAIT_39T
+SEND_SMALL_BLOCK_LOOP:
+            ld A,(DE)       ; 7T
+            OUT (C),A
+            inc DE          ; 6T
+            call WAIT_27T
+            djnz SEND_SMALL_BLOCK_LOOP ; 13T
+            ld A,(BORDER_COLOR)
+            SUB 4
+            OUT ($00),A
+WAIT_FOR_RESPONSE:
+            call WAIT_27T
+            IN  A,(C)
+            CP RETVAL_DATA_RECEIVED
+            jr z,WRITE_CYCLE_OK
+            CP RETVAL_DATA_NOT_READY_YET
+            jr z,WAIT_FOR_RESPONSE
+;            CP RETVAL_DATA_FAILED_TO_RECEIVE
+;            jr z,WRITE_CYCLE_FAILED
+WRITE_CYCLE_FAILED:
+            POP BC  ; drop it
+            ld b,h
+            ld c,l
+            push AF
+            ld a,(BORDER_COLOR)
+            OUT ($00),A
+            pop AF
+            OR A
+            POP DE
+            RET
+WRITE_CYCLE_OK:
+            ld b,h
+            ld c,l
+            ld a,h
+            or l
+            jr nz,INNER_DATA_SEND_CYCLE  ; bytes to send? yes->JUMP
+            ld a,(BORDER_COLOR)
+            OUT ($00),A
+            XOR A
+            POP BC
+            POP DE
+            RET      
+
+
+DE_STR: 
+    .pstr "\r\nDE: "
+BC_STR:
+    .pstr "\r\nBC: "

@@ -23,7 +23,7 @@
 using Multicart;
 using MultiCart.Forms;
 using YATECommon;
-using YATECommon.ExpansionManager;
+using YATECommon.Expansions;
 
 namespace MultiCart
 {

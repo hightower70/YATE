@@ -1,0 +1,59 @@
+﻿<UserControl x:Class="YATE.Forms.FlagsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:YATE.Forms"
+             mc:Ignorable="d" 
+             d:DesignHeight="50" d:DesignWidth="220">
+	<UserControl.Resources>
+		<Style TargetType="TextBlock" x:Key="CPUFlagsLabelStyle">
+			<Setter Property="Foreground" Value="OrangeRed"/>
+			<Setter Property="HorizontalAlignment" Value="Center"/>
+		</Style>
+
+		<Style TargetType="TextBlock" x:Key="CPUFlagsValueStyle">
+			<Setter Property="HorizontalAlignment" Value="Center"/>
+			<Setter Property="Foreground" Value="DeepSkyBlue"/>
+		</Style>
+
+
+	</UserControl.Resources>
+	<Grid>
+		<Grid Margin="5">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="30"/>
+				<ColumnDefinition Width="20"/>
+				<ColumnDefinition Width="20"/>
+				<ColumnDefinition Width="20"/>
+				<ColumnDefinition Width="20"/>
+				<ColumnDefinition Width="20"/>
+				<ColumnDefinition Width="20"/>
+				<ColumnDefinition Width="20"/>
+				<ColumnDefinition Width="20"/>
+			</Grid.ColumnDefinitions>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="18"/>
+				<RowDefinition Height="18"/>
+			</Grid.RowDefinitions>
+			<TextBlock Grid.Column="0" Grid.RowSpan="2" Text="F" Style="{StaticResource CPUFlagsLabelStyle}" FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+			<TextBlock Grid.Column="1" Text="S" Style="{StaticResource CPUFlagsLabelStyle}"/>
+			<TextBlock Grid.Column="2" Text="Z" Style="{StaticResource CPUFlagsLabelStyle}" />
+			<TextBlock Grid.Column="3" Text="5" Style="{StaticResource CPUFlagsLabelStyle}" />
+			<TextBlock Grid.Column="4" Text="H" Style="{StaticResource CPUFlagsLabelStyle}" />
+			<TextBlock Grid.Column="5" Text="3" Style="{StaticResource CPUFlagsLabelStyle}" />
+			<TextBlock Grid.Column="6" Text="PV" Style="{StaticResource CPUFlagsLabelStyle}" />
+			<TextBlock Grid.Column="7" Text="N" Style="{StaticResource CPUFlagsLabelStyle}" />
+			<TextBlock Grid.Column="8" Text="C" Style="{StaticResource CPUFlagsLabelStyle}" />
+
+			<TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding FS}" Style="{StaticResource CPUFlagsValueStyle}" />
+			<TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding FZ}" Style="{StaticResource CPUFlagsValueStyle}" />
+			<TextBlock Grid.Column="3" Grid.Row="1" Text="{Binding F5}" Style="{StaticResource CPUFlagsValueStyle}" />
+			<TextBlock Grid.Column="4" Grid.Row="1" Text="{Binding FH}" Style="{StaticResource CPUFlagsValueStyle}" />
+			<TextBlock Grid.Column="5" Grid.Row="1" Text="{Binding F3}" Style="{StaticResource CPUFlagsValueStyle}" />
+			<TextBlock Grid.Column="6" Grid.Row="1" Text="{Binding FPV}" Style="{StaticResource CPUFlagsValueStyle}" />
+			<TextBlock Grid.Column="7" Grid.Row="1" Text="{Binding FN}" Style="{StaticResource CPUFlagsValueStyle}" />
+			<TextBlock Grid.Column="8" Grid.Row="1" Text="{Binding FC}" Style="{StaticResource CPUFlagsValueStyle}" />
+		</Grid>
+	</Grid>
+</UserControl>

@@ -2,14 +2,15 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using YATE.Controls;
+using YATE.Managers;
 using YATE.Dialogs;
 using YATE.Drivers;
 using YATE.Emulator.TVCFiles;
 using YATE.Emulator.TVCHardware;
 using YATE.Settings;
-using YATECommon.ExpansionManager;
+using YATECommon.Expansions;
 using YATECommon.Settings;
+using YATECommon;
 
 namespace YATE.Forms
 {
@@ -21,35 +22,43 @@ namespace YATE.Forms
 		private WriteableBitmap m_image_source = null;
 		private Int32Rect m_refresh_rect;
 
-		public ExecutionControl ExecutionControl { get; }
-		public TVCCartridgeControl CartridgeControl { get; }
-
-    public AudioControl AudioControl { get; }
-
+		public ExecutionManager ExecutionControl { get { return (ExecutionManager)TVCManagers.Default.ExecutionManager; } }
+		public TVCCartridgeManager CartridgeControl { get { return (TVCCartridgeManager)TVCManagers.Default.CartridgeManager; } }
 
 		private KeyboardHook m_keyboard_hook = new KeyboardHook();
 
 		public MainWindow()
 		{
-			// load config file and get settings
-			SettingsFile.Default.Load();
-
-      // setup execution control
-      ExecutionControl = new ExecutionControl(this);
-      ExecutionControl.Initialize();
-      ExecutionControl.TVC.Video.FrameReady += FrameReady;
-
-      // Create Cartridge contol
-      CartridgeControl = new TVCCartridgeControl();
-
-      // Create Audio control
-      AudioControl = new AudioControl(this);
+      CreateManagers();
 
       // setup data context for data binding
       DataContext = this;
 
       InitializeComponent();
 		}
+
+    private void CreateManagers()
+    {
+      // load config file and get settings
+      SettingsFile.Default.Load();
+
+      TVCManagers.Default.SetMainWindow(this);
+
+
+      // Create Cartridge contol
+      TVCManagers.Default.SetCartridgeManager(new TVCCartridgeManager());
+
+      // setup execution manager
+      ExecutionManager execution_manager = new ExecutionManager(this);
+      TVCManagers.Default.SetExecutionManager(execution_manager);
+      
+      // Create Audio manager
+      TVCManagers.Default.SetAudioManager(new AudioManager(execution_manager));
+
+      // Intialize execution manager
+      TVCManagers.Default.ExecutionManager.Initialize();
+      ((ExecutionManager)TVCManagers.Default.ExecutionManager).TVC.Video.FrameReady += FrameReady;
+    }
 
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -60,12 +69,13 @@ namespace YATE.Forms
       CartridgeControl.Initialize(this, ExecutionControl);
 
       // load modules
-      ExpansionManager.Default.AddMainModule(typeof(MainModule));
-      ExpansionManager.Default.LoadExpansions();
-      ExpansionManager.Default.InstallExpansions(ExecutionControl.TVC);
+      TVCManagers.Default.SetExpansionManager(new ExpansionManager(SettingsFile.Default));
+      TVCManagers.Default.ExpansionManager.AddMainModule(typeof(MainModule));
+      TVCManagers.Default.ExpansionManager.LoadExpansions();
+      TVCManagers.Default.ExpansionManager.InstallExpansions(ExecutionControl.TVC);
 
       //  Start Audio control
-      AudioControl.Start();
+      TVCManagers.Default.AudioManager.Start();
 
       // Start emulator
       ExecutionControl.Start();
@@ -90,7 +100,7 @@ namespace YATE.Forms
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
-      AudioControl.Stop();
+      TVCManagers.Default.AudioManager.Stop();
 			ExecutionControl.Stop();
 			m_keyboard_hook.ReleaseHook();
 
@@ -104,12 +114,30 @@ namespace YATE.Forms
 
 		private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
 		{
-			ExecutionControl.TVC.Keyboard.KeyDown(e);
+      bool non_tvc_key = (e.Key == System.Windows.Input.Key.System);
+      if(!non_tvc_key)
+      {
+        non_tvc_key = (e.Key >= System.Windows.Input.Key.F1 && e.Key <= System.Windows.Input.Key.F12);
+      }
+
+      if (non_tvc_key)
+        base.OnKeyDown(e);
+      else
+  			ExecutionControl.TVC.Keyboard.KeyDown(e);
 		}
 
 		private void Window_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
 		{
-			ExecutionControl.TVC.Keyboard.KeyUp(e);
+      bool non_tvc_key = (e.Key == System.Windows.Input.Key.System);
+      if (!non_tvc_key)
+      {
+        non_tvc_key = (e.Key >= System.Windows.Input.Key.F1 && e.Key <= System.Windows.Input.Key.F12);
+      }
+
+      if (non_tvc_key)
+        base.OnKeyUp(e);
+      else
+        ExecutionControl.TVC.Keyboard.KeyUp(e);
 		}
 
 		private void MiOpenCASFile_Click(object sender, RoutedEventArgs e)
@@ -227,5 +255,12 @@ namespace YATE.Forms
         }
       }
 		}
+
+    private void MiHexEditor_Click(object sender, RoutedEventArgs e)
+    {
+      HexEditForm form = new HexEditForm();
+
+      form.Show();
+    }
   }
 }

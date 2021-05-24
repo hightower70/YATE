@@ -24,25 +24,29 @@ namespace YATE.Emulator.TVCHardware
 		public ITVCCard[] Cards { get; private set; }
 		public ITVCCartridge Cartridge { get; private set; }
     public ITVCCard MemoryExpansion { get; private set; }
+    public TVCSound Sound { get; private set; }
 
 
 		public void Initialize()
 		{
 			Ports = new TVCPorts();
 			Memory = new TVCMemory(this);
-			Video = new TVCVideo(this);
-			Keyboard = new TVCKeyboard(this);
-			Interrupt = new TVCInterrupt(this);
 
 			CPU = new Z80(Memory, Ports, null, true);
 
-			Cards = new ITVCCard[TVComputerConstants.ExpansionCardCount];
+      Video = new TVCVideo(this);
+      Keyboard = new TVCKeyboard(this);
+      Interrupt = new TVCInterrupt(this);
+      //Sound = new TVCSound(this);
+
+      Cards = new ITVCCard[TVComputerConstants.ExpansionCardCount];
 
       Ports.AddPortReader(0x5a, PortRead5AH);
 
 			// cartridge init
 			Cartridge = new TVCCartridge();
 			Cartridge.Initialize(this);
+      //((TVCCartridge)Cartridge).ReadCartridgeFile(@"d:\Projects\Retro\TVCDOC\Multicart4\test.bin");
 
 			Reset();
 		}
@@ -176,7 +180,7 @@ namespace YATE.Emulator.TVCHardware
 
 		public void PeriodicCallback()
 		{
-			for (int i = 0; i < TVComputerConstants.ExpansionCardCount; i++)
+      for (int i = 0; i < TVComputerConstants.ExpansionCardCount; i++)
 			{
 				if (Cards[i] != null)
 					Cards[i].PeriodicCallback(CPU.TotalTState);

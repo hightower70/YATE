@@ -21,7 +21,7 @@
 // Main interface class for RS232 interface card
 ///////////////////////////////////////////////////////////////////////////////
 using HBS.Forms;
-using YATECommon.ExpansionManager;
+using YATECommon.Expansions;
 
 namespace HBS
 {

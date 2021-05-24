@@ -28,7 +28,10 @@ namespace YATE.Settings
 	{
 		public int AudioOutDevice { get; set; }
 
-		public SetupAudioSettings() : base(SettingsCategory.Emulator, "Audio")
+    public int InternalSoundVolume { get; set; }
+    public int TapeSoundVolume { get; set; }
+
+    public SetupAudioSettings() : base(SettingsCategory.Emulator, "Audio")
 		{
 			SetDefaultValues();
 		}
@@ -36,6 +39,8 @@ namespace YATE.Settings
 		override public void SetDefaultValues()
 		{
       AudioOutDevice = 0;
-		}
+      InternalSoundVolume = 127;
+      TapeSoundVolume = 127;
+    }
 	}
 }

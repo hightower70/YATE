@@ -22,7 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 using HBE.Forms;
 using YATECommon;
-using YATECommon.ExpansionManager;
+using YATECommon.Expansions;
 
 namespace HBE
 {

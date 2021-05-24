@@ -22,7 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 using SAA1099.Forms;
 using YATECommon;
-using YATECommon.ExpansionManager;
+using YATECommon.Expansions;
 
 namespace SAA1099
 {

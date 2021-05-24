@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using YATE.Controls;
+using YATE.Managers;
 using YATE.Emulator.TVCHardware;
 
 namespace YATE.Forms
@@ -12,27 +12,27 @@ namespace YATE.Forms
   /// </summary>
   public partial class RegisterPage : UserControl, INotifyPropertyChanged
 	{
-		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionControl), typeof(RegisterPage), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
+		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionManager), typeof(RegisterPage), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
 
 		private static void OnExecutionControlPropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
 		{
-			((RegisterPage)sender).RegisterDebugEventHandler((ExecutionControl)e.NewValue);
+			((RegisterPage)sender).RegisterDebugEventHandler((ExecutionManager)e.NewValue);
 		}
 
-		public ExecutionControl ExecutionControl
+		public ExecutionManager ExecutionControl
 		{
-			get { return (ExecutionControl)GetValue(ExecutionControlProperty); }
+			get { return (ExecutionManager)GetValue(ExecutionControlProperty); }
 			set { SetValue(ExecutionControlProperty, value); }
 		}
 
-		private void RegisterDebugEventHandler(ExecutionControl in_execution_control)
+		private void RegisterDebugEventHandler(ExecutionManager in_execution_control)
 		{
 			in_execution_control.DebuggerBreakEvent += DebuggerBreakEventDelegate;
 			m_execution_control = in_execution_control;
 			DataContext = this;
 		}
 
-		private ExecutionControl m_execution_control;
+		private ExecutionManager m_execution_control;
 
 		private void DebuggerBreakEventDelegate(TVComputer in_sender)
 		{
@@ -46,9 +46,14 @@ namespace YATE.Forms
 			NotifyPropertyChanged("SP");
 			NotifyPropertyChanged("IR");
 			NotifyPropertyChanged("WZ");
-		}
 
-		public RegisterPage()
+      NotifyPropertyChanged("AF_");
+      NotifyPropertyChanged("BC_");
+      NotifyPropertyChanged("DE_");
+      NotifyPropertyChanged("HL_");
+    }
+
+    public RegisterPage()
 		{
 			InitializeComponent();
 		}
@@ -89,7 +94,7 @@ namespace YATE.Forms
 		{
 			get
 			{
-				return m_execution_control.TVC.CPU.Registers.AF;
+				return m_execution_control.TVC.CPU.Registers._AF_;
 			}
 		}
 
@@ -97,7 +102,7 @@ namespace YATE.Forms
 		{
 			get
 			{
-				return m_execution_control.TVC.CPU.Registers.BC;
+				return m_execution_control.TVC.CPU.Registers._BC_;
 			}
 		}
 
@@ -105,7 +110,7 @@ namespace YATE.Forms
 		{
 			get
 			{
-				return m_execution_control.TVC.CPU.Registers.DE;
+				return m_execution_control.TVC.CPU.Registers._DE_;
 			}
 		}
 
@@ -113,7 +118,7 @@ namespace YATE.Forms
 		{
 			get
 			{
-				return m_execution_control.TVC.CPU.Registers.HL;
+				return m_execution_control.TVC.CPU.Registers._HL_;
 			}
 		}
 

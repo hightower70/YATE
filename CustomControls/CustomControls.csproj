@@ -64,6 +64,15 @@
     <Compile Include="FolderBrowserDialog\Interop\nativetaskdialogshowstate.cs" />
     <Compile Include="FolderBrowserDialog\Interop\shellcominterfaces.cs" />
     <Compile Include="FolderBrowserDialog\Interop\shellwrapperdefinitions.cs" />
+    <Compile Include="HexEdit\ByteArrayStream.cs" />
+    <Compile Include="HexEdit\Converters\EqualityConverter.cs" />
+    <Compile Include="HexEdit\Converters\MultiEqualityConverter.cs" />
+    <Compile Include="HexEdit\DataColumnFormat.cs" />
+    <Compile Include="HexEdit\DataSignedness.cs" />
+    <Compile Include="HexEdit\DataType.cs" />
+    <Compile Include="HexEdit\HexEditor.cs" />
+    <Compile Include="HexEdit\TextColumnFormat.cs" />
+    <Compile Include="HexEdit\Utilities.cs" />
     <Compile Include="ImageButton\ImageButton.cs" />
     <Compile Include="CustomMessageBox\CustomMessageBox.xaml.cs">
       <DependentUpon>CustomMessageBox.xaml</DependentUpon>
@@ -104,6 +113,14 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ExceptionDialog\ExceptionDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="HexEdit\Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

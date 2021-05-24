@@ -21,7 +21,7 @@
 // Main module interface
 ///////////////////////////////////////////////////////////////////////////////
 using YATE.Dialogs;
-using YATECommon.ExpansionManager;
+using YATECommon.Expansions;
 
 namespace YATE.Settings
 {

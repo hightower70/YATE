@@ -33,6 +33,8 @@ namespace YATE.Drivers
   {
     #region · Types ·
 
+    public delegate void SampleRequestDelegate(short[] inout_sample_buffer);
+
     /// <summary>
     /// Wave out buffer class
     /// </summary>
@@ -184,6 +186,11 @@ namespace YATE.Drivers
       get { return m_wave_out_device_handle; }
     }
 
+    /// <summary>
+    /// Buffer request 
+    /// </summary>
+    public SampleRequestDelegate OnSampleRequest { get; set; }
+
     #endregion
 
     #region · Public members ·
@@ -293,6 +300,9 @@ namespace YATE.Drivers
         if (buffer != null)
         {
           buffer.Dequeue();
+
+          OnSampleRequest?.Invoke(buffer.Data);
+
           buffer.Enqueue();
         }
 

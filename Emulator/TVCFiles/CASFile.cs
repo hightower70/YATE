@@ -22,47 +22,19 @@
 ///////////////////////////////////////////////////////////////////////////////
 using System.IO;
 using System.Runtime.InteropServices;
-using YATE.Drivers;
+using YATECommon.Files;
+using YATECommon.Helpers;
 
 namespace YATE.Emulator.TVCFiles
 {
 	public class CASFile
 	{
-		public const int CASBlockHeaderFileBuffered  = 0x01;
-		public const int CASBlockHeaderFileUnbuffered = 0x11;
-
-		// Tape/CAS Program file header
-		[StructLayout(LayoutKind.Sequential, Pack = 1)]
-		public class CASProgramFileHeaderType
-		{
-			public byte Zero;								// Zero
-			public byte FileType;						// Program type: 0x01 - ASCII, 0x00 - binary
-			public ushort FileLength;				// Length of the file
-			public byte Autorun;						// Autostart: 0xff, no autostart: 0x00
-			[MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
-			public byte[] Zeros;						// Zero
-			public byte Version;						// Version
-		}
-
-		// CAS UPM header
-		[StructLayout(LayoutKind.Sequential, Pack = 1)]
-		public class CASUPMHeaderType
-		{
-			public byte FileType;       // File type: Buffered: 0x01, non-buffered: 0x11
-			public byte CopyProtect;    // Copy Protect: 0x01    file is copy protected, 0x00 non protected
-			public ushort BlockNumber;  // Number of the blocks (0x80 bytes length) occupied by the program
-			public byte LastBlockBytes; // Number of the used bytes in the last block
-			[MarshalAs(UnmanagedType.ByValArray, SizeConst = 123)]
-			public byte[] Zeros;        // unused
-		}
-
-
 		///////////////////////////////////////////////////////////////////////////////
 		// Loads CAS file
 		public static void CASLoad(Stream in_file, ProgramStorage in_storage)
 		{
-			CASUPMHeaderType upm_header = new CASUPMHeaderType();
-			CASProgramFileHeaderType program_header = new CASProgramFileHeaderType();
+      TVCFileTypes.CASUPMHeaderType upm_header = new TVCFileTypes.CASUPMHeaderType();
+      TVCFileTypes.CASProgramFileHeaderType program_header = new TVCFileTypes.CASProgramFileHeaderType();
 
 			// open CAS file
 			using (BinaryReader cas_file = new BinaryReader(in_file))
@@ -99,8 +71,8 @@ namespace YATE.Emulator.TVCFiles
 		{
 			using (BinaryWriter cas_file = new BinaryWriter(in_file))
 			{
-				CASUPMHeaderType upm_header = CreateUPMHeader(in_storage);
-				CASProgramFileHeaderType program_header = CreateProgramFileHeader(in_storage);
+        TVCFileTypes.CASUPMHeaderType upm_header = CreateUPMHeader(in_storage);
+        TVCFileTypes.CASProgramFileHeaderType program_header = CreateProgramFileHeader(in_storage);
 
 				cas_file.Write(upm_header);
 				cas_file.Write(program_header);
@@ -110,23 +82,23 @@ namespace YATE.Emulator.TVCFiles
 
 		///////////////////////////////////////////////////////////////////////////////
 		// Checks UPM header validity
-		public static bool CASCheckUPMHeaderValidity(CASUPMHeaderType in_header)
+		public static bool CASCheckUPMHeaderValidity(TVCFileTypes.CASUPMHeaderType in_header)
 		{
-			return (in_header.FileType == CASBlockHeaderFileUnbuffered);
+			return (in_header.FileType == TVCFileTypes.CASBlockHeaderFileUnbuffered);
 		}
 
 		///////////////////////////////////////////////////////////////////////////////
 		// Cheks CAS header validity
-		public static bool CASCheckHeaderValidity(CASProgramFileHeaderType in_header)
+		public static bool CASCheckHeaderValidity(TVCFileTypes.CASProgramFileHeaderType in_header)
 		{
 			return (in_header.Zero == 0 && (in_header.FileType == 0x00 || in_header.FileType ==0x01));
 		}
 
 		///////////////////////////////////////////////////////////////////////////////
 		// Initialize CAS Headers
-		public static CASProgramFileHeaderType CreateProgramFileHeader(ProgramStorage in_storage)
+		public static TVCFileTypes.CASProgramFileHeaderType CreateProgramFileHeader(ProgramStorage in_storage)
 		{
-			CASProgramFileHeaderType header = new CASProgramFileHeaderType();
+      TVCFileTypes.CASProgramFileHeaderType header = new TVCFileTypes.CASProgramFileHeaderType();
 
 			header.FileType = in_storage.GetFileTypeByte();
 			header.FileLength = in_storage.Length;
@@ -138,13 +110,13 @@ namespace YATE.Emulator.TVCFiles
 
 		///////////////////////////////////////////////////////////////////////////////
 		// Initizes UPM header
-		public static CASUPMHeaderType CreateUPMHeader(ProgramStorage in_storage)
+		public static TVCFileTypes.CASUPMHeaderType CreateUPMHeader(ProgramStorage in_storage)
 		{
-			CASUPMHeaderType header = new CASUPMHeaderType();
+      TVCFileTypes.CASUPMHeaderType header = new TVCFileTypes.CASUPMHeaderType();
 
-			ushort cas_length = (ushort)(in_storage.Length + Marshal.SizeOf(typeof(CASUPMHeaderType)) + Marshal.SizeOf(typeof(CASProgramFileHeaderType)));
+			ushort cas_length = (ushort)(in_storage.Length + Marshal.SizeOf(typeof(TVCFileTypes.CASUPMHeaderType)) + Marshal.SizeOf(typeof(TVCFileTypes.CASProgramFileHeaderType)));
 
-			header.FileType = CASBlockHeaderFileUnbuffered;
+			header.FileType = TVCFileTypes.CASBlockHeaderFileUnbuffered;
 			header.CopyProtect = (byte)((in_storage.CopyProtect) ? 0xff : 0x00);
 			header.BlockNumber = (byte)(cas_length / 128);
 			header.LastBlockBytes = (byte)(cas_length % 128);

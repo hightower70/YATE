@@ -15,6 +15,22 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>3</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -36,6 +52,21 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>3D0CFE1D31A5BB05E98418D1318524A485282228</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>YATE_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>MainIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -62,12 +93,24 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Controls\AudioControl.cs" />
-    <Compile Include="Controls\ExecutionControl.cs" />
-    <Compile Include="Controls\ExecutionControlCommand.cs" />
-    <Compile Include="Controls\ExecutionHistoryCollection.cs" />
-    <Compile Include="Controls\ExecutionHistoryEntry.cs" />
-    <Compile Include="Controls\TVCCartridgeControl.cs" />
+    <Compile Include="Forms\BreakpointSetForm.xaml.cs">
+      <DependentUpon>BreakpointSetForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FlagsPage.xaml.cs">
+      <DependentUpon>FlagsPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\HexEditForm.xaml.cs">
+      <DependentUpon>HexEditForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\DebugPage.xaml.cs">
+      <DependentUpon>DebugPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Managers\AudioManager.cs" />
+    <Compile Include="Managers\ExecutionManager.cs" />
+    <Compile Include="Managers\ExecutionManagerCommand.cs" />
+    <Compile Include="Managers\ExecutionHistoryCollection.cs" />
+    <Compile Include="Managers\ExecutionHistoryEntry.cs" />
+    <Compile Include="Managers\TVCCartridgeManager.cs" />
     <Compile Include="Dialogs\AddExpansionDialog.xaml.cs">
       <DependentUpon>AddExpansionDialog.xaml</DependentUpon>
     </Compile>
@@ -97,6 +140,7 @@
     <None Include="Drivers\WaveOutBuffer.cs" />
     <None Include="Drivers\WaveOutold.cs" />
     <Compile Include="Effects\CRTFilter.cs" />
+    <Compile Include="Emulator\TVCHardware\TVCTape.cs" />
     <Compile Include="Forms\ExecutionHistoryPage.xaml.cs">
       <DependentUpon>ExecutionHistoryPage.xaml</DependentUpon>
     </Compile>
@@ -114,7 +158,6 @@
     </Compile>
     <Compile Include="Drivers\KeyboardHook.cs" />
     <Compile Include="Emulator\TVCFiles\BASFile.cs" />
-    <Compile Include="Drivers\BinaryFileStructHelper.cs" />
     <Compile Include="Emulator\TVCFiles\CASFile.cs" />
     <Compile Include="Emulator\TVCFiles\FAT12\BiosParameterBlock.cs" />
     <Compile Include="Emulator\TVCFiles\FAT12\ClusterEntry.cs" />
@@ -124,7 +167,6 @@
     <Compile Include="Emulator\TVCFiles\FAT12\FatDirectoryEntry.cs" />
     <Compile Include="Emulator\TVCFiles\FAT12\FatPartition.cs" />
     <Compile Include="Emulator\TVCFiles\ProgramStorage.cs" />
-    <Compile Include="Emulator\TVCFiles\TVCCharacterCodePage.cs" />
     <Compile Include="Emulator\TVCFiles\TVCFileCRC.cs" />
     <Compile Include="Emulator\TVCFiles\TVCFiles.cs" />
     <Compile Include="Emulator\TVCHardware\TVCCartridge.cs" />
@@ -152,6 +194,7 @@
     <Compile Include="Emulator\Z80CPU\Z80OpcodesFDCB.cs" />
     <Compile Include="Emulator\Z80CPU\Z80Registers.cs" />
     <Compile Include="Emulator\Z80CPU\Z80Tables.cs" />
+    <Compile Include="Settings\DebugSettings.cs" />
     <Compile Include="Settings\GamebaseSettings.cs" />
     <Compile Include="Settings\MainGeneralSettings.cs" />
     <Compile Include="Settings\MainModule.cs" />
@@ -161,6 +204,7 @@
     <Compile Include="Settings\TVCConfigurationSettings.cs" />
     <Compile Include="Settings\SetupInputSettings.cs" />
     <Compile Include="Settings\SetupTVCConfigurationDataProvider.cs" />
+    <None Include="YATE_TemporaryKey.pfx" />
     <Page Include="Dialogs\AddExpansionDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -193,7 +237,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Forms\BreakpointSetForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Forms\ExecutionHistoryPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\HexEditForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -213,6 +265,14 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Forms\FlagsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Forms\DebugPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Forms\TimingPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -284,7 +344,16 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Effects\CRTFilter.fx" />
+    <Resource Include="MainIcon.ico" />
+    <Resource Include="Resources\MainIcon.png" />
     <EmbeddedResource Include="Resources\DefaultKeyMapping.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
