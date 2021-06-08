@@ -356,14 +356,17 @@ namespace YATE.Managers
 			uint current_instruction_t_cycle;
 			uint frame_start_cycle = m_cpu_t_cycle;
 			bool breakpoint_exit = false;
+      bool frame_finished = false;
 
-			while (!TVC.Video.RenderScanline() && m_thread_running && !breakpoint_exit)
+			while (m_thread_running && !breakpoint_exit && !frame_finished)
 			{
 				m_target_cycle += 200;	 //TODO: calculate from video timing
 				TVC.Memory.VideoMemAccessCount = 0;
 
-				do
-				{
+        frame_finished = TVC.Video.RenderScanline();
+
+        do
+        {
 					current_instruction_t_cycle = TVC.CPU.Step();
 					m_cpu_t_cycle += current_instruction_t_cycle;
 					m_instruction_t_cycle += current_instruction_t_cycle;
@@ -380,7 +383,7 @@ namespace YATE.Managers
 							breakpoint_exit = true;
 							m_execution_state = ExecutionState.Paused;
 						}
-  
+
             // do sound interrupt handling
             //TVC.Sound.PeriodicCallback();
           }
@@ -393,16 +396,19 @@ namespace YATE.Managers
           if (TVC.Sound != null)
             TVC.Sound.PeriodicCallback();
 
+          // handle clock stretching (video memory access)
+          if (TVC.Memory.VideoMemAccessCount > 0)
+          {
+            m_cpu_t_cycle += (uint)(TVC.Memory.VideoMemAccessCount + 1);
+            TVC.Memory.VideoMemAccessCount = 0;
+          }
+
         } while (((long)m_target_cycle - m_cpu_t_cycle) > 0 && m_thread_running && !breakpoint_exit);
 
-				if (TVC.Memory.VideoMemAccessCount > 0)
-				{
-					m_cpu_t_cycle += (uint)(TVC.Memory.VideoMemAccessCount + 1);
-				}
+        TVC.PeriodicCallback();
 
         //TVC.Sound.PeriodicCallback();
 
-        TVC.PeriodicCallback();
 			}
 
       if(breakpoint_exit)

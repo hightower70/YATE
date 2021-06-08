@@ -118,7 +118,7 @@ namespace YATE.Emulator.TVCFiles
 
 			header.FileType = TVCFileTypes.CASBlockHeaderFileUnbuffered;
 			header.CopyProtect = (byte)((in_storage.CopyProtect) ? 0xff : 0x00);
-			header.BlockNumber = (byte)(cas_length / 128);
+			header.BlockNumber = (ushort)(cas_length / 128);
 			header.LastBlockBytes = (byte)(cas_length % 128);
 
 			return header;

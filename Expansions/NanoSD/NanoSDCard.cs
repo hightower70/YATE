@@ -1,4 +1,26 @@
-﻿using System;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2019-2021 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// NanoSD card emulation class
+///////////////////////////////////////////////////////////////////////////////
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -35,12 +57,12 @@ namespace NanoSD
 
     private void FileSystemWatcherDeleted(object sender, FileSystemEventArgs e)
     {
-      m_arduino_cpu.FileSystemChanged();
+      m_arduino_cpu.FileSystemChanged(e.FullPath);
     }
 
     private void FileSystemWatcherCreated(object sender, FileSystemEventArgs e)
     {
-      m_arduino_cpu.FileSystemChanged();
+      m_arduino_cpu.FileSystemChanged(e.FullPath);
     }
 
     public void SetSettings(NanoSDCardSettings in_settings)
@@ -57,7 +79,7 @@ namespace NanoSD
 
       // file system watcher
       if (Directory.Exists(Settings.FilesystemFolder))
-      {
+      {                                  
         m_file_system_watcher.Path = Settings.FilesystemFolder;
         m_file_system_watcher.EnableRaisingEvents = true;
       }

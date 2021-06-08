@@ -109,8 +109,11 @@
 
 		<Border Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" BorderBrush="DarkGray" BorderThickness="1" UseLayoutRounding="True">
 			<Image x:Name="iDisplay" Width="640" Height="576" Stretch="Fill" UseLayoutRounding="True">
-				<Image.Effect>
+				<!-- <Image.Effect>
 					<effects:CRTFilter Width="{Binding Width, ElementName=iDisplay}" Height="{Binding Height, ElementName=iDisplay}" EvenParam="2,10,2,16" OddParam="2,8,2,16" />
+				</Image.Effect>-->
+				<Image.Effect>
+					<BlurEffect KernelType="Gaussian" Radius="2"/>
 				</Image.Effect>
 			</Image>
 		</Border>

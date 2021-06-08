@@ -58,7 +58,11 @@ namespace YATE.Emulator.TVCHardware
 
     public const int PaletterColorCount = 4;
 
+    public const byte DimScanlineColorMultiplier = 192;
+
     public const int HorizontalTiming = 64000; // horizontal timing in ns
+    public const int ScanlineVSyncPackPorch = 24; // first visible scanline after vertical sync and back porch
+    public const int PixelHSyncPackPorch = 130; // first visible column after horizonjtal sync and back porch
 
     public readonly Color[] TVCColors =
     {
@@ -139,11 +143,16 @@ namespace YATE.Emulator.TVCHardware
     // color related variables
     private uint[] m_current_colors;
     private uint[] m_current_graphics16_colors;
+    private uint[] m_current_graphics16_dim_colors;
 
     // video refresh variables
     private int m_scanline_index = 0;
     private int m_RA = 0;
     private int m_MA = 0;
+
+
+
+    private Random m_rand = new Random();
 
     #endregion
 
@@ -191,6 +200,7 @@ namespace YATE.Emulator.TVCHardware
 
       // color tables init
       m_current_graphics16_colors = new uint[128];
+      m_current_graphics16_dim_colors = new uint[128];
       m_current_colors = new uint[TVCColors.Length];
       FillColorCache();
 
@@ -313,277 +323,404 @@ namespace YATE.Emulator.TVCHardware
 
     public bool RenderScanline()
     {
-      int total_character_count = m_6845_registers[MC6845_HTOTAL] + 1;
-
-      if (total_character_count != 100)
-      {
-        //TODO: video error
-        return false;
-      }
-
-      int character_line_count = (m_6845_registers[MC6845_MAXSCANLINEADDR] & 0x1f) + 1;
-      if (character_line_count != 4)
-      {
-        //TODO: video error
-        return false;
-      }
-
-      // calculate total lines
-      int total_vertical_lines = ((m_6845_registers[MC6845_VTOTAL] & 0x7f) + 1) * character_line_count + (m_6845_registers[MC6845_VTOTALADJ] & 0x1f);
-      if (total_vertical_lines < 310 || total_vertical_lines > 320)
-      {
-        //TODO: video error
-        return false;
-      }
+      bool render_error = false;
 
       // determine first visible line
-      int first_visible_line = 25;
+      int first_visible_line = ScanlineVSyncPackPorch;
 
+      // skip non visible scanlines
       if (m_scanline_index < first_visible_line)
       {
         m_scanline_index++;
         return false;
       }
 
-
-      // start rendering
-      if (m_scanline_index == first_visible_line)
+      // Total character count (must be 100 for 15625Hz horizontal sync)
+      int total_character_count = m_6845_registers[MC6845_HTOTAL] + 1;
+      if (total_character_count != 100)
       {
-        m_RA = 0;
-        m_MA = ((m_6845_registers[MC6845_STARTADDRHI] & 0x3f) << 8) + m_6845_registers[MC6845_STARTADDRLO];
+        render_error = true;
       }
 
-      // check for display enabled in vertical direction
-      int vsync_line_pos = ((m_6845_registers[MC6845_VSYNCPOS] & 0x7f) + 1) * character_line_count;
-      int visible_line_count = (m_6845_registers[MC6845_VDISPLAYED] & 0x7f) * character_line_count;
-      if (m_scanline_index < (total_vertical_lines - vsync_line_pos) || m_scanline_index >= (total_vertical_lines - vsync_line_pos + visible_line_count))
+      // Character line count (must be 4 for correct address line generation
+      int character_line_count = (m_6845_registers[MC6845_MAXSCANLINEADDR] & 0x1f) + 1;
+      if (character_line_count != 4)
       {
-        if ((m_scanline_index - first_visible_line) < m_image_height / 2)
-        {
-          // render borders (top, bottom)
-          int frame_buffer_pos = (m_scanline_index - first_visible_line) * m_image_width * 2;
-          uint color = BorderColorRegisterToColor(m_port_00h);
+        render_error = true;
+      }
 
+      // calculate total lines (must be around 312 for 50Hz)
+      int total_vertical_lines = ((m_6845_registers[MC6845_VTOTAL] & 0x7f) + 1) * character_line_count + (m_6845_registers[MC6845_VTOTALADJ] & 0x1f);
+      if (total_vertical_lines < 310 || total_vertical_lines > 320)
+      {
+        render_error = true;
+        total_vertical_lines = 312;
+      }
+
+      int frame_buffer_line_index = m_scanline_index - first_visible_line;
+      int frame_buffer_line_length = m_image_width;
+
+      // render scanline
+      if (render_error)
+      {
+        if (frame_buffer_line_index < m_image_height / 2)
+        {
+          int frame_buffer_pos = frame_buffer_line_index * m_image_width * 2;
+
+          // render nosisy scanline
+          uint c;
+
+          // even line
           for (int i = 0; i < m_image_width; i++)
           {
-            m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color;
+            c = (uint)m_rand.Next(255);
+
+            m_frame_buffer.UIntBuffer[frame_buffer_pos] = 0xff000000u | (c << 16) | (c << 8) | (c);
+            m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = 0x80000000u | (c << 16) | (c << 8) | (c);
+            frame_buffer_pos++;
           }
         }
       }
       else
       {
-        // draw border (left side)
-        int first_visible_column = 140;
-        int total_horizontal_pixel = (m_6845_registers[MC6845_HTOTAL] + 1) * 8;
-        int image_offset = (total_horizontal_pixel - first_visible_column - m_image_width) / 2;
-        int frame_buffer_pos = (m_scanline_index - first_visible_line) * m_image_width * 2 - first_visible_column;
-
-        // TODO: check 
-        if (frame_buffer_pos < 0)
+        // start rendering
+        if (m_scanline_index == first_visible_line)
         {
-          frame_buffer_pos = 0;
+          m_RA = 0;
+          m_MA = ((m_6845_registers[MC6845_STARTADDRHI] & 0x3f) << 8) + m_6845_registers[MC6845_STARTADDRLO];
         }
 
-        int pixel_index = 0;
-        int first_visible_pixel = ((m_6845_registers[MC6845_HTOTAL] + 1) - (m_6845_registers[MC6845_HSYNCPOS] + 1)) * 8 + image_offset;
-        uint border_color = BorderColorRegisterToColor(m_port_00h);
-        while (pixel_index < first_visible_pixel)
-        {
-          m_frame_buffer.UIntBuffer[frame_buffer_pos++] = border_color;
-          pixel_index++;
-        }
-
-        int displayed_character_count = m_6845_registers[MC6845_HDISPLAYED];
-        int character_index = 0;
-        int video_memory_address;
+        // check for display enabled in vertical direction
         int line_start_video_memory_address = m_MA;
-
-        // draw pixels
-        byte data;
-        switch (m_port_06h)
+        int vsync_line_pos = ((m_6845_registers[MC6845_VSYNCPOS] & 0x7f) + 1) * character_line_count;
+        int visible_line_count = (m_6845_registers[MC6845_VDISPLAYED] & 0x7f) * character_line_count;
+        if (frame_buffer_line_index < m_image_height / 2)
         {
-          // 2 color mode
-          case 0:
-            {
-              byte[] video_mem = m_tvc.Memory.VisibleVideoMem;
-              uint color0 = ColorRegisterToColor(m_port_palette[0]);
-              uint color1 = ColorRegisterToColor(m_port_palette[1]);
-
-              while (character_index < displayed_character_count)
-              {
-                video_memory_address = GenerateAndIncrementVideoMemoryAddress();
-
-                data = video_mem[video_memory_address];
-
-                // pixel 7
-                if ((data & 0x80) == 0)
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
-                else
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
-
-                // pixel 6
-                if ((data & 0x40) == 0)
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
-                else
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
-
-                // pixel 5
-                if ((data & 0x20) == 0)
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
-                else
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
-
-                // pixel 4
-                if ((data & 0x10) == 0)
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
-                else
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
-
-                // pixel 3
-                if ((data & 0x08) == 0)
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
-                else
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
-
-                // pixel 2
-                if ((data & 0x04) == 0)
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
-                else
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
-
-                // pixel 1
-                if ((data & 0x02) == 0)
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
-                else
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
-
-                // pixel 0
-                if ((data & 0x01) == 0)
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
-                else
-                  m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
-
-                character_index++;
-              }
-            }
-            break;
-
-          case 1:
-            {
-              byte[] video_mem = m_tvc.Memory.VisibleVideoMem;
-
-              // get colors from palette
-              uint[] colors = new uint[32];
-              colors[0] = ColorRegisterToColor(m_port_palette[0]);
-              colors[1] = ColorRegisterToColor(m_port_palette[2]);
-              colors[16] = ColorRegisterToColor(m_port_palette[1]);
-              colors[17] = ColorRegisterToColor(m_port_palette[3]);
-
-              uint current_color;
-
-              while (character_index < displayed_character_count)
-              {
-                video_memory_address = GenerateAndIncrementVideoMemoryAddress();
-
-                data = video_mem[video_memory_address];
-
-                current_color = colors[(data >> 3) & 0x11];
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-
-                current_color = colors[(data >> 2) & 0x11];
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-
-                current_color = colors[(data >> 1) & 0x11];
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-
-                current_color = colors[data & 0x11];
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-
-                character_index++;
-              }
-            }
-            break;
-
-          default:
-            {
-              byte[] video_mem = m_tvc.Memory.VisibleVideoMem;
-
-              // get colors from palette
-              uint current_color;
-
-              while (character_index < displayed_character_count)
-              {
-                video_memory_address = GenerateAndIncrementVideoMemoryAddress();
-
-                data = video_mem[video_memory_address];
-
-                current_color = m_current_graphics16_colors[(data >> 1) & 0x55];
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-
-                current_color = m_current_graphics16_colors[data & 0x55];
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-                m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-
-                character_index++;
-              }
-            }
-            break;
-
-        }
-
-        // draw border (right side)
-        int right_border_pixel_count = ((m_6845_registers[MC6845_HSYNCPOS] + 1) - displayed_character_count) * 8;
-        pixel_index = 0;
-        while (pixel_index < right_border_pixel_count)
-        {
-          m_frame_buffer.UIntBuffer[frame_buffer_pos++] = border_color;
-          pixel_index++;
-        }
-
-        // handle cursor interrupt
-        int cursor_address = ((m_6845_registers[MC6845_CURSORHI] << 8) + m_6845_registers[MC6845_CURSORLO]);
-        int cursor_start_address = m_6845_registers[MC6845_CURSORSTART] & 0x1f;
-        int marker_index = (m_scanline_index - first_visible_line) * m_image_width * 2;
-
-        // if cursor is enabled (cursor IT is enabled)
-        if ((m_6845_registers[MC6845_CURSORSTART] & 60) == 0)
-        {
-          // check address matching
-          if (cursor_start_address == m_RA && line_start_video_memory_address <= cursor_address && (m_MA >= cursor_address || m_MA < line_start_video_memory_address))
+          if (m_scanline_index < (total_vertical_lines - vsync_line_pos) || m_scanline_index >= (total_vertical_lines - vsync_line_pos + visible_line_count))
           {
-            m_tvc.Interrupt.GenerateCursorSoundInterrupt();
+            // render borders (top, bottom)
+            int frame_buffer_pos = frame_buffer_line_index * m_image_width * 2;
+            uint color = BorderColorRegisterToColor(m_port_00h);
+            uint dim_border_color = ConvertDimScanlineColor(color);
 
-            m_frame_buffer.UIntBuffer[marker_index] = 0xffffffff;
-            m_frame_buffer.UIntBuffer[marker_index + 1] = 0xffffffff;
-            m_frame_buffer.UIntBuffer[marker_index + 2] = 0xffffffff;
+            for (int i = 0; i < m_image_width; i++)
+            {
+              m_frame_buffer.UIntBuffer[frame_buffer_pos] = color;
+              m_frame_buffer.UIntBuffer[frame_buffer_pos+frame_buffer_line_length] = dim_border_color;
+              frame_buffer_pos++;
+            }
           }
           else
           {
-            m_frame_buffer.UIntBuffer[marker_index] = 0xff000000;
-            m_frame_buffer.UIntBuffer[marker_index + 1] = 0xff000000;
-            m_frame_buffer.UIntBuffer[marker_index + 2] = 0xff000000;
+            // draw border (left side)
+            int frame_buffer_pos = frame_buffer_line_index * m_image_width * 2;
+            int total_horizontal_pixel = (m_6845_registers[MC6845_HTOTAL] + 1) * 8;
+
+            int first_visible_pixel = ((m_6845_registers[MC6845_HTOTAL] + 1) - (m_6845_registers[MC6845_HSYNCPOS] + 1)) * 8 - PixelHSyncPackPorch;
+            if (first_visible_pixel < 0)
+              first_visible_pixel = 0;
+
+            uint border_color = BorderColorRegisterToColor(m_port_00h);
+            uint dim_border_color = ConvertDimScanlineColor(border_color);
+
+            int pixel_index = 0;
+            while (pixel_index < first_visible_pixel)
+            {
+              m_frame_buffer.UIntBuffer[frame_buffer_pos] = border_color;
+              m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_border_color;
+              frame_buffer_pos++;
+              pixel_index++;
+            }
+
+            int displayed_character_count = m_6845_registers[MC6845_HDISPLAYED];
+            int character_index = 0;
+            int video_memory_address;
+
+            // draw pixels
+            byte data;
+
+            switch (m_port_06h)
+            {
+              // 2 color mode
+              case 0:
+                {
+                  byte[] video_mem = m_tvc.Memory.VisibleVideoMem;
+                  uint color0 = ColorRegisterToColor(m_port_palette[0]);
+                  uint color1 = ColorRegisterToColor(m_port_palette[1]);
+                  uint dim_color0 = ConvertDimScanlineColor(color0);
+                  uint dim_color1 = ConvertDimScanlineColor(color1);
+
+                  while (character_index < displayed_character_count)
+                  {
+                    video_memory_address = GenerateAndIncrementVideoMemoryAddress();
+
+                    data = video_mem[video_memory_address];
+
+                    // pixel 7
+                    if ((data & 0x80) == 0)
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos+frame_buffer_line_length] = dim_color0;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
+                    }
+                    else
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos+frame_buffer_line_length] = dim_color1;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
+                    }
+
+                    // pixel 6
+                    if ((data & 0x40) == 0)
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color0;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
+                    }
+                    else
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color1;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
+                    }
+
+                    // pixel 5
+                    if ((data & 0x20) == 0)
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color0;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
+                    }
+                    else
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color1;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
+                    }
+
+                    // pixel 4
+                    if ((data & 0x10) == 0)
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color0;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
+                    }
+                    else
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color1;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
+                    }
+
+                    // pixel 3
+                    if ((data & 0x08) == 0)
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color0;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
+                    }
+                    else
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color1;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
+                    }
+
+                    // pixel 2
+                    if ((data & 0x04) == 0)
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color0;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
+                    }
+                    else
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color1;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
+                    }
+
+                    // pixel 1
+                    if ((data & 0x02) == 0)
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color0;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
+                    }
+                    else
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color1;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
+                    }
+
+                    // pixel 0
+                    if ((data & 0x01) == 0)
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color0;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color0;
+                    }
+                    else
+                    {
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_color1;
+                      m_frame_buffer.UIntBuffer[frame_buffer_pos++] = color1;
+                    }
+
+                    character_index++;
+                  }
+                }
+                break;
+
+              // 4 color mode
+              case 1:
+                {
+                  byte[] video_mem = m_tvc.Memory.VisibleVideoMem;
+
+                  // get colors from palette
+                  uint[] colors = new uint[32];
+                  colors[0] = ColorRegisterToColor(m_port_palette[0]);
+                  colors[1] = ColorRegisterToColor(m_port_palette[2]);
+                  colors[16] = ColorRegisterToColor(m_port_palette[1]);
+                  colors[17] = ColorRegisterToColor(m_port_palette[3]);
+
+                  // dim colors
+                  colors[0 + 2] = ConvertDimScanlineColor(colors[0]);
+                  colors[1 + 2] = ConvertDimScanlineColor(colors[1]);
+                  colors[16 + 2] = ConvertDimScanlineColor(colors[16]);
+                  colors[17 + 2] = ConvertDimScanlineColor(colors[17]);
+
+                  uint current_color;
+                  uint current_dim_color;
+                  int color_index;
+
+                  while (character_index < displayed_character_count)
+                  {
+                    video_memory_address = GenerateAndIncrementVideoMemoryAddress();
+
+                    data = video_mem[video_memory_address];
+
+                    color_index = (data >> 3) & 0x11;
+                    current_color = colors[color_index];
+                    current_dim_color = colors[color_index + 2];
+
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+
+                    color_index = (data >> 2) & 0x11;
+                    current_color = colors[color_index];
+                    current_dim_color = colors[color_index + 2];
+
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+
+                    color_index = (data >> 1) & 0x11;
+                    current_color = colors[color_index];
+                    current_dim_color = colors[color_index + 2];
+
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+
+                    color_index = data & 0x11;
+                    current_color = colors[color_index];
+                    current_dim_color = colors[color_index + 2];
+
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+
+                    character_index++;
+                  }
+                }
+                break;
+
+              // 16 color mode
+              default:
+                {
+                  byte[] video_mem = m_tvc.Memory.VisibleVideoMem;
+
+                  // get colors from palette
+                  uint current_color;
+                  uint current_dim_color;
+                  int color_index;
+
+                  while (character_index < displayed_character_count)
+                  {
+                    video_memory_address = GenerateAndIncrementVideoMemoryAddress();
+
+                    data = video_mem[video_memory_address];
+
+                    color_index = (data >> 1) & 0x55;
+                    current_color = m_current_graphics16_colors[color_index];
+                    current_dim_color = m_current_graphics16_dim_colors[color_index];
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+
+                    color_index = data & 0x55;
+                    current_color = m_current_graphics16_colors[color_index];
+                    current_dim_color = m_current_graphics16_dim_colors[color_index];
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
+                    m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
+
+                    character_index++;
+                  }
+                }
+                break;
+
+            }
+
+            // draw border (right side)
+            pixel_index = first_visible_pixel + m_6845_registers[MC6845_HDISPLAYED] * 8; // ((m_6845_registers[MC6845_HSYNCPOS] + 1) - displayed_character_count) * 8;
+            while (pixel_index < m_image_width)
+            {
+              m_frame_buffer.UIntBuffer[frame_buffer_pos] = border_color;
+              m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = dim_border_color;
+              frame_buffer_pos++;
+              pixel_index++;
+            }
+
+
+            // handle cursor interrupt
+            int cursor_address = (((m_6845_registers[MC6845_CURSORHI] << 8) + m_6845_registers[MC6845_CURSORLO]) & 0x3fff);
+            int cursor_start_address = m_6845_registers[MC6845_CURSORSTART] & 0x1f;
+            int marker_index = frame_buffer_line_index * m_image_width * 2;
+
+            // if cursor is enabled (cursor IT is enabled)
+            if ((m_6845_registers[MC6845_CURSORSTART] & 0x60) != 0x20)
+            {
+              // check address matching
+              if (cursor_start_address == m_RA && line_start_video_memory_address <= cursor_address && (m_MA > cursor_address || m_MA < line_start_video_memory_address))
+              {
+                m_tvc.Interrupt.GenerateCursorSoundInterrupt();
+
+                m_frame_buffer.UIntBuffer[marker_index] = 0xffffffff;
+                m_frame_buffer.UIntBuffer[marker_index + 1] = 0xffffffff;
+                m_frame_buffer.UIntBuffer[marker_index + 2] = 0xffffffff;
+              }
+              else
+              {
+                m_frame_buffer.UIntBuffer[marker_index] = 0xff000000;
+                m_frame_buffer.UIntBuffer[marker_index + 1] = 0xff000000;
+                m_frame_buffer.UIntBuffer[marker_index + 2] = 0xff000000;
+              }
+            }
+
+            // next scanline
+            m_RA++;
+
+            if (m_RA >= 4)
+            {
+              m_RA = 0;
+            }
+            else
+            {
+              m_MA = line_start_video_memory_address;
+            }
           }
-        }
-
-        // next scanline
-        m_RA++;
-
-        if (m_RA >= 4)
-        {
-          m_RA = 0;
-        }
-        else
-        {
-          m_MA = line_start_video_memory_address;
         }
       }
 
@@ -647,6 +784,7 @@ namespace YATE.Emulator.TVCHardware
         }
 
         m_current_graphics16_colors[graphics16_color_index] = m_current_colors[i];
+        m_current_graphics16_dim_colors[graphics16_color_index] = ConvertDimScanlineColor(m_current_colors[i]);
       }
     }
 
@@ -704,6 +842,18 @@ namespace YATE.Emulator.TVCHardware
       byte Y = (byte)(255 * (0.229 * inout_color.R / 255.0 + 0.587 * inout_color.G / 255.0 + 0.114 * inout_color.B / 255.0));
 
       return 0xff000000u | ((uint)Y << 16) | ((uint)Y << 8) | (Y);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private uint ConvertDimScanlineColor(uint in_color)
+    {
+      uint ret_color = in_color & 0xff000000;
+
+      ret_color |= DimScanlineColorMultiplier * (in_color & 0x000000ff) / 256;
+      ret_color |= (DimScanlineColorMultiplier * ((in_color >> 8) & 0x000000ff) / 256) << 8;
+      ret_color |= (DimScanlineColorMultiplier * ((in_color >> 16) & 0x000000ff) / 256) << 16;
+
+      return ret_color;
     }
   }
 }

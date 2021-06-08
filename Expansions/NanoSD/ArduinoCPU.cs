@@ -1,19 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2019-2021 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// NanoSD Card onboard CPU emulator class
+///////////////////////////////////////////////////////////////////////////////
+using System;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace NanoSD
 {
   class ArduinoCPU
   {
+    #region · Constants ·
+
     private int BufferLength = 128;
     private int GETDATA_SIZE = 64;
 
     private readonly string FirmwareVersionString = "NanoSD Arduino fw v0.31";
 
+    #endregion
+
+    #region · Types · 
+
+    /// <summary>
+    /// Arduino CPU commands used by TVC software
+    /// </summary>
     private enum COMMANDS : byte
     {
       OPEN = 0, // Open a file. Parameter is a null terminated string. Returns 0: ok
@@ -38,6 +66,9 @@ namespace NanoSD
       NONE = 255
     };
 
+    /// <summary>
+    /// Status byte values, returned from Arduino to TVC
+    /// </summary>
     private enum STATUS : byte
     {
       OK = 0,
@@ -72,6 +103,9 @@ namespace NanoSD
       STATUS_NO_SD = 0xFF
     };
 
+    /// <summary>
+    /// Get/Set parameter, parameter types
+    /// </summary>
     private enum PARAMETERS : byte
     {
       PARAM_MENU_STATUS = 0,
@@ -80,13 +114,18 @@ namespace NanoSD
       PARAM_NANO_VERSION
     };
 
+    /// <summary>
+    /// Handled file types
+    /// </summary>
     private enum FILETYPE : byte
     {
       DIRECTORY = 0,
       PLAINFILE
     };
 
-    private delegate void ReadBlockFinishedCallback();
+    #endregion
+
+    #region · Data members ·
 
     private NanoSDCard m_parent;
 
@@ -101,15 +140,26 @@ namespace NanoSD
     private int m_input_pos;
 
     private string m_current_dir;
-    private FileInfo[] m_directory;
+    private FileSystemInfo[] m_directory;
     private int m_directory_index;
 
-    private ReadBlockFinishedCallback m_read_block_finished;
-
     private bool m_file_system_changed;
+    private string m_current_changed_file;
 
     private BinaryReader m_file_read;
+    private BinaryWriter m_file_write;
 
+    private int m_bytes_written;
+    private byte m_write_file_type;
+
+    #endregion
+
+    #region · Constructor ·
+
+    /// <summary>
+    /// Default constructor. Creates NanoSD Arduino CPU function emulation class.
+    /// </summary>
+    /// <param name="in_parent"></param>
     public ArduinoCPU(NanoSDCard in_parent)
     {
       m_parent = in_parent;
@@ -123,11 +173,17 @@ namespace NanoSD
 
       m_current_dir = "/";
 
-      m_read_block_finished = null;
-
       m_file_system_changed = false;
     }
 
+    #endregion
+
+    #region · Host communication functions ·
+
+    /// <summary>
+    /// Reads byte from the Arduino CPU
+    /// </summary>
+    /// <returns></returns>
     public byte ReadByte()
     {
       if ((((byte)m_status) & 0x80) != 0)
@@ -148,19 +204,15 @@ namespace NanoSD
         }
         else
         {
-          if (m_read_block_finished != null)
-          {
-            m_read_block_finished();
-            return (byte)STATUS.DATA_NOT_READY_YET;
-          }
-          else
-          {
-            return (byte)STATUS.BUFFER_UNDERRUN;
-          }
+          return (byte)STATUS.BUFFER_UNDERRUN;
         }
       }
     }
 
+    /// <summary>
+    /// Write byte to the Arduino CPU
+    /// </summary>
+    /// <param name="in_byte"></param>
     public void WriteByte(byte in_byte)
     {
       // store input data
@@ -206,7 +258,7 @@ namespace NanoSD
             break;
 
           case COMMANDS.CHDIR:
-            //handleChDir();
+            CmdChDir();
             break;
 
           case COMMANDS.FINFO:
@@ -220,20 +272,21 @@ namespace NanoSD
           case COMMANDS.BANKTO0:
             CmdBankSelect(0);
             break;
+
           case COMMANDS.BANKTO1:
             CmdBankSelect(1);
             break;
 
           case COMMANDS.CREATE:
-            //handleCreate();
+            CmdCreate();
             break;
 
           case COMMANDS.PUTDATA:
-            //handlePutData();
+            CmdPutData();
             break;
 
           case COMMANDS.CLOSEWRITE:
-            //handleCloseForWrite();
+            CmdCloseForWrite();
             break;
 
           case COMMANDS.GETPARAMETER:
@@ -245,19 +298,23 @@ namespace NanoSD
             break;
 
           case COMMANDS.MKDIR:
-            //handleMkDir();
+            CmdMkDir();
             break;
 
           case COMMANDS.RMDIR:
-            //handleRmDir();
+            CmdRmDir();
             break;
 
           case COMMANDS.DELETE:
-            //handleDelete();
+            CmdDelete();
             break;
 
           case COMMANDS.CDPINCHANGE_DETECTED:
             //handleCDPinChangeDetected();
+            break;
+
+          default:
+            ResetInputBuffer();
             break;
         }
       }
@@ -281,79 +338,27 @@ namespace NanoSD
       }
     }
 
-    public void FileSystemChanged()
-    {
-      m_file_system_changed = true;
-    }
+    #endregion
 
+    #region · Arduino CPU Commands ·
 
-    private void ResetInputBuffer()
-    {
-      m_input_pos = -1;
-    }
-
-    private void ResetOutputBuffer()
-    {
-      m_output_length = 0;
-      m_output_pos = 0;
-    }
-
-    private void SendOuputBuffer()
-    {
-      m_output_length = m_output_pos;
-      m_output_pos = 0;
-    }
-
-    private void SendOuputBuffer(STATUS in_status)
-    {
-      m_status = in_status;
-      m_output_length = m_output_pos;
-      m_output_pos = -1;
-    }
-
-    private void SetStatus(STATUS in_status)
-    {
-      m_status = in_status;
-    }
-
-    private void StoreByte(byte in_byte)
-    {
-      if (m_output_pos < BufferLength)
-      {
-        m_output_buffer[m_output_pos++] = in_byte;
-      }
-    }
-
-    private bool FilesystemIsReady()
-    {
-      bool file_system_is_ready =  Directory.Exists(m_parent.Settings.FilesystemFolder);
-
-      if (m_file_system_changed && m_directory == null && m_file_read == null)
-      {
-        file_system_is_ready = false;
-      }
-
-      return file_system_is_ready;
-    }
-
-    private string GetFilePath()
-    {
-      string file_path = m_current_dir;
-
-      if (file_path.StartsWith("/"))
-        file_path = file_path.Remove(0, 1);
-
-      file_path = Path.Combine(m_parent.Settings.FilesystemFolder, file_path);
-
-      return file_path;
-    }
-
+    /// <summary>
+    /// Command: opens file for read
+    /// </summary>
     private void CmdOpen()
     {
       SetStatus(STATUS.WAITING_FOR_INPUT);
 
       if (m_input_pos < 1)
+      {
+        // close file if already opened
+        if (m_file_read != null)
+        {
+          m_file_read.Close();
+          m_file_read = null;
+        }
         return;
+      }
 
       // check end of filename
       if (m_input_buffer[m_input_pos - 1] == 0)
@@ -366,11 +371,11 @@ namespace NanoSD
         if (m_input_buffer[0] == 0)
         {
           // get the first CAS file
-          string[] files = Directory.GetFiles(GetFilePath(), "*.cas");
+          string[] files = Directory.GetFiles(GetAbsoluteFolderPath(), "*.cas");
 
-          if(files.Length>0)
+          if (files.Length > 0)
           {
-            full_file_name = Path.Combine(GetFilePath(), files[0]);
+            full_file_name = Path.Combine(GetAbsoluteFolderPath(), files[0]);
           }
           else
           {
@@ -379,13 +384,13 @@ namespace NanoSD
         }
         else
         {
-          full_file_name = Path.Combine(GetFilePath(), Encoding.ASCII.GetString(m_input_buffer, 0, m_input_pos - 1));
+          full_file_name = Path.Combine(GetAbsoluteFolderPath(), Encoding.ASCII.GetString(m_input_buffer, 0, m_input_pos - 1));
         }
 
         // Add cas if there is no extension
-        if(!File.Exists(full_file_name))
+        if (!File.Exists(full_file_name))
         {
-          if(Path.GetExtension(full_file_name).Length== 0)
+          if (Path.GetExtension(full_file_name).Length == 0)
           {
             full_file_name += ".CAS";
           }
@@ -409,7 +414,7 @@ namespace NanoSD
             StoreByte((byte)file_name[i]);
           }
 
-          
+
           // get length
           long length = m_file_read.BaseStream.Length - m_file_read.BaseStream.Position;
 
@@ -429,9 +434,12 @@ namespace NanoSD
       }
     }
 
+    /// <summary>
+    /// Command: read data from the opened read file
+    /// </summary>
     private void CmdGetData()
     {
-      if(m_file_read == null)
+      if (m_file_read == null)
       {
         SetStatus(STATUS.FILE_NOT_OPEN);
         ResetInputBuffer();
@@ -455,9 +463,12 @@ namespace NanoSD
       ResetInputBuffer();
     }
 
+    /// <summary>
+    /// Command: close read file
+    /// </summary>
     private void CmdClose()
     {
-      if(m_file_read != null)
+      if (m_file_read != null)
       {
         m_file_read.Close();
         m_file_read = null;
@@ -468,6 +479,154 @@ namespace NanoSD
       SetStatus(STATUS.CLOSE_OK);
     }
 
+    /// <summary>
+    /// Command: creates file for write
+    /// </summary>
+    private void CmdCreate()
+    {
+      SetStatus(STATUS.WAITING_FOR_INPUT);
+
+      if (m_input_pos < 1)
+      {
+        if (m_file_write != null)
+        {
+          m_file_write.Close();
+          m_file_write = null;
+
+          return;
+        }
+      }
+
+      int expected_length = 1 + m_input_buffer[0] + 1; // file name length + file name + file type
+      if (m_input_pos < expected_length)
+        return;
+
+      m_write_file_type = m_input_buffer[m_input_buffer[0] + 1];
+
+      string file_name = Encoding.ASCII.GetString(m_input_buffer, 1, m_input_buffer[0]);
+
+      // default name if no file name specified
+      if (file_name.Length == 0)
+        file_name = "NONAME.CAS";
+
+      // add extension if not specified
+      string ext = Path.GetExtension(file_name);
+      if (string.IsNullOrEmpty(ext))
+        file_name += ".CAS";
+      else
+      {
+        if (string.Compare(ext, ".CAS", true) != 0)
+        {
+          m_write_file_type = 0;
+        }
+      }
+
+      string absolute_file_name = GetAbsouteFilePath(file_name);
+
+      // create file
+      m_current_changed_file = absolute_file_name;
+      m_file_write = new BinaryWriter(File.Open(absolute_file_name, FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
+      m_current_changed_file = null;
+      if (m_file_write != null)
+      {
+        m_bytes_written = 0;
+
+        // Write CAS header
+        if ((m_write_file_type == 0x01) || (m_write_file_type == 0x11))
+        {
+          m_file_write.Write(m_write_file_type);
+
+          for (int i = 1; i < 128; i++)
+            m_file_write.Write((byte)0x00);
+
+          m_bytes_written += 128;
+        }
+
+        SetStatus(STATUS.CREATE_OK);
+      }
+      else
+      {
+        SetStatus(STATUS.CREATE_FAILED);
+      }
+
+      ResetInputBuffer();
+      ResetOutputBuffer();
+    }
+
+    /// <summary>
+    /// Command: write data to the write opened file
+    /// </summary>
+    private void CmdPutData()
+    {
+      SetStatus(STATUS.WAITING_FOR_INPUT);
+
+      if (m_input_pos < 1)
+        return;
+
+      int expected_length = m_input_buffer[0] + 1; // data packet length + data packet
+      if (m_input_pos < expected_length)
+        return;
+
+      int bytes_to_write = m_input_buffer[0];
+
+      if (m_file_write == null)
+      {
+        SetStatus(STATUS.DATA_FAILED_TO_RECEIVE);
+      }
+      else
+      {
+        try
+        {
+          m_file_write.Write(m_input_buffer, 1, bytes_to_write);
+
+          m_bytes_written += bytes_to_write;
+
+          SetStatus(STATUS.DATA_RECEIVED);
+        }
+        catch
+        {
+          SetStatus(STATUS.DATA_FAILED_TO_RECEIVE);
+        }
+      }
+
+      ResetInputBuffer();
+      ResetOutputBuffer();
+    }
+
+    /// <summary>
+    /// Command: Close write opened file
+    /// </summary>
+    private void CmdCloseForWrite()
+    {
+      if (m_file_write == null)
+      {
+        SetStatus(STATUS.CLOSE_FAILED);
+        return;
+      }
+
+      // Update CAS header
+      if ((m_write_file_type == 0x01) || (m_write_file_type == 0x11))
+      {
+        int lastBlock = m_bytes_written % 128;
+
+        m_file_write.Seek(2, SeekOrigin.Begin);
+        m_file_write.Write((byte)((m_bytes_written / 128) % 256));
+        m_file_write.Write((byte)((m_bytes_written / 128) / 256));
+        m_file_write.Write((byte)(lastBlock));
+      }
+
+      m_file_write.Close();
+      m_file_write = null;
+
+      SetStatus(STATUS.CLOSE_OK);
+
+      ResetInputBuffer();
+      ResetOutputBuffer();
+    }
+
+    /// <summary>
+    /// Command: get parameter
+    /// </summary>
     private void CmdGetParameter()
     {
       if (m_input_pos < 1)
@@ -515,6 +674,9 @@ namespace NanoSD
       ResetInputBuffer();
     }
 
+    /// <summary>
+    /// Command: set parameter
+    /// </summary>
     private void CmdSetParameter()
     {
       if (m_input_pos < 2)
@@ -524,7 +686,7 @@ namespace NanoSD
       switch ((PARAMETERS)param)
       {
         case PARAMETERS.PARAM_MENU_STATUS:
-          m_parent.Settings.MenuStatus = (m_input_buffer[1] == 0);
+          m_parent.Settings.MenuStatus = (m_input_buffer[1] != 0);
           SetStatus(STATUS.PARAMETER_SET);
           m_parent.StoreSettings();
           break;
@@ -543,6 +705,9 @@ namespace NanoSD
       ResetInputBuffer();
     }
 
+    /// <summary>
+    /// Command: get current directory
+    /// </summary>
     private void CmdGetCDir()
     {
       StoreByte((byte)m_current_dir.Length);
@@ -556,6 +721,10 @@ namespace NanoSD
       ResetInputBuffer();
     }
 
+    /// <summary>
+    /// Command: bank select
+    /// </summary>
+    /// <param name="in_bank"></param>
     private void CmdBankSelect(int in_bank)
     {
       if (in_bank == 0)
@@ -568,12 +737,15 @@ namespace NanoSD
       ResetInputBuffer();
     }
 
+    /// <summary>
+    /// Command: list first directory entry
+    /// </summary>
     private void CmdListFirst()
     {
-      string path = GetFilePath();
+      string path = GetAbsoluteFolderPath();
 
       DirectoryInfo di = new DirectoryInfo(path);
-      m_directory = di.GetFiles();
+      m_directory = di.GetFileSystemInfos();
 
       m_directory_index = 0;
 
@@ -582,6 +754,9 @@ namespace NanoSD
       ResetInputBuffer();
     }
 
+    /// <summary>
+    /// Command: list next directory entry
+    /// </summary>
     private void CmdListNext()
     {
       m_directory_index++;
@@ -591,20 +766,339 @@ namespace NanoSD
       ResetInputBuffer();
     }
 
+    /// <summary>
+    /// Command: change directory
+    /// </summary>
+    private void CmdChDir()
+    {
+      SetStatus(STATUS.WAITING_FOR_INPUT);
+
+      if (m_input_pos < 1)
+        return;
+
+      // check end of directory name
+      if (m_input_buffer[m_input_pos - 1] == 0)
+      {
+        SetStatus(STATUS.DATA_NOT_READY_YET); // no use in this case but looks fancy
+
+        string path = GetParameterAbsoluteFilePath();
+
+        if (path.StartsWith(m_parent.Settings.FilesystemFolder) && Directory.Exists(path))
+        {
+          string current_dir = path.Remove(0, m_parent.Settings.FilesystemFolder.Length).Replace("\\", "/");
+
+          if (!current_dir.StartsWith("/"))
+            current_dir = "/" + current_dir;
+
+          m_current_dir = current_dir;
+
+          SetStatus(STATUS.CHDIR_OK);
+        }
+        else
+        {
+          SetStatus(STATUS.CHDIR_FAILED);
+        }
+
+        ResetInputBuffer();
+      }
+    }
+
+    /// <summary>
+    /// Command: create directory
+    /// </summary>
+    private void CmdMkDir()
+    {
+      SetStatus(STATUS.WAITING_FOR_INPUT);
+
+      if (m_input_pos < 1)
+        return;
+
+      // check end of directory name
+      if (m_input_buffer[m_input_pos - 1] == 0)
+      {
+        SetStatus(STATUS.DATA_NOT_READY_YET); // no use inthis case but looks fancy
+
+        string path = GetParameterAbsoluteFilePath();
+
+        if (Directory.Exists(path))
+        {
+          SetStatus(STATUS.MKDIR_FAILED);
+        }
+        else
+        {
+          try
+          {
+            m_current_changed_file = path;
+            Directory.CreateDirectory(path);
+            SetStatus(STATUS.MKDIR_OK);
+            m_current_changed_file = null;
+          }
+          catch
+          {
+            SetStatus(STATUS.MKDIR_FAILED);
+          }
+        }
+
+        ResetInputBuffer();
+      }
+    }
+
+    /// <summary>
+    /// Command: remove directory
+    /// </summary>
+    private void CmdRmDir()
+    {
+      SetStatus(STATUS.WAITING_FOR_INPUT);
+
+      if (m_input_pos < 1)
+        return;
+
+      // check end of directory name
+      if (m_input_buffer[m_input_pos - 1] == 0)
+      {
+        SetStatus(STATUS.DATA_NOT_READY_YET);
+
+        string path = GetParameterAbsoluteFilePath();
+
+        if (!Directory.Exists(path))
+        {
+          SetStatus(STATUS.RMDIR_FAILED);
+        }
+        else
+        {
+          try
+          {
+            m_current_changed_file = path;
+            Directory.Delete(path);
+            SetStatus(STATUS.RMDIR_OK);
+            m_current_changed_file = null;
+          }
+          catch
+          {
+            SetStatus(STATUS.RMDIR_FAILED);
+          }
+        }
+
+        ResetInputBuffer();
+      }
+    }
+
+    /// <summary>
+    /// Command: delete file
+    /// </summary>
+    private void CmdDelete()
+    {
+      SetStatus(STATUS.WAITING_FOR_INPUT);
+
+      if (m_input_pos < 1)
+        return;
+
+      // check end of directory name
+      if (m_input_buffer[m_input_pos - 1] == 0)
+      {
+        SetStatus(STATUS.DATA_NOT_READY_YET);
+
+        string path = GetParameterAbsoluteFilePath();
+
+        if (!File.Exists(path))
+        {
+          SetStatus(STATUS.DELETE_FAILED);
+        }
+        else
+        {
+          try
+          {
+            m_current_changed_file = path;
+            File.Delete(path);
+            SetStatus(STATUS.DELETE_OK);
+            m_current_changed_file = null;
+          }
+          catch
+          {
+            SetStatus(STATUS.DELETE_FAILED);
+          }
+        }
+
+        ResetInputBuffer();
+      }
+    }
+
+
+    #endregion
+
+    #region · Helper functions ·
+
+    public void FileSystemChanged(string in_changed_file)
+    {
+      // skip currently handled file
+      if (!string.IsNullOrEmpty(m_current_changed_file) && string.Compare(m_current_changed_file, in_changed_file) == 0)
+        return;
+
+      m_file_system_changed = true;
+    }
+
+    /// <summary>
+    /// Resets command buffer
+    /// </summary>
+    private void ResetInputBuffer()
+    {
+      m_input_pos = -1;
+    }
+
+    /// <summary>
+    /// Resets result buffer
+    /// </summary>
+    private void ResetOutputBuffer()
+    {
+      m_output_length = 0;
+      m_output_pos = 0;
+    }
+
+    private void SendOuputBuffer()
+    {
+      m_output_length = m_output_pos;
+      m_output_pos = 0;
+    }
+
+    private void SendOuputBuffer(STATUS in_status)
+    {
+      m_status = in_status;
+      m_output_length = m_output_pos;
+      m_output_pos = -1;
+    }
+
+    /// <summary>
+    /// Sets status code
+    /// </summary>
+    /// <param name="in_status"></param>
+    private void SetStatus(STATUS in_status)
+    {
+      m_status = in_status;
+    }
+
+    /// <summary>
+    /// Stores one byte in the result buffer
+    /// </summary>
+    /// <param name="in_byte"></param>
+    private void StoreByte(byte in_byte)
+    {
+      if (m_output_pos < BufferLength)
+      {
+        m_output_buffer[m_output_pos++] = in_byte;
+      }
+    }
+
+    private bool FilesystemIsReady()
+    {
+      bool file_system_is_ready = Directory.Exists(m_parent.Settings.FilesystemFolder);
+
+      if (m_file_system_changed && m_directory == null && m_file_read == null)
+      {
+        file_system_is_ready = false;
+      }
+
+      return file_system_is_ready;
+    }
+
+    private string GetParameterAbsoluteFilePath()
+    {
+      string parameter_path = Encoding.ASCII.GetString(m_input_buffer, 0, m_input_pos - 1);
+      return GetAbsouteFilePath(parameter_path);
+    }
+
+    /// <summary>
+    /// Gets absolute path of a file
+    /// </summary>
+    /// <param name="in_path"></param>
+    /// <returns></returns>
+    private string GetAbsouteFilePath(string in_path)
+    {
+      string current_path;
+
+      // start path from root
+      if (in_path.StartsWith("/"))
+      {
+        current_path = "";
+        in_path.Remove(0, 1);
+      }
+      else
+      {
+        current_path = m_current_dir;
+        if (current_path.StartsWith("/"))
+          current_path = current_path.Remove(0, 1);
+
+        if (current_path.Length != 0 && !current_path.EndsWith("/"))
+          current_path += '/';
+      }
+
+      string[] path_elements = in_path.Split('/');
+      for (int i = 0; i < path_elements.Length; i++)
+      {
+        if (path_elements[i] == ".")
+          continue;
+
+        if (path_elements[i] == "..")
+        {
+          int index = -1;
+
+          if (current_path.Length > 1)
+            index = current_path.LastIndexOf('/', current_path.Length - 2);
+
+          if (index == -1)
+            current_path = "";
+          else
+          {
+            current_path = current_path.Remove(index + 1, current_path.Length - (index + 1));
+          }
+
+          continue;
+        }
+
+        if (!string.IsNullOrEmpty(current_path))
+          current_path += '/';
+
+        current_path += path_elements[i];
+      }
+
+      current_path = current_path.Replace('/', '\\');
+
+      current_path = Path.Combine(m_parent.Settings.FilesystemFolder, current_path);
+
+      return current_path;
+    }
+
+    private string GetAbsoluteFolderPath()
+    {
+      string file_path = m_current_dir;
+
+      if (file_path.StartsWith("/"))
+        file_path = file_path.Remove(0, 1);
+
+      file_path = Path.Combine(m_parent.Settings.FilesystemFolder, file_path);
+
+      return file_path;
+    }
+
     private void StoreDirectoryBlock()
     {
-      if(m_directory_index < m_directory.Length)
+      if (m_directory_index < m_directory.Length)
       {
         ResetOutputBuffer();
 
         StoreByte((byte)STATUS.OK);
 
-        FileInfo file_info = m_directory[m_directory_index];
+        FileSystemInfo file_info = m_directory[m_directory_index];
 
         string name = Path.GetFileNameWithoutExtension(file_info.Name);
-        string ext = Path.GetExtension(file_info.Name).Remove(0, 1);
+        string ext = file_info.Extension;
+        if (ext.StartsWith("."))
+          ext = ext.Remove(0, 1);
+
         bool is_directory = (file_info.Attributes & FileAttributes.Directory) == FileAttributes.Directory;
-        int length = (UInt16)file_info.Length;
+
+        int length = 0;
+        if (file_info is FileInfo)
+          length = (UInt16)((file_info as FileInfo).Length);
 
         if (name.Length > 8)
           name = name.Remove(8);
@@ -612,7 +1106,9 @@ namespace NanoSD
         if (ext.Length > 3)
           ext = ext.Remove(3);
 
-        string filename = name + "." + ext;
+        string filename = name;
+        if (!string.IsNullOrEmpty(ext))
+          filename += "." + ext;
 
         // store name
         for (int i = 0; i < 12; i++)
@@ -630,7 +1126,7 @@ namespace NanoSD
           StoreByte((byte)FILETYPE.PLAINFILE);
 
         // store length
-        if(is_directory)
+        if (is_directory)
         {
           StoreByte(0);
           StoreByte(0);
@@ -643,9 +1139,9 @@ namespace NanoSD
             length -= 128;
 
           StoreByte((byte)(length & 0xff));
-          StoreByte((byte)((length>>8) & 0xff));
-          StoreByte((byte)((length>>16) & 0xff));
-          StoreByte((byte)((length>>24) & 0xff));
+          StoreByte((byte)((length >> 8) & 0xff));
+          StoreByte((byte)((length >> 16) & 0xff));
+          StoreByte((byte)((length >> 24) & 0xff));
         }
 
         SendOuputBuffer(STATUS.OK);
@@ -653,11 +1149,12 @@ namespace NanoSD
       else
       {
         m_directory = null;
-        m_read_block_finished = null;
         ResetOutputBuffer();
         ResetInputBuffer();
         SetStatus(STATUS.END_OF_LIST);
       }
     }
+
+    #endregion
   }
 }
