@@ -278,7 +278,7 @@ namespace SDCart
                   }
 
                   // generate result file name
-                  filename = Path.GetFileNameWithoutExtension(filename);
+                  filename = Path.GetFileName(filename);
                   if (filename.Length < m_filename_length_param)
                     m_filename_length_param = filename.Length;
                   m_filename_param = TVCCharacterCodePage.UNICODEStringToTVCString(filename);
@@ -340,7 +340,7 @@ namespace SDCart
     /// <param name="in_data"></param>
     private void CasReadBlock(byte in_data)
     {
-      if (m_read_data_index == 0)
+      if (m_write_data_index == 0)
       {
         // set block length
         if (in_data == 0)
@@ -374,7 +374,7 @@ namespace SDCart
         }
       }
 
-      m_read_data_index++;
+      m_write_data_index++;
     }
 
     /// <summary>

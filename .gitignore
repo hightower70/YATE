@@ -17,6 +17,8 @@ disk/
 cas/
 roms/
 cart/
+DiskImage/
+
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
