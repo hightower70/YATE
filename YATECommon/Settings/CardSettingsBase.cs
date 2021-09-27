@@ -22,6 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 using System.Xml.Serialization;
+using YATECommon.Helpers;
 
 namespace YATECommon.Settings
 {
@@ -58,6 +59,21 @@ namespace YATECommon.Settings
       Active = false;
       ExpansionIndex = -1;
       SlotIndex = -1;
+    }
+
+    public override bool Equals(object obj)
+    {
+      if(obj is CardSettingsBase)
+      {
+        return base.Equals(obj) && SlotIndex == ((CardSettingsBase)obj).SlotIndex;
+      }
+
+      return false;
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCodeHelper.Hash(base.GetHashCode(), SlotIndex.GetHashCode());
     }
   }
 }

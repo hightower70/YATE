@@ -254,6 +254,11 @@ namespace YATE.Managers
       }
     }
 
+    public void UpdateSettings(bool in_restart_tvc)
+    {
+      
+    }
+
     #endregion
   }
 }

@@ -25,7 +25,9 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Reflection;
 using System.Windows.Input;
+using YATECommon;
 using YATECommon.Helpers;
+using YATECommon.Settings;
 
 namespace YATE.Emulator.TVCHardware
 {
@@ -193,33 +195,34 @@ namespace YATE.Emulator.TVCHardware
 		private ulong m_keyboard_injection_timestamp;
 		private ulong m_keyboard_injection_rate;
 
+    // Settings
+    private SetupInputSettings m_settings;
 
-		#endregion
+    // Joysticks
+    public TVCJoystick JoyStick1 { get; private set; }
+    public TVCJoystick JoyStick2 { get; private set; }
 
-		/// <summary>
-		/// Creates TVC keyboard emulation 
-		/// </summary>
-		/// <param name="in_tvc">TVC hardware which owns this keyboard</param>
-		public TVCKeyboard(TVComputer in_tvc)
+    byte m_joystick1_state;
+    byte m_joystick2_state;
+
+    #endregion
+
+    /// <summary>
+    /// Creates TVC keyboard emulation 
+    /// </summary>
+    /// <param name="in_tvc">TVC hardware which owns this keyboard</param>
+    public TVCKeyboard(TVComputer in_tvc)
 		{
 			m_tvc = in_tvc;
 
-			// init matrx
+			// init matrix
 			m_keyboard_matrix = new byte[KeyboardRowCount];
 			for (int i = 0; i < m_keyboard_matrix.Length; i++)
 			{
 				m_keyboard_matrix[i] = 0xff;
 			}
-
-			// create key mapping table
-			LoadKeyMappingTableFromResource("YATE.Resources.DefaultKeyMapping.txt");
-
-			// clear pressed key table
-			m_pressed_keys = new Key[PressedKeyCount];
-			for (int i = 0; i < PressedKeyCount; i++)
-			{
-				m_pressed_keys[i] = Key.None;
-			}
+      m_joystick1_state = 0xff;
+      m_joystick2_state = 0xff;
 
 			// add port access handlers
 			m_tvc.Ports.AddPortWriter(0x03, PortWrite03H);
@@ -228,23 +231,44 @@ namespace YATE.Emulator.TVCHardware
 			// setup injection service
 			m_keyboard_injection_pos = -1;
 			m_keyboard_injection_rate = m_tvc.MillisecToCPUTicks(KeyboardInjectionRate);
+
+      // setup joystick
+      JoyStick1 = new TVCJoystick();
+      JoyStick2 = new TVCJoystick();
+
+      // apply settings
+      bool dummy = false;
+      SettingsChanged(ref dummy);
 		}
 
-		/// <summary>
-		/// TVC hardware keyboard data port reader function
-		/// </summary>
-		/// <param name="in_address">Address of the port</param>
-		/// <param name="inout_data">Data from the port</param>
-		private void PortRead58H(ushort in_address, ref byte inout_data)
-		{
-			// update injected keys (if injection is active)
-			if (m_keyboard_injection_pos >= 0)
-			{
-				UpdateInjectedKeyboardMatrix();
-			}
+    /// <summary>
+    /// TVC hardware keyboard data port reader function
+    /// </summary>
+    /// <param name="in_address">Address of the port</param>
+    /// <param name="inout_data">Data from the port</param>
+    private void PortRead58H(ushort in_address, ref byte inout_data)
+    {
+      // update injected keys (if injection is active)
+      if (m_keyboard_injection_pos >= 0)
+      {
+        UpdateInjectedKeyboardMatrix();
+      }
 
-			// get matrix data
-			inout_data = m_keyboard_matrix[m_selected_row];
+      // get matrix data
+      switch (m_selected_row)
+      {
+        case 8:
+          inout_data = (byte)(m_keyboard_matrix[m_selected_row] & m_joystick1_state);
+          break;
+
+        case 9:
+          inout_data = (byte)(m_keyboard_matrix[m_selected_row] & m_joystick2_state);
+          break;
+
+        default:
+          inout_data = m_keyboard_matrix[m_selected_row];
+          break;
+      }
 		}
 
 		/// <summary>
@@ -269,6 +293,18 @@ namespace YATE.Emulator.TVCHardware
 				m_keyboard_matrix[i] = 0xff;
 			}
 		}
+
+    /// <summary>
+    /// Updates keyboard/joystick state
+    /// </summary>
+    public void Update()
+    {
+      JoyStick1.Update();
+      JoyStick2.Update();
+
+      m_joystick1_state = JoyStick1.StateByte;
+      m_joystick2_state = JoyStick2.StateByte;
+    }
 
 		/// <summary>
 		/// Windows key down event handler
@@ -661,5 +697,24 @@ namespace YATE.Emulator.TVCHardware
 
 			m_key_mapping = key_mapping;
 		}
+
+    public void SettingsChanged(ref bool in_restart_tvc)
+    {
+      SetupInputSettings settings = SettingsFile.Default.GetSettings<SetupInputSettings>();
+
+      // create key mapping table
+      LoadKeyMappingTableFromResource("YATE.Resources.DefaultKeyMapping.txt");
+
+      // Joystick1 init
+      JoyStick1.SetSettings(settings.Joystick1);
+      JoyStick2.SetSettings(settings.Joystick2);
+
+      // clear pressed key table
+      m_pressed_keys = new Key[PressedKeyCount];
+      for (int i = 0; i < PressedKeyCount; i++)
+      {
+        m_pressed_keys[i] = Key.None;
+      }
+    }
 	}
 }

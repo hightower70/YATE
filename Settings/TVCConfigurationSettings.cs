@@ -26,7 +26,8 @@ namespace YATE.Settings
 {
 	class TVCConfigurationSettings : SettingsBase
 	{
-		public int HardwareVersion { get; set; }
+    public int ComputerVersion { get; set; }
+    public int HardwareVersion { get; set; }
 		public int ROMVersion { set; get; }
 
     public string ROMPath { get; set; }
@@ -44,8 +45,9 @@ namespace YATE.Settings
 
 		override public void SetDefaultValues()
 		{
-			HardwareVersion = 1;
-			ROMVersion = 1;
+      ComputerVersion = 1; // TVC 64k
+			HardwareVersion = 1; // TVC 64k
+			ROMVersion = 1; // Basic 1.2
 
       ROMPath = "";
       ExtROMPath = "";

@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CustomControls</RootNamespace>
     <AssemblyName>CustomControls</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -77,10 +77,13 @@
     <Compile Include="CustomMessageBox\CustomMessageBox.xaml.cs">
       <DependentUpon>CustomMessageBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="LedIndicator\LedIndicator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RadioMenuItem\RadioMenuItem.cs" />
     <Compile Include="Title\Title.cs" />
     <Compile Include="TreeViewHelpers\TreeViewItemBase.cs" />
+    <Compile Include="Utils\EnumDescriptionExtension.cs" />
+    <Compile Include="Utils\EnumValueDescription.cs" />
     <Compile Include="Utils\SystemPaths.cs" />
     <Compile Include="Validators\StringValidator.cs" />
     <Compile Include="ValueConverters\GeometryConverters.cs" />
@@ -117,6 +120,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="HexEdit\Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="LedIndicator\Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

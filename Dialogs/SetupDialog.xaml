@@ -60,7 +60,7 @@
 
 			<GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" ResizeDirection="Columns"/>
 
-			<Grid x:Name="gSetupFormContainer" Grid.Column="2"/>
+			<ScrollViewer x:Name="gSetupFormContainer" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
 		</Grid>
 
 		<Grid Grid.Row="1" Background="{DynamicResource WindowTitleBackground}">

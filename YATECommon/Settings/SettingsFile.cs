@@ -429,6 +429,7 @@ namespace YATECommon.Settings
 
     private static SettingsFile m_default = null;
     private static SettingsFile m_editing = null;
+    private static SettingsFile m_previous_settings = null;
 
     /// <summary>
     /// Gets default singleton instance
@@ -459,6 +460,23 @@ namespace YATECommon.Settings
         }
 
         return m_editing;
+      }
+    }
+
+
+    /// <summary>
+    /// Gets instance of the previous settings after editing
+    /// </summary>
+    public static SettingsFile Previous
+    {
+      get
+      {
+        if (m_previous_settings == null)
+        {
+          m_previous_settings = new SettingsFile();
+        }
+
+        return m_previous_settings;
       }
     }
     #endregion

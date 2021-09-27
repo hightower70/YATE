@@ -25,6 +25,7 @@
 		<!--<ResourceDictionary Source="NumericUpDownStyle.xaml"/>-->
 		<ResourceDictionary Source="DataGridStyles.xaml"/>
     <ResourceDictionary Source="ProgressBar.xaml"/>
+		<ResourceDictionary Source="Slider.xaml"/>
 		<!-- <ResourceDictionary Source="AutoCompleteTextBox.xaml"/>-->
 
         <!--<ResourceDictionary Source="TabControlStyles.xaml"/>
@@ -36,6 +37,7 @@
 		<!--<ResourceDictionary Source="AppTreeStyle.xaml"/>-->
 
 		<ResourceDictionary Source="HexEditorStyles.xaml"/>
+		<ResourceDictionary Source="LedIndicatorStyle.xaml"/>
 	</ResourceDictionary.MergedDictionaries>
 
 	<Style TargetType="Window" BasedOn="{StaticResource WindowStyle}"/>
@@ -53,6 +55,7 @@
 	<Style TargetType="c:Title" BasedOn="{StaticResource StandardTitle}"/>
 	<Style TargetType="DataGrid" BasedOn="{StaticResource StandardDataGrid}"/>
   <Style TargetType="ProgressBar" BasedOn="{StaticResource StandardProgressBar}"/>
+
 	<!--<Style TargetType="c:AutoCompleteTextBox" BasedOn="{StaticResource StandardAutoCompleteTextBox}"/>-->
 	<!--<Style TargetType="c:NumericUpDownInt" BasedOn="{StaticResource StandardNumericUpDown}"/>-->
 	<!-- <Style TargetType="c:NumericUpDownFloat" BasedOn="{StaticResource StandardNumericUpDown}"/> -->
@@ -68,5 +71,6 @@
 
 	<Style TargetType="c:RadioMenuItem" BasedOn="{StaticResource RadioMenuItem}"/>
 	<Style TargetType="c:HexEditor" BasedOn="{StaticResource StandardHexEditor}"/>
+	<Style TargetType="c:LedIndicator" BasedOn="{StaticResource StandardLedIndicator}"/>
 
 </ResourceDictionary>

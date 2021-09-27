@@ -115,8 +115,8 @@ namespace YATE.Dialogs
 			FrameworkElement old_page;
 				
 			// get old page
-			if (gSetupFormContainer.Children.Count > 0)
-				old_page = (FrameworkElement)gSetupFormContainer.Children[0];
+			if (gSetupFormContainer.Content != null)
+				old_page = (FrameworkElement)gSetupFormContainer.Content;
 			else
 				old_page = null;
 
@@ -124,7 +124,7 @@ namespace YATE.Dialogs
 			if (old_page != null && in_new_page != null && old_page.GetType() == in_new_page.GetType())
 				return;
 
-			gSetupFormContainer.Children.Clear();
+			gSetupFormContainer.Content = null;
 
 			// event arg
 			SetupPageBase.SetupPageEventArgs event_args = new SetupPageBase.SetupPageEventArgs();
@@ -139,7 +139,7 @@ namespace YATE.Dialogs
 			// add new page to the container
 			if (in_new_page != null)
 			{
-				gSetupFormContainer.Children.Add(in_new_page);
+				gSetupFormContainer.Content = in_new_page;
 
 				if (in_new_page is SetupPageBase)
 					((SetupPageBase)in_new_page).OnSetupPageActivating(this, event_args);
@@ -148,7 +148,7 @@ namespace YATE.Dialogs
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{		
-			gSetupFormContainer.Children.Clear();
+			gSetupFormContainer.Content = null;
 
 			SetupDialogSettings settings = SettingsFile.Editing.GetSettings<SetupDialogSettings>();
 

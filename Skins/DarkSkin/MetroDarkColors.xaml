@@ -82,4 +82,6 @@
 	<!-- CheckBox -->
 	<SolidColorBrush x:Key="CheckBoxMarkerColor" Color="#3399ff"/>
 
+	<!-- LedIndicator -->
+	<SolidColorBrush x:Key="LedIndicatorMarkerColor" Color="#3399ff"/>
 </ResourceDictionary>

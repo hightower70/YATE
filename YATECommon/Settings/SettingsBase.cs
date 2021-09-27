@@ -47,5 +47,18 @@ namespace YATECommon.Settings
     public virtual void SetDefaultValues()
     {
     }
+
+    public override bool Equals(object obj)
+    {
+      if(obj is SettingsBase)
+        return ModuleName.Equals(((SettingsBase)obj).ModuleName);
+
+      return false;
+    }
+
+    public override int GetHashCode()
+    {
+      return ModuleName.GetHashCode();
+    }
   }
 }

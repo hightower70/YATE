@@ -406,6 +406,7 @@ namespace YATE.Managers
         } while (((long)m_target_cycle - m_cpu_t_cycle) > 0 && m_thread_running && !breakpoint_exit);
 
         TVC.PeriodicCallback();
+        TVC.Keyboard.Update();
 
         //TVC.Sound.PeriodicCallback();
 

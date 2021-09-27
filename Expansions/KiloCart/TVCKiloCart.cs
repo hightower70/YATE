@@ -27,7 +27,7 @@ namespace KiloCart
       LoadROMContent(m_settings.ROMFileName, 0);
 
       // initialize members
-      m_page_register = 0;
+      m_page_register = 3;
     }
 
     private void LoadROMContent(string in_rom_file_name, int in_address)

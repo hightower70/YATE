@@ -20,6 +20,8 @@
 // ----------------
 // Interface for emulated TVC card
 ///////////////////////////////////////////////////////////////////////////////
+using YATECommon.Settings;
+
 namespace YATECommon
 {
 	public interface ITVCCard

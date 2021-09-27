@@ -78,6 +78,14 @@ namespace YATECommon.Expansions
     }
 
 
+    /// <summary>
+    /// Called when settings has been changed
+    /// </summary>
+    public virtual void SettingsChanged(ref bool in_restart_tvc)
+    {
+
+    }
+
     #endregion
   }
 }

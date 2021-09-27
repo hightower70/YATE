@@ -34,5 +34,7 @@ namespace YATECommon
 
     void Start();
     void Stop();
+
+    void UpdateSettings(bool in_restart_tvc);
   }
 }

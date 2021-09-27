@@ -21,6 +21,7 @@
 // Expansion settings base class
 ///////////////////////////////////////////////////////////////////////////////
 using System.Xml.Serialization;
+using YATECommon.Helpers;
 
 namespace YATECommon.Settings
 {
@@ -51,5 +52,21 @@ namespace YATECommon.Settings
       Active = false;
       ExpansionIndex = -1;
     }
+
+    public override bool Equals(object obj)
+    {
+      if(obj is ExpansionSettingsBase)
+      {
+        return base.Equals(obj) && ExpansionIndex == ((ExpansionSettingsBase)obj).ExpansionIndex;
+      }
+
+      return false;
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCodeHelper.Hash(base.GetHashCode(), ExpansionIndex.GetHashCode());
+    }
+
   }
 }

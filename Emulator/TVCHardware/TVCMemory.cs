@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using YATE.Emulator.TVCFiles;
 using YATE.Emulator.Z80CPU;
 using YATE.Settings;
+using YATECommon.Helpers;
 using YATECommon.Settings;
 
 namespace YATE.Emulator.TVCHardware
@@ -47,12 +48,9 @@ namespace YATE.Emulator.TVCHardware
 		public const int Page3StartAddress = 0xc000;
 
 		public const int PageLength = 0x4000;
-		public const int SysMemLength = 0x8000;
-		public const int ExtMemLength = 0x4000;
+		public const int SysMemLength = 0x4000;
+		public const int ExtMemLength = 0x2000;
 		public const int IOMemSize = 0x4000;
-		public const int UserMemSize = 0x8000;
-		public const int VideoMemSize = 0x8000;
-
 
 		private delegate byte PageReader(ushort in_address);
 		private delegate void PageWriter(ushort in_address, byte in_byte);
@@ -107,37 +105,7 @@ namespace YATE.Emulator.TVCHardware
 			m_tvc.Ports.AddPortReset(0x02, PortReset02H);
 			m_tvc.Ports.AddPortReset(0x03, PortReset03H);
 
-      // load ROM content
-      switch(m_settings.ROMVersion)
-      {
-        // customn version
-        case 0:
-          break;
-
-        // BASIC 1.2
-        case 1:
-          LoadMemoryContentFromResource("YATE.Resources.rom_1_2.bin", 0, m_mem_sys);
-          LoadMemoryContentFromResource("YATE.Resources.ext_1_2.bin", 0, m_mem_ext);
-          break;
-
-        // BASIC 1.2 (RU)
-        case 2:
-          LoadMemoryContentFromResource("YATE.Resources.rom_1_2_ru.bin", 0, m_mem_sys);
-          LoadMemoryContentFromResource("YATE.Resources.ext_1_2_ru.bin", 0, m_mem_ext);
-          break;
-
-        // BASIC 2.1
-        case 3:
-          LoadMemoryContentFromResource("YATE.Resources.rom_2_1.bin", 0, m_mem_sys);
-          LoadMemoryContentFromResource("YATE.Resources.ext_2_1.bin", 0, m_mem_ext);
-          break;
-          
-        // BASIC 2.2
-        case 4:
-          LoadMemoryContentFromResource("YATE.Resources.rom_2_2.bin", 0, m_mem_sys);
-          LoadMemoryContentFromResource("YATE.Resources.ext_2_2.bin", 0, m_mem_ext);
-          break;
-      }
+      LoadROM();
 		}
 
 		private void PortReset02H()
@@ -150,7 +118,76 @@ namespace YATE.Emulator.TVCHardware
 			PortWrite03H(0x03, 0);
 		}
 
-		public void ClearMemory()
+    /// <summary>
+    /// Updates settings
+    /// </summary>
+    /// <param name="in_restart_tvc">True - if TVC needs to be restarted</param>
+    public void SettingsChanged(ref bool in_restart_tvc)
+    {
+      // load configuration
+      m_settings = SettingsFile.Default.GetSettings<TVCConfigurationSettings>();
+
+      // update configuration
+      if (LoadROM())
+        in_restart_tvc = true;
+    }
+
+    private bool LoadROM()
+    {
+      bool memory_changed = false;
+
+      byte[] old_mem_sys = m_mem_sys;
+      byte[] old_mem_ext = m_mem_ext;
+
+      // reserve space for memories
+      m_mem_sys = new byte[SysMemLength];
+      m_mem_ext = new byte[ExtMemLength];
+
+      // load ROM content
+      switch (m_settings.ROMVersion)
+      {
+        // custom version
+        case 0:
+          break;
+
+        // BASIC 1.2
+        case 1:
+          ROMFile.LoadMemoryFromResource("YATE.Resources.rom_1_2.bin", m_mem_sys);
+          ROMFile.LoadMemoryFromResource("YATE.Resources.ext_1_2.bin", m_mem_ext);
+          break;
+
+        // BASIC 1.2 (RU)
+        case 2:
+          ROMFile.LoadMemoryFromResource("YATE.Resources.rom_1_2_ru.bin", m_mem_sys);
+          ROMFile.LoadMemoryFromResource("YATE.Resources.ext_1_2_ru.bin", m_mem_ext);
+          break;
+
+        // BASIC 2.1
+        case 3:
+          ROMFile.LoadMemoryFromResource("YATE.Resources.rom_2_1.bin", m_mem_sys);
+          ROMFile.LoadMemoryFromResource("YATE.Resources.ext_2_1.bin", m_mem_ext);
+          break;
+
+        // BASIC 2.2
+        case 4:
+          ROMFile.LoadMemoryFromResource("YATE.Resources.rom_2_2.bin", m_mem_sys);
+          ROMFile.LoadMemoryFromResource("YATE.Resources.ext_2_2.bin", m_mem_ext);
+          break;
+      }
+
+      if (!ROMFile.IsMemoryEqual(old_mem_sys, m_mem_sys))
+        memory_changed = true;
+
+      if (!ROMFile.IsMemoryEqual(old_mem_ext, m_mem_ext))
+        memory_changed = true;
+
+      return memory_changed;
+    }
+
+    /// <summary>
+    /// Clears memory content
+    /// </summary>
+    public void ClearMemory()
 		{
 			// clear video memory
 			for (int i = 0; i < m_mem_user.Length; i++)
@@ -602,38 +639,5 @@ namespace YATE.Emulator.TVCHardware
 
 			in_storage.Length = length;
 		}
-
-    private void LoadMemoryContent(string name, ushort in_address, byte[] in_memory)
-    {
-      byte[] data = File.ReadAllBytes(name);
-
-      int byte_to_copy = data.Length;
-
-      if (byte_to_copy > in_memory.Length)
-        byte_to_copy = in_memory.Length;
-
-      Array.Copy(data, 0, in_memory, in_address, byte_to_copy);
-    }
-
-    public void LoadMemoryContentFromResource(string in_resource_name, ushort in_address, byte[] in_memory)
-    {
-      // load default key mapping
-      Assembly assembly = Assembly.GetExecutingAssembly();
-
-      using (Stream stream = assembly.GetManifestResourceStream(in_resource_name))
-      {
-        using (BinaryReader binary_reader = new BinaryReader(stream))
-        {
-          byte[] data = binary_reader.ReadBytes((int)stream.Length);
-
-          int byte_to_copy = data.Length;
-
-          if (byte_to_copy > in_memory.Length)
-            byte_to_copy = in_memory.Length;
-
-          Array.Copy(data, 0, in_memory, in_address, byte_to_copy);
-        }
-      }
-    }
   }
 }

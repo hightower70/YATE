@@ -18,8 +18,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Class for storing 'Form' setup panel settings
+// Settings dialog, User Input Device Settings
 ///////////////////////////////////////////////////////////////////////////////
+using YATE.Settings;
 
 namespace YATECommon.Settings
 {
@@ -28,8 +29,14 @@ namespace YATECommon.Settings
 		public string KeyboardMapping { get; set; }
 		public bool CaptureCtrlESC { set; get; }
 
+    public TVCJoystick1Settings Joystick1 { set; get; }
+    public TVCJoystick2Settings Joystick2 { set; get; }
+
 		public SetupInputSettings() : base(SettingsCategory.Emulator, "Input")
 		{
+      Joystick1 = new TVCJoystick1Settings();
+      Joystick2 = new TVCJoystick2Settings();
+
 			SetDefaultValues();
 		}
 
@@ -37,6 +44,8 @@ namespace YATECommon.Settings
 		{
 			CaptureCtrlESC = true;
 			KeyboardMapping = "default";
+
+
 		}
 	}
 }

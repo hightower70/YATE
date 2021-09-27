@@ -3,5 +3,6 @@
 
 	<ResourceDictionary.MergedDictionaries>
 		<ResourceDictionary Source="pack://application:,,,/CustomControls;component/HexEdit/Themes/Generic.xaml" />
+		<ResourceDictionary Source="pack://application:,,,/CustomControls;component/LedIndicator/Themes/Generic.xaml" />
 	</ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using YATE.Settings;
 using YATECommon.Settings;
 using YATECommon.SetupPage;
@@ -29,5 +30,46 @@ namespace YATE.Dialogs
       m_data_provider.Save();
     }
 
-	}
+    private void ComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+      ComboBox combobox = (ComboBox)sender;
+
+      bool custom = combobox.SelectedIndex == 4;
+
+      cbHardwareVersion.IsEnabled = custom;
+      cbROMVersion.IsEnabled = custom;
+
+      switch(combobox.SelectedIndex)
+      {
+        // TVC 32k
+        case 0:
+          cbHardwareVersion.SelectedIndex = 0;
+          cbROMVersion.SelectedIndex = 1;
+          break;
+
+        // TVC 64k
+        case 1:
+          cbHardwareVersion.SelectedIndex = 1;
+          cbROMVersion.SelectedIndex = 1;
+          break;
+        
+        // TVC 64k+
+        case 2:
+          cbHardwareVersion.SelectedIndex = 3;
+          cbROMVersion.SelectedIndex = 4;
+          break;
+
+        // TVC 64k (RU)
+        case 3:
+          cbHardwareVersion.SelectedIndex = 1;
+          cbROMVersion.SelectedIndex = 2;
+          break;
+
+        // Custom
+        case 4:
+          break;
+      }
+
+    }
+  }
 }

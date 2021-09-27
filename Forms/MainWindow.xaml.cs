@@ -63,7 +63,10 @@ namespace YATE.Forms
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-      m_keyboard_hook.EnableHook(Window_KeyDown);
+      SetupInputSettings input_settings = SettingsFile.Default.GetSettings<SetupInputSettings>();
+
+      if (input_settings.CaptureCtrlESC)
+        m_keyboard_hook.EnableHook(Window_KeyDown);
 
       // setup cartridge control
       CartridgeControl.Initialize(this, ExecutionControl);
@@ -242,16 +245,35 @@ namespace YATE.Forms
 			{						
 				using (new WaitCursor())
 				{
-					// stop modules and dispatcher timer
+          // stop simulation
+          ExecutionControl.ChangeExecutionState(ExecutionManager.ExecutionStateRequest.Pause);
 
-					// save settings if dialog result was success
-					SettingsFile.Default.CopySettingsFrom(SettingsFile.Editing);
+          // save previous settings
+          SettingsFile.Previous.CopySettingsFrom(SettingsFile.Default);
+
+          // save settings if dialog result was success
+          SettingsFile.Default.CopySettingsFrom(SettingsFile.Editing);
 					SettingsFile.Default.Save();
 
-					// reload modules
+          // reload modules
           //TODO:javitani
-					//ExpansionManager.Default.LoadExpansions();
+          //ExpansionManager.Default.LoadExpansions();
           //ExpansionManager.Default.InstallExpansions(ExecutionControl.TVC);
+
+
+
+          bool restart_tvc = false;
+
+          ExecutionControl.TVC.SettingsChanged(ref restart_tvc);
+
+          TVCManagers.Default.ExpansionManager.SettingsChanged(ExecutionControl.TVC, ref restart_tvc);
+
+          // reset computer if required
+          if (restart_tvc)
+            ExecutionControl.TVC.ColdReset();
+
+          // restore execution state
+          ExecutionControl.ChangeExecutionState(ExecutionManager.ExecutionStateRequest.Restore);
         }
       }
 		}

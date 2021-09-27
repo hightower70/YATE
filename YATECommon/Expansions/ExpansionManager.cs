@@ -214,16 +214,64 @@ namespace YATECommon.Expansions
 			}
 		}
 
-		
-		#endregion
+    /// <summary>
+    /// Updates settigns
+    /// </summary>
+    public void SettingsChanged(ITVComputer in_computer, ref bool in_restart_tvc)
+    {
+      bool reload_modules = false;
 
-		#region · Setup (options settings) helper functions ·
+      List<ExpansionSettingsBase> module_list = m_settings_file.GetExpansionList();
+      List<ExpansionSettingsBase> old_module_list = SettingsFile.Previous.GetExpansionList();
 
-		/// <summary>
-		/// Add module in setup operation
-		/// </summary>
-		/// <param name="in_module_name"></param>
-		public void SetupAddModule(ExpansionInfo in_expansion_info, int in_selected_slot_index)
+      // check if module config has been changed
+      if (module_list.Count != old_module_list.Count)
+      {
+        reload_modules = true;
+      }
+      else
+      {
+        for (int i = 0; i < module_list.Count && !reload_modules; i++)
+        {
+          if (!module_list[i].Equals(old_module_list[i]))
+            reload_modules = true;
+        }
+      }
+
+      if (reload_modules)
+      {
+        // remove current expansions
+        for (int i = 0; i < m_expansions.Count; i++)
+        {
+          m_expansions[i].ExpansionClass.Remove(in_computer);
+        }
+
+        // load new expansions
+        LoadExpansions();
+        InstallExpansions(in_computer);
+      }
+      else
+      {
+        // update settings for all expansions
+        for (int i = 0; i < m_expansions.Count; i++)
+        {
+          m_expansions[i].ExpansionClass.SettingsChanged(ref in_restart_tvc);
+        }
+      }
+
+      if (reload_modules)
+        in_restart_tvc = true;
+    }
+
+    #endregion
+
+    #region · Setup (options settings) helper functions ·
+
+    /// <summary>
+    /// Add module in setup operation
+    /// </summary>
+    /// <param name="in_module_name"></param>
+    public void SetupAddModule(ExpansionInfo in_expansion_info, int in_selected_slot_index)
 		{
       ExpansionSettingsBase expansion_settings = in_expansion_info.ConvertToSettings(in_selected_slot_index);
       expansion_settings.Active = true;

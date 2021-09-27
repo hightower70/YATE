@@ -7,14 +7,16 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
-	<Grid Margin="5">
+	<Grid Margin="5" Background="{DynamicResource Background}">
 		<Grid.RowDefinitions>
-			<RowDefinition Height="35"/>
+			<RowDefinition Height="37"/>
+			<RowDefinition Height="30"/>
+			<RowDefinition Height="10"/>
 			<RowDefinition Height="30"/>
 			<RowDefinition Height="30"/>
 			<RowDefinition Height="30"/>
 			<RowDefinition Height="30"/>
-			<RowDefinition Height="49*"/>
+			<RowDefinition/>
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="100"/>
@@ -26,18 +28,21 @@
 			<cc:Title Text="Hardware Configuration"/>
 		</Grid>
 		
-		<TextBlock Grid.Row="1" Grid.Column="0" Text="Hardware version:" VerticalAlignment="Center"/>
-		<ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding HardwareVersionList}" SelectedIndex="{Binding Settings.HardwareVersion}" />
+		<TextBlock Grid.Row="1" Grid.Column="0" Text="Computer Model:" VerticalAlignment="Center"/>
+		<ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding ComputerVersionList}" SelectedIndex="{Binding Settings.ComputerVersion}" SelectionChanged="ComboBox_SelectionChanged" />
 
-		<TextBlock Grid.Row="2" Grid.Column="0" Text="ROM version:" VerticalAlignment="Center"/>
-		<ComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding ROMVersionList}" SelectedIndex="{Binding Settings.ROMVersion}" />
+		<TextBlock Grid.Row="3" Grid.Column="0" Text="Hardware version:" VerticalAlignment="Center"/>
+		<ComboBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" x:Name="cbHardwareVersion" Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding HardwareVersionList}" SelectedIndex="{Binding Settings.HardwareVersion}" />
 
-		<TextBlock Grid.Row="3" Grid.Column="0" Text="Custom Sys ROM:" VerticalAlignment="Center"/>
-		<TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ROMPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-		<Button Grid.Row="3" Grid.Column="2" Margin="3" Content="..." />
+		<TextBlock Grid.Row="4" Grid.Column="0" Text="ROM version:" VerticalAlignment="Center"/>
+		<ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="cbROMVersion"  Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding ROMVersionList}" SelectedIndex="{Binding Settings.ROMVersion}" />
 
-		<TextBlock Grid.Row="4" Grid.Column="0" Text="Custom Ext ROM:" VerticalAlignment="Center"/>
-		<TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ExtROMPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-		<Button Grid.Row="4" Grid.Column="2" Margin="3" Content="..." />
+		<TextBlock Grid.Row="5" Grid.Column="0" Text="Custom Sys ROM:" VerticalAlignment="Center"/>
+		<TextBox Grid.Row="5" Grid.Column="1" Text="{Binding ROMPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
+		<Button Grid.Row="5" Grid.Column="2" Margin="3" Content="..." />
+
+		<TextBlock Grid.Row="6" Grid.Column="0" Text="Custom Ext ROM:" VerticalAlignment="Center"/>
+		<TextBox Grid.Row="6" Grid.Column="1" Text="{Binding ExtROMPath}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
+		<Button Grid.Row="6" Grid.Column="2" Margin="3" Content="..." />
 	</Grid>
 </tec:SetupPageBase>

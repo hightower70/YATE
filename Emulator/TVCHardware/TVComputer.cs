@@ -1,5 +1,7 @@
 ﻿using YATECommon;
 using YATE.Emulator.Z80CPU;
+using YATECommon.Settings;
+using YATE.Settings;
 
 namespace YATE.Emulator.TVCHardware
 {
@@ -26,8 +28,7 @@ namespace YATE.Emulator.TVCHardware
     public ITVCCard MemoryExpansion { get; private set; }
     public TVCSound Sound { get; private set; }
 
-
-		public void Initialize()
+    public void Initialize()
 		{
 			Ports = new TVCPorts();
 			Memory = new TVCMemory(this);
@@ -48,7 +49,9 @@ namespace YATE.Emulator.TVCHardware
 			Cartridge.Initialize(this);
       //((TVCCartridge)Cartridge).ReadCartridgeFile(@"d:\Projects\Retro\TVCDOC\Multicart4\test.bin");
 
-			Reset();
+
+
+      Reset();
 		}
 
 		/// <summary>
@@ -70,6 +73,13 @@ namespace YATE.Emulator.TVCHardware
       // reset cartridge
       Cartridge?.Reset();
 		}
+
+    public void SettingsChanged(ref bool in_restart_tvc)
+    {
+      Keyboard.SettingsChanged(ref in_restart_tvc);
+      Memory.SettingsChanged(ref in_restart_tvc);
+
+    }
 
 		/// <summary>
 		/// Resets computer (Cold reset)

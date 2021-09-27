@@ -28,9 +28,8 @@ namespace YATE.Settings
   class SetupTVCConfigurationDataProvider
   {
     public TVCConfigurationSettings Settings { get; private set; }
-    //private Joystick m_joystick;
-    //public readonly string[] InstalledJoysticks;
 
+    public string[] ComputerVersionList { get; private set; }
     public string[] HardwareVersionList { get; private set; }
     public string[] ROMVersionList { get; private set; }
 
@@ -39,6 +38,7 @@ namespace YATE.Settings
       //m_joystick = new Joystick(in_parent);
       //InstalledJoysticks = m_joystick.FindJoysticks();
 
+      ComputerVersionList = new string[] { "TV Computer", "TV Computer 64k", "TV Computer 64k+", "TV Computer 64k (Russian)", "Custom" };
       HardwareVersionList = new string[] { "TVC 32k", "TVC 64k", "TVC 64 & Ram Paging", "TVC 64k+" };
       ROMVersionList = new string[] { "(custom)", "BASIC 1.2", "BASIC 1.2 (RU)", "BASIC 2.1", "BASIC 2.2" };
 
