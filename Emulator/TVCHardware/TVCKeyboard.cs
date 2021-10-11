@@ -22,6 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows.Input;
@@ -35,165 +36,165 @@ namespace YATE.Emulator.TVCHardware
   /// TVC keyboard hardware emulation
   /// </summary>
   public class TVCKeyboard
-	{
-		#region · Constants ·
+  {
+    #region · Constants ·
 
-		public const int KeyboardRowCount = 16;		// Number of keyboard row in hardware
-		private const int PressedKeyCount = 16;   // Number of simulataniously pressed keys handled by the system
-		private const int KeyboardInjectionRate = 40; // injected string rate key/ms
+    public const int KeyboardRowCount = 16;   // Number of keyboard row in hardware
+    private const int PressedKeyCount = 16;   // Number of simulataniously pressed keys handled by the system
+    private const int KeyboardInjectionRate = 40; // injected string rate key/ms
 
-		#endregion
+    #endregion
 
-		#region · Types ·
+    #region · Types ·
 
-		/// <summary>
-		/// Requested modifiers for the given key combination on the TVC keyboard hardware
-		/// </summary>
-		[Flags]
-		private enum KeyModifiers
-		{
-			None				= 0,
+    /// <summary>
+    /// Requested modifiers for the given key combination on the TVC keyboard hardware
+    /// </summary>
+    [Flags]
+    private enum KeyModifiers
+    {
+      None = 0,
 
-			RemoveShift	= 0x0001,
-			AddShift		= 0x0002,
-			KeepShift		= 0x0004,
+      RemoveShift = 0x0001,
+      AddShift = 0x0002,
+      KeepShift = 0x0004,
 
-			RemoveCtrl	= 0x0010,
-			AddCtrl			= 0x0020,
-			KeepCtrl		= 0x0040,
+      RemoveCtrl = 0x0010,
+      AddCtrl = 0x0020,
+      KeepCtrl = 0x0040,
 
-			RemoveAlt		= 0x0100,
-			AddAlt			= 0x0200,
-			KeepAlt			= 0x0400,
+      RemoveAlt = 0x0100,
+      AddAlt = 0x0200,
+      KeepAlt = 0x0400,
 
-			RemoveAll   = RemoveShift | RemoveCtrl | RemoveAlt,
-			KeepAll			= KeepShift | KeepCtrl | KeepAlt
-		};
+      RemoveAll = RemoveShift | RemoveCtrl | RemoveAlt,
+      KeepAll = KeepShift | KeepCtrl | KeepAlt
+    };
 
-		/// <summary>
-		/// Storage of one mapped (Windows->TVC) key
-		/// </summary>
-		private class KeyMappingEntry
-		{
-			/// <summary>Windows key code</summary>
-			public Key WindowsKey;
-			/// <summary> Windows modifier code</summary>
-			public ModifierKeys WindowsModifiers;
+    /// <summary>
+    /// Storage of one mapped (Windows->TVC) key
+    /// </summary>
+    private class KeyMappingEntry
+    {
+      /// <summary>Windows key code</summary>
+      public Key WindowsKey;
+      /// <summary> Windows modifier code</summary>
+      public ModifierKeys WindowsModifiers;
 
-			/// <summary>TVC key row</summary>
-			public int Row;
-			/// <summary> TVC key column</summary>
-			public int Column;
-			/// <summary> TVC required modifiers</summary>
-			public KeyModifiers Modifiers;
+      /// <summary>TVC key row</summary>
+      public int Row;
+      /// <summary> TVC key column</summary>
+      public int Column;
+      /// <summary> TVC required modifiers</summary>
+      public KeyModifiers Modifiers;
 
-			/// <summary>
-			/// Construct key mapping entry
-			/// </summary>
-			/// <param name="in_windows_key">Windows key code</param>
-			/// <param name="in_windows_modifiers">Windows modifier</param>
-			/// <param name="in_row">TVC key row</param>
-			/// <param name="in_column">TVC key column</param>
-			/// <param name="in_modifiers">TVC modifiers</param>
-			public KeyMappingEntry(Key in_windows_key, ModifierKeys in_windows_modifiers, int in_row, int in_column, KeyModifiers in_modifiers)
-			{
-				WindowsKey = in_windows_key;
-				WindowsModifiers = in_windows_modifiers;
+      /// <summary>
+      /// Construct key mapping entry
+      /// </summary>
+      /// <param name="in_windows_key">Windows key code</param>
+      /// <param name="in_windows_modifiers">Windows modifier</param>
+      /// <param name="in_row">TVC key row</param>
+      /// <param name="in_column">TVC key column</param>
+      /// <param name="in_modifiers">TVC modifiers</param>
+      public KeyMappingEntry(Key in_windows_key, ModifierKeys in_windows_modifiers, int in_row, int in_column, KeyModifiers in_modifiers)
+      {
+        WindowsKey = in_windows_key;
+        WindowsModifiers = in_windows_modifiers;
 
-				Row = in_row;
-				Column = in_column;
-				Modifiers = in_modifiers;
-			}
+        Row = in_row;
+        Column = in_column;
+        Modifiers = in_modifiers;
+      }
 
-			/// <summary>
-			/// Construct entry for storing windows key information only (used for lookup)
-			/// </summary>
-			/// <param name="in_windows_key">Windows key code</param>
-			/// <param name="in_windows_modifiers">Windows key modifier</param>
-			public KeyMappingEntry(Key in_windows_key, ModifierKeys in_windows_modifiers)
-			{
-				WindowsKey = in_windows_key;
-				WindowsModifiers = in_windows_modifiers;
+      /// <summary>
+      /// Construct entry for storing windows key information only (used for lookup)
+      /// </summary>
+      /// <param name="in_windows_key">Windows key code</param>
+      /// <param name="in_windows_modifiers">Windows key modifier</param>
+      public KeyMappingEntry(Key in_windows_key, ModifierKeys in_windows_modifiers)
+      {
+        WindowsKey = in_windows_key;
+        WindowsModifiers = in_windows_modifiers;
 
-				Row = 0;
-				Column = 0;
-				Modifiers = KeyModifiers.None;
-			}
+        Row = 0;
+        Column = 0;
+        Modifiers = KeyModifiers.None;
+      }
 
-			/// <summary>
-			/// gets has code for lookup
-			/// </summary>
-			/// <returns></returns>
-			public override int GetHashCode()
-			{
-				return HashCodeHelper.Hash(WindowsKey.GetHashCode(), WindowsModifiers.GetHashCode());
-			}
+      /// <summary>
+      /// gets has code for lookup
+      /// </summary>
+      /// <returns></returns>
+      public override int GetHashCode()
+      {
+        return HashCodeHelper.Hash(WindowsKey.GetHashCode(), WindowsModifiers.GetHashCode());
+      }
 
-			/// <summary>
-			/// Checks for equiality of windows keys
-			/// </summary>
-			/// <param name="obj"></param>
-			/// <returns></returns>
-			public override bool Equals(object obj)
-			{
-				if (obj is KeyMappingEntry)
-				{
-					KeyMappingEntry entry = (KeyMappingEntry)obj;
+      /// <summary>
+      /// Checks for equiality of windows keys
+      /// </summary>
+      /// <param name="obj"></param>
+      /// <returns></returns>
+      public override bool Equals(object obj)
+      {
+        if (obj is KeyMappingEntry)
+        {
+          KeyMappingEntry entry = (KeyMappingEntry)obj;
 
-					return (entry.WindowsKey == WindowsKey) && (entry.WindowsModifiers == WindowsModifiers);
-				}
-				else
-				{
-					return false;
-				}
-			}
-		}
-														 
-		/// <summary>
-		/// Collection of key mappings (Windows->TVC)
-		/// </summary>
-		private class KeyMappingCollection : KeyedCollection<int, KeyMappingEntry>
-		{
-			/// <summary>
-			/// Gets has code of the given key
-			/// </summary>
-			/// <param name="item"></param>
-			/// <returns></returns>
-			protected override int GetKeyForItem(KeyMappingEntry item)
-			{
-				return item.GetHashCode();
-			}
-		}
+          return (entry.WindowsKey == WindowsKey) && (entry.WindowsModifiers == WindowsModifiers);
+        }
+        else
+        {
+          return false;
+        }
+      }
+    }
 
-		#endregion
+    /// <summary>
+    /// Collection of key mappings (Windows->TVC)
+    /// </summary>
+    private class KeyMappingCollection : KeyedCollection<int, KeyMappingEntry>
+    {
+      /// <summary>
+      /// Gets has code of the given key
+      /// </summary>
+      /// <param name="item"></param>
+      /// <returns></returns>
+      protected override int GetKeyForItem(KeyMappingEntry item)
+      {
+        return item.GetHashCode();
+      }
+    }
 
-		#region · Data members ·
+    #endregion
 
-		// TVC hardware class
-		private TVComputer m_tvc;
+    #region · Data members ·
 
-		// Current TVC matrix state
-		private byte[] m_keyboard_matrix;
+    // TVC hardware class
+    private TVComputer m_tvc;
 
-		// currently pressed key on windows
-		private Key[] m_pressed_keys;
+    // Current TVC matrix state
+    private byte[] m_keyboard_matrix;
 
-		// TVC hardware selected rows
-		private int m_selected_row = 0;
+    // currently pressed key on windows
+    private Key[] m_pressed_keys;
 
-		// Key mapping table (Windows->TVC)
-		private KeyMappingCollection m_key_mapping;
+    // TVC hardware selected rows
+    private int m_selected_row = 0;
 
-		// Cached modifier keys from the key mapping table
-		private KeyMappingEntry m_shift_key = null;
-		private KeyMappingEntry m_ctrl_key = null;
-		private KeyMappingEntry m_alt_key = null;
+    // Key mapping table (Windows->TVC)
+    private KeyMappingCollection m_key_mapping;
 
-		// Keyboard string injection members
-		private string m_keyboard_injection_string;
-		private int m_keyboard_injection_pos;
-		private ulong m_keyboard_injection_timestamp;
-		private ulong m_keyboard_injection_rate;
+    // Cached modifier keys from the key mapping table
+    private KeyMappingEntry m_shift_key = null;
+    private KeyMappingEntry m_ctrl_key = null;
+    private KeyMappingEntry m_alt_key = null;
+
+    // Keyboard string injection members
+    private string m_keyboard_injection_string;
+    private int m_keyboard_injection_pos;
+    private ulong m_keyboard_injection_timestamp;
+    private ulong m_keyboard_injection_rate;
 
     // Settings
     private SetupInputSettings m_settings;
@@ -212,25 +213,25 @@ namespace YATE.Emulator.TVCHardware
     /// </summary>
     /// <param name="in_tvc">TVC hardware which owns this keyboard</param>
     public TVCKeyboard(TVComputer in_tvc)
-		{
-			m_tvc = in_tvc;
+    {
+      m_tvc = in_tvc;
 
-			// init matrix
-			m_keyboard_matrix = new byte[KeyboardRowCount];
-			for (int i = 0; i < m_keyboard_matrix.Length; i++)
-			{
-				m_keyboard_matrix[i] = 0xff;
-			}
+      // init matrix
+      m_keyboard_matrix = new byte[KeyboardRowCount];
+      for (int i = 0; i < m_keyboard_matrix.Length; i++)
+      {
+        m_keyboard_matrix[i] = 0xff;
+      }
       m_joystick1_state = 0xff;
       m_joystick2_state = 0xff;
 
-			// add port access handlers
-			m_tvc.Ports.AddPortWriter(0x03, PortWrite03H);
-			m_tvc.Ports.AddPortReader(0x58, PortRead58H);
+      // add port access handlers
+      m_tvc.Ports.AddPortWriter(0x03, PortWrite03H);
+      m_tvc.Ports.AddPortReader(0x58, PortRead58H);
 
-			// setup injection service
-			m_keyboard_injection_pos = -1;
-			m_keyboard_injection_rate = m_tvc.MillisecToCPUTicks(KeyboardInjectionRate);
+      // setup injection service
+      m_keyboard_injection_pos = -1;
+      m_keyboard_injection_rate = m_tvc.MillisecToCPUTicks(KeyboardInjectionRate);
 
       // setup joystick
       JoyStick1 = new TVCJoystick();
@@ -239,7 +240,7 @@ namespace YATE.Emulator.TVCHardware
       // apply settings
       bool dummy = false;
       SettingsChanged(ref dummy);
-		}
+    }
 
     /// <summary>
     /// TVC hardware keyboard data port reader function
@@ -269,30 +270,30 @@ namespace YATE.Emulator.TVCHardware
           inout_data = m_keyboard_matrix[m_selected_row];
           break;
       }
-		}
+    }
 
-		/// <summary>
-		/// TVC hardware keyboard row select register
-		/// </summary>
-		/// <param name="in_address">Address of the register</param>
-		/// <param name="in_data">Row selection data</param>
-		private void PortWrite03H(ushort in_address, byte in_data)
-		{
-			m_selected_row = in_data & 0x0f;
-		}
+    /// <summary>
+    /// TVC hardware keyboard row select register
+    /// </summary>
+    /// <param name="in_address">Address of the register</param>
+    /// <param name="in_data">Row selection data</param>
+    private void PortWrite03H(ushort in_address, byte in_data)
+    {
+      m_selected_row = in_data & 0x0f;
+    }
 
-		public void InjectKeys(string in_string_to_inject)
-		{
-			m_keyboard_injection_string = in_string_to_inject;
-			m_keyboard_injection_pos = 0;
-			m_keyboard_injection_timestamp = m_tvc.GetCPUTicks();
+    public void InjectKeys(string in_string_to_inject)
+    {
+      m_keyboard_injection_string = in_string_to_inject;
+      m_keyboard_injection_pos = 0;
+      m_keyboard_injection_timestamp = m_tvc.GetCPUTicks();
 
-			// reset keyboard matrix
-			for (int i = 0; i < m_keyboard_matrix.Length; i++)
-			{
-				m_keyboard_matrix[i] = 0xff;
-			}
-		}
+      // reset keyboard matrix
+      for (int i = 0; i < m_keyboard_matrix.Length; i++)
+      {
+        m_keyboard_matrix[i] = 0xff;
+      }
+    }
 
     /// <summary>
     /// Updates keyboard/joystick state
@@ -306,94 +307,68 @@ namespace YATE.Emulator.TVCHardware
       m_joystick2_state = JoyStick2.StateByte;
     }
 
-		/// <summary>
-		/// Windows key down event handler
-		/// </summary>
-		/// <param name="in_eventargs">Key down event argument</param>
-		public void KeyDown(KeyEventArgs in_eventargs)
-		{
-			in_eventargs.Handled = true;
+    /// <summary>
+    /// Windows key down event handler
+    /// </summary>
+    /// <param name="in_keys">Pressed Key Code</param>
+    public void KeyDown(Key in_key)
+    {
+      // check if this key is already in the list
+      bool found = false;
+      for (int i = 0; i < PressedKeyCount; i++)
+      {
+        if (m_pressed_keys[i] == in_key)
+        {
+          found = true;
+        }
+      }
 
-			if (in_eventargs.RoutedEvent == Keyboard.PreviewKeyDownEvent && !in_eventargs.IsRepeat)
-			{
-				// determine key
-				Key key = in_eventargs.Key;
-				if (key == Key.DeadCharProcessed)
-					key = in_eventargs.DeadCharProcessedKey;
+      // not found in the pressed list -> add to it
+      if (!found)
+      {
+        int j = -1;
 
-				if (key == Key.System)
-					key = in_eventargs.SystemKey;
-
-				// check if this key is already in the list
-				bool found = false;
-				for (int i = 0; i < PressedKeyCount; i++)
-				{
-					if (m_pressed_keys[i] == key)
-					{
-						found = true;
-					}
-				}
-
-				// not found in the pressed list -> add to it
-				if (!found)
-				{
-					int j = -1;
-
-					// find empty slot in the pressed key array and store the pressed key
-					for (int i = 0; i < PressedKeyCount; i++)
-					{
-						if (m_pressed_keys[i] == Key.None)
-						{
-							m_pressed_keys[i] = key;
-							j = i;
-							break;
-						}
-					}
+        // find empty slot in the pressed key array and store the pressed key
+        for (int i = 0; i < PressedKeyCount; i++)
+        {
+          if (m_pressed_keys[i] == Key.None)
+          {
+            m_pressed_keys[i] = in_key;
+            j = i;
+            break;
+          }
+        }
 
 #if DEBUG_TVC_KEYBOARD
-					Debug.Write("D: " + key.ToString() + " " + Keyboard.Modifiers.ToString() + " [" + j.ToString() + "] M:");
+        Debug.Write("D: " + in_key.ToString() + " " + Keyboard.Modifiers.ToString() + " [" + j.ToString() + "] M:");
 #endif
-					// update TVC keyboard
-					UpdateKeyboardMatrix();
-				}
-			}
-		}
+        // update TVC keyboard
+        UpdateKeyboardMatrix();
+      }
+    }
 
-		/// <summary>
-		/// Windows key up event handler
-		/// </summary>
-		/// <param name="in_eventargs">Key up event handler</param>
-		public void KeyUp(KeyEventArgs in_eventargs)
-		{
-			in_eventargs.Handled = true;
-
-			if (!in_eventargs.IsDown)
-			{
-				// determine key
-				Key key = in_eventargs.Key;
-				if (key == Key.DeadCharProcessed)
-					key = in_eventargs.DeadCharProcessedKey;
-
-				if (key == Key.System)
-					key = in_eventargs.SystemKey;
-
+    /// <summary>
+    /// Windows key up event handler
+    /// </summary>
+    /// <param name="in_key">Released Key Code</param>
+    public void KeyUp(Key in_key)
+    {
 #if DEBUG_TVC_KEYBOARD
-				Debug.Write("U: " + key.ToString() + " " + Keyboard.Modifiers.ToString() + " M:");
+      Debug.Write("U: " + in_key.ToString() + " " + Keyboard.Modifiers.ToString() + " M:");
 #endif
-				// delete this key from the store of the pressed key
-				int i;
-				for (i = 0; i < PressedKeyCount; i++)
-				{
-					if (m_pressed_keys[i] == key)
-					{
-						m_pressed_keys[i] = Key.None;
-					}
-				}
+      // delete this key from the store of the pressed key
+      int i;
+      for (i = 0; i < PressedKeyCount; i++)
+      {
+        if (m_pressed_keys[i] == in_key)
+        {
+          m_pressed_keys[i] = Key.None;
+        }
+      }
 
-				// update TVC keyboard
-				UpdateKeyboardMatrix();
-			}
-		}
+      // update TVC keyboard
+      UpdateKeyboardMatrix();
+    }
 
 		/// <summary>
 		/// Update TVC hardware keyboard matrix content

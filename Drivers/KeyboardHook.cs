@@ -35,17 +35,22 @@ namespace YATE.Drivers
 		#region · Constants ·
 		private const int WH_KEYBOARD_LL = 13;
 		private const int WM_KEYDOWN = 0x0100;
-		#endregion
+    private const int WM_KEYUP = 0x0101;
+    #endregion
 
-		#region · Delegates	·
-		private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
-		public delegate void KeyDownProc(object sender, System.Windows.Input.KeyEventArgs e);
+    #region · Delegates	·
+    private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+		public delegate void KeyProc(object sender, Key key, ModifierKeys modifiers);
 		#endregion
 
 		#region · Data members ·
 		private IntPtr m_hook_id = IntPtr.Zero;
 		private LowLevelKeyboardProc m_hook_proc = null;
-		private KeyDownProc m_key_down_proc = null;
+    #endregion
+
+    #region · Properties members ·
+    public KeyProc OnKeyDown { get; set; } = null;
+    public KeyProc OnKeyUp { get; set; } = null;
     #endregion
 
     #region · Public members ·
@@ -54,14 +59,13 @@ namespace YATE.Drivers
     /// Enables keyboard hook
     /// </summary>
     /// <param name="in_key_down_proc">Key down event handler</param>
-    public void EnableHook(KeyDownProc in_key_down_proc)
+    public void EnableHook()
 		{
 			// hook only once
 			if (m_hook_id != IntPtr.Zero)
 				return;
 
 			m_hook_proc = new LowLevelKeyboardProc(HookCallback);
-			m_key_down_proc = in_key_down_proc;
 
 			using (Process curProcess = Process.GetCurrentProcess())
 			using (ProcessModule curModule = curProcess.MainModule)
@@ -95,31 +99,34 @@ namespace YATE.Drivers
     /// <param name="lParam"></param>
     /// <returns></returns>
     private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-		{
-			if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
-			{
-				bool alt = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
-				bool control = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+    {
+      if (nCode >= 0)
+      {
+        bool alt = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
+        bool control = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
 
-				int forms_key = Marshal.ReadInt32(lParam);
+        if (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_KEYUP)
+        {
+          int forms_key = Marshal.ReadInt32(lParam);
 
-				Key key = KeyInterop.KeyFromVirtualKey(forms_key);
+          Key key = KeyInterop.KeyFromVirtualKey(forms_key);
 
-				if (key == Key.Escape && control)
-				{
-					KeyEventArgs e = new KeyEventArgs(Keyboard.PrimaryDevice, Keyboard.PrimaryDevice.ActiveSource, 0, key)
-					{
-						RoutedEvent = Keyboard.PreviewKeyDownEvent
-					};
+          if (wParam == (IntPtr)WM_KEYDOWN && key == Key.Escape && control)
+          {
+            OnKeyDown?.Invoke(this, key, Keyboard.Modifiers);
 
-					m_key_down_proc?.Invoke(this, e);
+            return (IntPtr)1;
+          }
 
-					return (IntPtr)1;
-				}
-			}
+          if (wParam == (IntPtr)WM_KEYUP && key == Key.Escape)
+          {
+            OnKeyUp?.Invoke(this, key, Keyboard.Modifiers);
+          }
+        }
+      }
 
-			return CallNextHookEx(m_hook_id, nCode, wParam, lParam);
-		}
+      return CallNextHookEx(m_hook_id, nCode, wParam, lParam);
+    }
     #endregion
 
     #region · Native functions ·

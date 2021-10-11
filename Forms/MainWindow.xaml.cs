@@ -11,6 +11,7 @@ using YATE.Settings;
 using YATECommon.Expansions;
 using YATECommon.Settings;
 using YATECommon;
+using System.Windows.Input;
 
 namespace YATE.Forms
 {
@@ -25,11 +26,16 @@ namespace YATE.Forms
 		public ExecutionManager ExecutionControl { get { return (ExecutionManager)TVCManagers.Default.ExecutionManager; } }
 		public TVCCartridgeManager CartridgeControl { get { return (TVCCartridgeManager)TVCManagers.Default.CartridgeManager; } }
 
-		private KeyboardHook m_keyboard_hook = new KeyboardHook();
+		private KeyboardHook m_keyboard_hook;
 
 		public MainWindow()
 		{
       CreateManagers();
+
+      // create keyboard hook (for Ctrl-ESC)
+      m_keyboard_hook = new KeyboardHook();
+      m_keyboard_hook.OnKeyDown = HookKeyDown;
+      m_keyboard_hook.OnKeyUp = HookKeyUp;
 
       // setup data context for data binding
       DataContext = this;
@@ -66,8 +72,10 @@ namespace YATE.Forms
       SetupInputSettings input_settings = SettingsFile.Default.GetSettings<SetupInputSettings>();
 
       if (input_settings.CaptureCtrlESC)
-        m_keyboard_hook.EnableHook(Window_KeyDown);
-
+      {
+        m_keyboard_hook.EnableHook();
+      }
+                                          
       // setup cartridge control
       CartridgeControl.Initialize(this, ExecutionControl);
 
@@ -115,33 +123,74 @@ namespace YATE.Forms
 			SettingsFile.Default.Save();
 		}
 
-		private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+		private void Window_KeyDown(object sender, KeyEventArgs e)
 		{
-      bool non_tvc_key = (e.Key == System.Windows.Input.Key.System);
+      bool non_tvc_key = (e.Key == Key.System);
       if(!non_tvc_key)
       {
-        non_tvc_key = (e.Key >= System.Windows.Input.Key.F1 && e.Key <= System.Windows.Input.Key.F12);
+        non_tvc_key = (e.Key >= Key.F1 && e.Key <= Key.F12);
       }
 
       if (non_tvc_key)
         base.OnKeyDown(e);
       else
-  			ExecutionControl.TVC.Keyboard.KeyDown(e);
+      {
+        e.Handled = true;
+
+        if (e.RoutedEvent == Keyboard.PreviewKeyDownEvent && !e.IsRepeat)
+        {
+          // determine key
+          Key key = e.Key;
+          if (key == Key.DeadCharProcessed)
+            key = e.DeadCharProcessedKey;
+
+          if (key == Key.System)
+            key = e.SystemKey;
+
+          ExecutionControl.TVC.Keyboard.KeyDown(key);
+        }
+      }
 		}
 
-		private void Window_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
-		{
-      bool non_tvc_key = (e.Key == System.Windows.Input.Key.System);
+    private void HookKeyDown(object sender, Key key, ModifierKeys modifiers)
+    {
+      ExecutionControl.TVC.Keyboard.KeyDown(Key.LeftCtrl);
+      ExecutionControl.TVC.Keyboard.KeyDown(Key.Escape);
+    }
+
+    private void HookKeyUp(object sender, Key key, ModifierKeys modifiers)
+    {
+      ExecutionControl.TVC.Keyboard.KeyUp(Key.Escape);
+    }
+
+    private void Window_KeyUp(object sender, KeyEventArgs e)
+    {
+      bool non_tvc_key = (e.Key == Key.System);
       if (!non_tvc_key)
       {
-        non_tvc_key = (e.Key >= System.Windows.Input.Key.F1 && e.Key <= System.Windows.Input.Key.F12);
+        non_tvc_key = (e.Key >= Key.F1 && e.Key <= Key.F12);
       }
 
       if (non_tvc_key)
         base.OnKeyUp(e);
       else
-        ExecutionControl.TVC.Keyboard.KeyUp(e);
-		}
+      {
+        e.Handled = true;
+
+        if (!e.IsDown)
+        {
+          // determine key
+          Key key = e.Key;
+          if (key == Key.DeadCharProcessed)
+            key = e.DeadCharProcessedKey;
+
+          if (key == Key.System)
+            key = e.SystemKey;
+
+          ExecutionControl.TVC.Keyboard.KeyUp(key);
+        }
+      }
+    }
 
 		private void MiOpenCASFile_Click(object sender, RoutedEventArgs e)
 		{
