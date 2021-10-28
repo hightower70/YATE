@@ -2,12 +2,14 @@
 using System.IO;
 using System.Reflection;
 using YATECommon;
+using YATECommon.Chips;
 
 namespace SoundMagic
 {
   public class SoundMagicCard : ITVCCard
   {
     public const int RomSize = 32 * 1024;   // 32k is the max ROM size
+    const uint SN_CLOCK = 3579545;
 
     private ITVComputer m_tvcomputer;
     private SoundMagicSettings m_settings;
@@ -15,8 +17,22 @@ namespace SoundMagic
     private byte m_page_register = 0xff;
     private byte[] m_card_rom;
 
+    private SN76489 m_SN76489;
+    private int m_SN76489_audio_channel_index;
+
+    private SAA1099 m_SAA1099;
+    private int m_SAA1099_audio_channel_index;
+
     public SoundMagicCard() 
     {
+      uint sample_rate = TVCManagers.Default.AudioManager.SampleRate;
+
+      m_SN76489 = new SN76489();
+      m_SN76489.Initialize(sample_rate, SN_CLOCK);
+
+      m_SAA1099 = new SAA1099();
+      m_SAA1099.Initialize(sample_rate);
+
     }
 
     public void SetSettings(SoundMagicSettings in_settings)
@@ -98,18 +114,30 @@ namespace SoundMagic
 
     public void PortWrite(ushort in_address, byte in_byte)
     {
-      switch((in_address >> 1) & 0x03)
+      switch(in_address & 0x0f)
       {
         case 0:
-          break;
-
         case 1:
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_SN76489_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          m_SN76489.WriteRegister(in_byte);
           break;
 
         case 2:
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_SAA1099_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          m_SAA1099.WriteControlRegister(in_byte);
           break;
 
         case 3:
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_SAA1099_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          m_SAA1099.WriteAddressRegister(in_byte);
+          break;
+
+        case 4:
+        case 5:
+          break;
+
+        case 6:
+        case 7:
           m_page_register = in_byte;
           break;
       }
@@ -127,11 +155,42 @@ namespace SoundMagic
     public void Install(ITVComputer in_parent)
     {
       m_tvcomputer = in_parent;
+
+      m_SN76489_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderSN76489Audio);
+      m_SAA1099_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderSAA1099Audio);
+
     }
 
     public void Remove(ITVComputer in_parent)
     {
-
+      TVCManagers.Default.AudioManager.CloseChannel(m_SN76489_audio_channel_index);
+      TVCManagers.Default.AudioManager.CloseChannel(m_SAA1099_audio_channel_index);
     }
+
+
+    private void RenderSAA1099Audio(int[] inout_buffer, int in_start_sample_index, int in_end_sample_index)
+    {
+      int sample_pos = in_start_sample_index * 2;
+
+      // render samples
+      for (int sample_index = in_start_sample_index; sample_index < in_end_sample_index; sample_index++)
+      {
+        m_SAA1099.RenderAudioStream(ref inout_buffer[sample_pos], ref inout_buffer[sample_pos+1]);
+        sample_pos += 2;
+      }
+    }
+
+    private void RenderSN76489Audio(int[] inout_buffer, int in_start_sample_index, int in_end_sample_index)
+    {
+      int sample_pos = in_start_sample_index * 2;
+
+      // render samples
+      for (int sample_index = in_start_sample_index; sample_index < in_end_sample_index; sample_index++)
+      {
+        m_SN76489.RenderAudioStream(ref inout_buffer[sample_pos], ref inout_buffer[sample_pos+1]);
+        sample_pos += 2;
+      }
+    }
+
   }
 }

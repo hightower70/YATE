@@ -18,7 +18,7 @@ namespace YATE.Emulator.TVCHardware
     }
 
 		public Z80 CPU { get; private set; }
-		public TVCPorts Ports { get; private set; }
+		public ITVCPorts Ports { get; private set; }
 		public TVCMemory Memory { get; private set; }
 		public TVCVideo Video { get; private set; }
 		public TVCKeyboard Keyboard { get; private set; }
@@ -33,12 +33,12 @@ namespace YATE.Emulator.TVCHardware
 			Ports = new TVCPorts();
 			Memory = new TVCMemory(this);
 
-			CPU = new Z80(Memory, Ports, null, true);
+			CPU = new Z80(Memory, (IZ80Port)Ports, null, true);
 
       Video = new TVCVideo(this);
       Keyboard = new TVCKeyboard(this);
       Interrupt = new TVCInterrupt(this);
-      //Sound = new TVCSound(this);
+      Sound = new TVCSound(this);
 
       Cards = new ITVCCard[TVComputerConstants.ExpansionCardCount];
 

@@ -61,6 +61,7 @@ namespace YATE.Emulator.TVCHardware
 
     private TVComputer m_tvc;
     private int m_audio_channel_index;
+    private int m_sample_rate;
 
     private int m_volume = 127; // current audio volume settings 0..127
 
@@ -97,8 +98,10 @@ namespace YATE.Emulator.TVCHardware
       m_tvc.Ports.AddPortReset(0x05, PortReset05H);
       m_tvc.Ports.AddPortReset(0x06, PortReset06H);
 
-      m_counter_increment = m_tvc.CPUClock / AudioManager.SampleRate;
-      m_counter_increment_remainder = m_tvc.CPUClock % AudioManager.SampleRate;
+      m_sample_rate = (int)TVCManagers.Default.AudioManager.SampleRate;
+
+      m_counter_increment = m_tvc.CPUClock / m_sample_rate;
+      m_counter_increment_remainder = m_tvc.CPUClock % m_sample_rate;
 
       m_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderAudio);
     }
@@ -199,7 +202,7 @@ namespace YATE.Emulator.TVCHardware
 
 
     /// <summary>
-    /// 
+    /// Reset sound frequency divisor counters
     /// </summary>
     /// <param name="in_port_address"></param>
     /// <param name="inout_data"></param>
@@ -221,23 +224,30 @@ namespace YATE.Emulator.TVCHardware
       m_interrupt_timestamp = timestamp;
     }
 
-#endregion
+    #endregion
 
+    /// <summary>
+    /// Renders audio samples into the audio buffer
+    /// </summary>
+    /// <param name="inout_buffer">Audio buffer</param>
+    /// <param name="in_start_sample_index">Samples index of the first sample to render</param>
+    /// <param name="in_end_sample_index">Samples index of the last sample to render</param>
     public void RenderAudio(int[] inout_buffer, int in_start_sample_index, int in_end_sample_index)
     {
       int sample_pos = in_start_sample_index * 2;
       int sample;
       int dac_value = m_dac_value * m_volume / 128;
+      int sample_index;
 
       // render samples
-      for (int sample_index = in_start_sample_index; sample_index < in_end_sample_index; sample_index++)
+      for (sample_index = in_start_sample_index; sample_index < in_end_sample_index; sample_index++)
       {
         // increment counter
         m_counter += m_counter_increment;
         m_counter_fraction += m_counter_increment_remainder;
-        if(m_counter_fraction >= AudioManager.SampleRate)
+        if(m_counter_fraction >= m_sample_rate)
         {
-          m_counter_fraction -= AudioManager.SampleRate;
+          m_counter_fraction -= m_sample_rate;
           m_counter++;
         }
 
@@ -258,7 +268,7 @@ namespace YATE.Emulator.TVCHardware
         if ((m_port05 & 0x10) != 0)
         {
           if ((m_post_scaler & 0x0008) == 0)
-            sample = 0;
+            sample = -dac_value;
           else
             sample = dac_value;
         }
@@ -267,11 +277,9 @@ namespace YATE.Emulator.TVCHardware
           sample = dac_value;
         }
 
-        // store calculated sample
+        // store calculated sample on both (L,R) channels
         inout_buffer[sample_pos++] += sample;
         inout_buffer[sample_pos++] += sample;
-
-        sample_index++;
       }
 
     }

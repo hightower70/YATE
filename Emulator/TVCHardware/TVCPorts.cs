@@ -1,14 +1,11 @@
 ﻿using YATE.Emulator.Z80CPU;
+using YATECommon;
 
 namespace YATE.Emulator.TVCHardware
 {
-	public class TVCPorts : IZ80Port
+	public class TVCPorts : IZ80Port, ITVCPorts
 	{
 		public const int PortCount = 256;
-
-		public delegate void IORead(ushort in_port_address, ref byte inout_data);
-		public delegate void IOWrite(ushort in_port_address, byte in_data);
-		public delegate void IOReset();
 
 		private IORead[] m_io_read;
 		private IOWrite[] m_io_write;
@@ -22,7 +19,7 @@ namespace YATE.Emulator.TVCHardware
 			m_io_reset = new IOReset[PortCount];
 		}
 
-		public void SetCPU(Z80CPU.Z80 in_cpu)
+		public void SetCPU(Z80 in_cpu)
 		{
 			m_cpu = in_cpu;
 		}

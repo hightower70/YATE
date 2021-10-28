@@ -79,7 +79,7 @@ namespace SoundMagic
     /// <param name="in_computer"></param>
     public override void Remove(ITVComputer in_computer)
     {
-      
+      m_sound_magic.Remove(in_computer);
     }
   }
 }

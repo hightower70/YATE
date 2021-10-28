@@ -47,14 +47,19 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Chips\AY8910.cs" />
+    <Compile Include="Chips\FMOpl.cs" />
     <Compile Include="Chips\I8251.cs" />
     <Compile Include="Chips\I8255.cs" />
     <Compile Include="Chips\SAA1099.cs" />
     <Compile Include="Chips\SN76489.cs" />
+    <Compile Include="Chips\YM2413.cs" />
+    <Compile Include="Chips\YM3812.cs" />
     <Compile Include="Drivers\Joystick.cs" />
     <Compile Include="Drivers\JoystickNative.cs" />
     <Compile Include="Drivers\JoystickState.cs" />
     <Compile Include="Helpers\ROMFile.cs" />
+    <Compile Include="ITVCPorts.cs" />
     <Compile Include="TVCJoystick.cs" />
     <Compile Include="Drivers\JoystickChannel.cs" />
     <Compile Include="Expansions\ExpansionBase.cs" />

@@ -15,5 +15,9 @@
     // card handling function
     void InsertCard(int in_slot_index, ITVCCard in_card);
     void RemoveCard(int in_slot_index);
+
+    // ports handling
+    ITVCPorts Ports { get; }
+
   }
 }

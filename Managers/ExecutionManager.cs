@@ -44,6 +44,7 @@ namespace YATE.Managers
 		// thread variables
 		private Thread m_stream_thread;
 		private AutoResetEvent m_thread_event;
+    private volatile bool m_sound_event;
 		private SynchronizationContext m_context;
 		private bool m_thread_running;
 		private uint m_cpu_t_cycle;						// current CPU cycle
@@ -79,8 +80,9 @@ namespace YATE.Managers
 			m_thread_event = new AutoResetEvent(false);
 			m_context = SynchronizationContext.Current;
 			m_thread_running = false;
+      m_sound_event = false;
 
-			m_execution_state = ExecutionState.Running;
+      m_execution_state = ExecutionState.Running;
 			m_last_execution_state = ExecutionState.Running;
 
 			m_execution_state_request = ExecutionStateRequest.NoChange;
@@ -165,6 +167,12 @@ namespace YATE.Managers
 
 			DebuggerBreakEvent?.Invoke(TVC);
 		}
+
+    public void SetSoundEvent()
+    {
+      m_sound_event = true;
+      m_thread_event.Set();
+    }
 
 		public void StepInto()
 		{
@@ -309,13 +317,16 @@ namespace YATE.Managers
 						{
 							uint ellapsed_tick;
 
-							m_stopwatch.Restart();
+							//m_stopwatch.Restart();
 							ellapsed_tick = RunOneFrame();
 							GenerateDebugEvent(false);
-							m_stopwatch.Stop();
+              //m_stopwatch.Stop();
 
-							delay_time += TVC.CPUTickToMillisec(ellapsed_tick) - m_stopwatch.Elapsed.TotalMilliseconds;
+              //delay_time += TVC.CPUTickToMillisec(ellapsed_tick) - m_stopwatch.Elapsed.TotalMilliseconds;
 
+              m_thread_event.WaitOne(1000);
+
+              /*
 							if (delay_time > 0)
 							{
 								int delay = (int)Math.Truncate(delay_time);
@@ -332,6 +343,7 @@ namespace YATE.Managers
 
 								delay_time = 0;
 							}
+              */
 						}
 						break;
 
@@ -385,7 +397,7 @@ namespace YATE.Managers
 						}
 
             // do sound interrupt handling
-            //TVC.Sound.PeriodicCallback();
+            TVC.Sound.PeriodicCallback();
           }
 
           // handle pending interrupts
@@ -408,8 +420,7 @@ namespace YATE.Managers
         TVC.PeriodicCallback();
         TVC.Keyboard.Update();
 
-        //TVC.Sound.PeriodicCallback();
-
+        TVC.Sound.PeriodicCallback();
 			}
 
       if(breakpoint_exit)

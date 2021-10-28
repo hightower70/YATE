@@ -18,65 +18,68 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Main interface class for 32k RAM expansion card
+// Main interface class for SoundQuartett expansion card
 ///////////////////////////////////////////////////////////////////////////////
-using SAA1099Expansion.Forms;
+using SoundQuartett.Forms;
 using YATECommon;
 using YATECommon.Expansions;
 
-namespace SAA1099Expansion
+namespace SoundQuartett
 {
   public class ExpansionMain : ExpansionBase
   {
-    public const string ModuleName = "SAA1099";
+    public const string ModuleName = "SoundQuartett";
 
     #region · Data members ·
-    private ExpansionSetupPageInfo[] m_settings_page_info;
-
-    private SAA1099Expansion m_expansion;
+    private ExpansionSetupPageInfo[] m_setup_page_info;
+    private SoundQuartettCard m_sound_quartett;
     #endregion
 
     public ExpansionMain()
     {
-      m_settings_page_info = new ExpansionSetupPageInfo[]
+      m_setup_page_info = new ExpansionSetupPageInfo[]
       {
         new ExpansionSetupPageInfo("Information", typeof(SetupInformation)),
         new ExpansionSetupPageInfo("About", typeof(SetupAbout))
       };
     }
 
-    public override void Initialize(ExpansionManager in_expansion_manager, int in_expansion_index)
-    {
-      base.Initialize(in_expansion_manager, in_expansion_index);
-    }
-
-
     public override void GetExpansionInfo(ExpansionInfo inout_module_info)
     {
       base.GetExpansionInfo(inout_module_info);
 
-      inout_module_info.Description = "SAA1099 Sound Generator";
+      inout_module_info.Description = "SoundQuartett Four Channel Sound card";
       inout_module_info.SectionName = ModuleName;
-      inout_module_info.Type = ExpansionManager.ExpansionType.Hardware;
-      inout_module_info.SetupPages = m_settings_page_info;
+      inout_module_info.Type = ExpansionManager.ExpansionType.Card;
+      inout_module_info.SetupPages = m_setup_page_info;
+    }
+
+    public override void Initialize(ExpansionManager in_expansion_manager, int in_expansion_index)
+    {
+      base.Initialize(in_expansion_manager, in_expansion_index);
+
+      Settings = ParentManager.Settings.GetSettings<SoundQuartettSettings>(in_expansion_index);
     }
 
     /// <summary>
-    /// Installs this expansion to the emulated computer
+    /// Installs expansion module into the computer
     /// </summary>
+    /// <param name="in_computer"></param>
     public override void Install(ITVComputer in_computer)
     {
-      m_expansion = new SAA1099Expansion();
-      m_expansion.Install(in_computer);
+      m_sound_quartett = new SoundQuartettCard();
+      m_sound_quartett.SetSettings((SoundQuartettSettings)Settings);
+      in_computer.InsertCard(((SoundQuartettSettings)Settings).SlotIndex, m_sound_quartett);
     }
 
     /// <summary>
-    /// Removes this expansion module from the emulated computer
+    /// Removes expansion module from the computer
     /// </summary>
+    /// <param name="in_computer"></param>
     public override void Remove(ITVComputer in_computer)
     {
-      m_expansion.Remove(in_computer);
-      m_expansion = null;
+      m_sound_quartett.Remove(in_computer);
     }
   }
 }
+

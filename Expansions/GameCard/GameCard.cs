@@ -18,18 +18,24 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// NanoSD card emulation class
+// Game card emulation class
 ///////////////////////////////////////////////////////////////////////////////
 using System;
 using System.IO;
 using System.Reflection;
 using YATECommon;
+using YATECommon.Chips;
 using YATECommon.Helpers;
 
 namespace GameCard
 {
   public class GameCard : ITVCCard
   {
+    #region · Constants ·
+
+    const byte SOUND_REGISTER = 0x00;
+    const byte SOUND_ENABLE_MASK = 0x08;
+    const byte PAGE_ADDRESS_MASK = 0x07;
     const byte PAGE_REGISTER = 0x0f;
     const byte JOY3_REGISTER = 0x02;
     const byte JOY4_REGISTER = 0x03;
@@ -40,11 +46,13 @@ namespace GameCard
     const byte JOY_RIGHT = 0x08;
     const byte JOY_FIRE = 0x10;
 
-    const int SN_CLOCK = 3125000;
+    const uint SN_CLOCK = 3125000;
 
     const ulong JOY_REFRESH_RATE = 20; // Joystick refresh rate in ms
 
     public const int MaxRomSize = 64 * 1024;
+
+    #endregion
 
     public byte[] Rom { get; private set; }
 
@@ -60,9 +68,18 @@ namespace GameCard
     private TVCJoystick m_joystick3;
     private TVCJoystick m_joystick4;
 
+    private SN76489 m_sound_chip;
+    private bool m_sound_chip_enable;
+    private int m_audio_channel_index;
+
     public GameCard(ExpansionMain in_expansion_main)
     {
+      m_sound_chip_enable = false;
+      m_audio_channel_index = -1;
       m_expansion_main = in_expansion_main;
+
+      m_sound_chip = new SN76489();
+      m_sound_chip.Initialize(TVCManagers.Default.AudioManager.SampleRate, SN_CLOCK);
 
       m_joystick3 = new TVCJoystick();
       m_joystick4 = new TVCJoystick();
@@ -89,6 +106,10 @@ namespace GameCard
       m_expansion_main.ParentManager.Settings.SetSettings(Settings);
     }
 
+    /// <summary>
+    /// Loads ROM content
+    /// </summary>
+    /// <returns></returns>
     private bool LoadROM()
     {
       bool changed = false;
@@ -116,16 +137,29 @@ namespace GameCard
       return changed;
     }
 
+    /// <summary>
+    /// Z80 memory reader routine
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <returns></returns>
     public byte MemoryRead(ushort in_address)
     {
       return Rom[in_address | m_current_page_address];
     }
 
+    /// <summary>
+    /// Z80 memory writer routine
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <param name="in_byte"></param>
     public void MemoryWrite(ushort in_address, byte in_byte)
     {
       // no ROM write
     }
 
+    /// <summary>
+    /// Hardware reset
+    /// </summary>
     public void Reset()
     {
     }
@@ -135,6 +169,12 @@ namespace GameCard
      
     }
       */
+
+    /// <summary>
+    /// Z80 port read routine
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <param name="inout_data"></param>
     public void PortRead(ushort in_address, ref byte inout_data)
     {
       switch (in_address & 0x0f)
@@ -150,12 +190,23 @@ namespace GameCard
       }
     }
 
+    /// <summary>
+    /// Z80 port write routine
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <param name="in_byte"></param>
     public void PortWrite(ushort in_address, byte in_byte)
     {
       switch (in_address & 0x0f)
       {
+        case SOUND_REGISTER:
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          m_sound_chip.WriteRegister(in_byte);
+          break;
+
         case PAGE_REGISTER:
-          m_current_page_address = (UInt16)((in_byte & 7) << 13);
+          m_current_page_address = (UInt16)((in_byte & PAGE_ADDRESS_MASK) << 13);
+          m_sound_chip_enable = (in_byte & SOUND_ENABLE_MASK) != 0;
           break;
       }
     }
@@ -172,21 +223,39 @@ namespace GameCard
       }
     }
 
+    /// <summary>
+    /// Gets expansion card ID
+    /// </summary>
+    /// <returns></returns>
     public byte GetID()
     {
       return 0x03;
     }
 
+    /// <summary>
+    /// Installs card into the TVC
+    /// </summary>
+    /// <param name="in_parent"></param>
     public void Install(ITVComputer in_parent)
     {
       m_tvcomputer = in_parent;
+      m_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderAudio);
     }
 
+    /// <summary>
+    /// Removes card from the TVC
+    /// </summary>
+    /// <param name="in_parent"></param>
     public void Remove(ITVComputer in_parent)
     {
-      // no action needed
+      TVCManagers.Default.AudioManager.CloseChannel(m_audio_channel_index);
     }
 
+    /// <summary>
+    /// Gets joystick state in the GameCard bitfield format
+    /// </summary>
+    /// <param name="in_joystick"></param>
+    /// <returns></returns>
     private byte GetJoystickStateByte(TVCJoystick in_joystick)
     {
       byte retval = 0Xff;
@@ -207,6 +276,27 @@ namespace GameCard
         retval = (byte)(retval & ~JOY_FIRE);
 
       return retval;
+    }
+
+    /// <summary>
+    /// Renders audio samples into the audio buffer
+    /// </summary>
+    /// <param name="inout_buffer">Audio buffer</param>
+    /// <param name="in_start_sample_index">Samples index of the first sample to render</param>
+    /// <param name="in_end_sample_index">Samples index of the last sample to render</param>
+    public void RenderAudio(int[] inout_buffer, int in_start_sample_index, int in_end_sample_index)
+    {
+      // check for chip enable
+      if (!m_sound_chip_enable)
+        return;
+
+      // render samples
+      int sample_pos = in_start_sample_index * 2;
+      for (int sample_index = in_start_sample_index; sample_index < in_end_sample_index; sample_index++)
+      {
+        m_sound_chip.RenderAudioStream(ref inout_buffer[sample_pos], ref inout_buffer[sample_pos+1]);
+        sample_pos += 2;
+      }
     }
   }
 }

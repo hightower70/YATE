@@ -85,7 +85,7 @@ namespace GameCard
 
     public override void SettingsChanged(ref bool in_restart_tvc)
     {
-      // updatre settingsd
+      // update settings
       Settings = ParentManager.Settings.GetSettings<GameCardSettings>(ExpansionIndex);
 
       // activate settings

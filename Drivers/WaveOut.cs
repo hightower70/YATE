@@ -21,6 +21,7 @@
 // Wave out device handler class
 ///////////////////////////////////////////////////////////////////////////////
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -33,6 +34,10 @@ namespace YATE.Drivers
   {
     #region · Types ·
 
+    /// <summary>
+    /// Delegate function type for requesting new buffer of samples
+    /// </summary>
+    /// <param name="inout_sample_buffer"></param>
     public delegate void SampleRequestDelegate(short[] inout_sample_buffer);
 
     /// <summary>
@@ -62,14 +67,14 @@ namespace YATE.Drivers
         BufferIndex = in_buffer_index;
         Free = true;
         Header = new WaveNative.WaveHdr();
-        Data = new short[in_parent.BufferSampleCount];
+        Data = new short[in_parent.BufferLength * in_parent.ChannelCount];
 
         m_this = GCHandle.Alloc(this);
         m_header_handle = GCHandle.Alloc(Header, GCHandleType.Pinned);
         m_data_handle = GCHandle.Alloc(Data, GCHandleType.Pinned);
 
         Header.lpData = m_data_handle.AddrOfPinnedObject();
-        Header.dwBufferLength = sizeof(short) * Parent.BufferSampleCount;
+        Header.dwBufferLength = sizeof(short) * Data.Length;
         Header.dwUser = (IntPtr)m_this;
 
         // prepare header
@@ -149,7 +154,6 @@ namespace YATE.Drivers
     private WaveOutBuffer[] m_wave_out_buffers;
 
     // Class configuration
-    private int m_sample_rate;
     private int m_device_id;
 
     // Wave settings
@@ -160,7 +164,6 @@ namespace YATE.Drivers
     private Thread m_thread;
     private AutoResetEvent m_thread_event;
     private bool m_thread_running;
-    private WaveOutBuffer m_finished_buffer;
 
     private readonly WaveNative.WaveOutDelegate m_buffer_proc = new WaveNative.WaveOutDelegate(WaveOutProc);
 
@@ -171,12 +174,22 @@ namespace YATE.Drivers
     /// <summary>
     /// Number of buffers
     /// </summary>
-    public int BufferCount { get; private set; }
+    public int BufferCount { get; set; }
 
     /// <summary>
     /// Number of samples in one buffer
     /// </summary>
-    public int BufferSampleCount { get; private set; }
+    public int BufferLength { get; set; }
+
+    /// <summary>
+    /// Number of channels (2 for stereo)
+    /// </summary>
+    public int ChannelCount { get; set; } = 2;
+
+    /// <summary>
+    /// Sample rate (44100Hz is the default)
+    /// </summary>
+    public int SampleRate { get; set; } = 44100;
 
     /// <summary>
     /// WaveOut device handle
@@ -187,7 +200,7 @@ namespace YATE.Drivers
     }
 
     /// <summary>
-    /// Buffer request 
+    /// Sample Buffer request 
     /// </summary>
     public SampleRequestDelegate OnSampleRequest { get; set; }
 
@@ -199,19 +212,13 @@ namespace YATE.Drivers
     /// Open wave out device for playback
     /// </summary>
     /// <param name="in_device_id">Device ID to use for playback</param>
-    /// <param name="in_sample_rate">Sample rate</param>
-    /// <param name="in_buffer_count">Number of buffers to use</param>
-    /// <param name="in_buffer_sample_count">Length of one buffer in samples</param>
-    public void Open(int in_device_id, int in_sample_rate, int in_buffer_count, int in_buffer_sample_count)
+    public void Open(int in_device_id)
     {
       // init class
       m_wave_out_device_handle = IntPtr.Zero;
 
       // store class settings
       m_device_id = in_device_id;
-      m_sample_rate = in_sample_rate;
-      BufferCount = in_buffer_count;
-      BufferSampleCount = in_buffer_sample_count;
     }
 
     /// <summary>
@@ -222,12 +229,10 @@ namespace YATE.Drivers
     {
       WaveNative.MMRESULT error;
 
-      m_finished_buffer = null;
-
       // create thread event
       m_thread_event = new AutoResetEvent(false);
 
-      m_wave_out_format = new WaveNative.WaveFormat(m_sample_rate, 16, 2);
+      m_wave_out_format = new WaveNative.WaveFormat(SampleRate, 16, ChannelCount);
 
       // open wave device
       error = WaveNative.waveOutOpen(out m_wave_out_device_handle, m_device_id, m_wave_out_format, m_buffer_proc, 0, (uint)WaveNative.WaveInOutOpenFlags.CALLBACK_FUNCTION);
@@ -293,38 +298,32 @@ namespace YATE.Drivers
       // thread loop
       while (m_thread_running)
       {
+        // wait for wave event
         m_thread_event.WaitOne();
-        buffer = m_finished_buffer;
-        m_finished_buffer = null;
 
-        if (buffer != null)
+        // find finished buffers and dequeue, fill and enqueue them
+        for (int i = 0; i < BufferCount && m_thread_running; i++)
         {
-          buffer.Dequeue();
-
-          OnSampleRequest?.Invoke(buffer.Data);
-
-          buffer.Enqueue();
-        }
-
-        // find finished buffer and dequeue
-        for (int i = 0; i < BufferCount; i++)
-        {
-          if (m_wave_out_buffers[i].Free)
+          buffer = m_wave_out_buffers[i];
+          if (buffer.Free)
           {
-            if (m_thread_running)
-            {
-              //m_wave_out_buffers[i].Enqueue();
-            }
-            break;
+            buffer.Dequeue();
+
+            OnSampleRequest?.Invoke(buffer.Data);
+
+            buffer.Enqueue();
           }
         }
       }
 
+      // stop wave out
       WaveNative.waveOutReset(m_wave_out_device_handle);
 
+      // release buffers
       for (int i = 0; i < BufferCount; i++)
         m_wave_out_buffers[i].Dispose();
 
+      // close wave out
       WaveNative.waveOutClose(m_wave_out_device_handle);
 
       m_wave_out_buffers = null;
@@ -341,8 +340,6 @@ namespace YATE.Drivers
     /// <param name="in_buffer"></param>
     private void BufferFinished(WaveOutBuffer in_buffer)
     {
-      Interlocked.CompareExchange(ref m_finished_buffer, in_buffer, null);
-      
       m_thread_event.Set();
     }
 
@@ -360,8 +357,6 @@ namespace YATE.Drivers
       {
         if (uMsg == WaveNative.WaveMessage.WOM_DONE)
         {
-          //Debug.WriteLine(uMsg.ToString() + " " + wavhdr.dwUser.ToString());
-
           GCHandle hBuffer = (GCHandle)wavhdr.dwUser;
           WaveOutBuffer buffer = (WaveOutBuffer)hBuffer.Target;
 

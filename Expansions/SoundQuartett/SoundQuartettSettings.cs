@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2019-2020 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2019-2021 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,25 +18,22 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Audio System Manager Interface
+// SoundQuartett card configuration
 ///////////////////////////////////////////////////////////////////////////////
+using YATECommon.Settings;
 
-namespace YATECommon
+namespace SoundQuartett
 {
-  public delegate void AudioChannelRenderDelegate(int[] inout_buffer, int in_start_sample_index, int in_end_sample_index);
-
-  public interface IAudioManager
+  public class SoundQuartettSettings : CardSettingsBase
   {
-    int OpenChannel(AudioChannelRenderDelegate in_audio_rendering_method);
-    void CloseChannel(int in_channel_index);
+    public SoundQuartettSettings() : base(SettingsCategory.TVC, ExpansionMain.ModuleName)
+    {
+      SetDefaultValues();
+    }
 
-    void AdvanceChannel(int in_channel_index, ulong in_target_tick);
-
-    void Start();
-    void Stop();
-
-    void UpdateSettings(bool in_restart_tvc);
-
-    uint SampleRate { get; }
+    override public void SetDefaultValues()
+    {
+      base.SetDefaultValues();
+    }
   }
 }

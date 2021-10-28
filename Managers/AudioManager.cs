@@ -32,11 +32,13 @@ namespace YATE.Managers
   public class AudioManager : IAudioManager
   {
     #region ·  Constants ·
-    public const int ChannelCount = 8;  // Number of handled audio channels
-    public const int SampleRate = 44100;  // Desired sample rate
-    public const int AudioLag = 100; // Audio lag in ms (the real audio lag is twice as this
-    public const int AudioBufferSampleLength =  SampleRate * AudioLag / 1000; // Length of the audio buffers in samples
-    public const int AudioBufferCount = 2; // Number of used audio buffers
+    public const int StereoChannelCount = 2; // Number of channels for stereo (2)
+    public const int AudioChannelCount = 8;  // Number of handled audio channels
+    public const int DefaultSampleRate = 44100;  // Desired sample rate
+    public const int AudioLag = 200; // Audio lag in ms
+    public const int AudioBufferLength = 20; // Length of the audio buffer in ms
+    public const int AudioBufferSampleLength =  DefaultSampleRate * AudioBufferLength / 1000; // Length of the audio buffers in samples
+    public const int AudioBufferCount = AudioLag / AudioBufferLength; // Number of used audio buffers
     #endregion
 
     #region · Types ·
@@ -66,9 +68,21 @@ namespace YATE.Managers
     private SetupAudioSettings m_settings;
     private ExecutionManager m_execution_manager;
 
+    private int m_active_channels;
+
     private int[] m_rendering_buffer;
     private object m_audio_render_lock = new object();
-    private ulong m_block_start_tick;
+    #endregion
+
+    #region · Properties ·
+
+    /// <summary>
+    /// Current sample rate of the audio subsystem
+    /// </summary>
+    public uint SampleRate
+    {
+      get { return DefaultSampleRate; }
+    }
     #endregion
 
     #region · Constructor ·
@@ -78,13 +92,15 @@ namespace YATE.Managers
     /// </summary>
     public AudioManager(ExecutionManager in_execution_manager)
     {
-      m_rendering_buffer = new int[AudioBufferSampleLength * 2]; // stereo buffer (*2)
+      m_active_channels = 0;
+
+      m_rendering_buffer = new int[AudioBufferSampleLength * StereoChannelCount]; // stereo buffer
       for (int i = 0; i < m_rendering_buffer.Length; i++)
       {
         m_rendering_buffer[i] = 0;
       }
 
-      m_channels = new ChannelInfo[ChannelCount];
+      m_channels = new ChannelInfo[AudioChannelCount];
       m_execution_manager = in_execution_manager;
 
       for (int i = 0; i < m_channels.Length; i++)
@@ -118,7 +134,12 @@ namespace YATE.Managers
       m_wave_out = new WaveOut();
       m_wave_out.OnSampleRequest = FinishAllChannels;
 
-      m_wave_out.Open(device_id, SampleRate, AudioBufferCount, AudioBufferSampleLength);
+      m_wave_out.ChannelCount = StereoChannelCount;
+      m_wave_out.SampleRate = (int)SampleRate;
+      m_wave_out.BufferCount = AudioBufferCount;
+      m_wave_out.BufferLength = AudioBufferSampleLength;
+
+      m_wave_out.Open(device_id);
 
       m_wave_out.Start();
     }
@@ -149,6 +170,7 @@ namespace YATE.Managers
           m_channels[i].RenderingMethod = in_audio_rendering_method;
           m_channels[i].SamplePosition = 0;
           m_channels[i].TickPosition = m_execution_manager.TVC.GetCPUTicks();
+          m_active_channels++;
           break;
         }
       }
@@ -162,7 +184,11 @@ namespace YATE.Managers
     /// <param name="in_channel_index">Audio channel index</param>
     public void CloseChannel(int in_channel_index)
     {
-      m_channels[in_channel_index].RenderingMethod = null;
+      if (in_channel_index >= 0 && in_channel_index < AudioChannelCount && m_channels[in_channel_index].RenderingMethod != null)
+      {
+        m_active_channels--;
+        m_channels[in_channel_index].RenderingMethod = null;
+      }
     }
 
     /// <summary>
@@ -207,7 +233,7 @@ namespace YATE.Managers
     /// <param name="in_target_tick"></param>
     public void AdvanceAllChannels(ulong in_target_tick)
     {
-      for (int i = 0; i < ChannelCount; i++)
+      for (int i = 0; i < AudioChannelCount; i++)
       {
         if (m_channels[i].RenderingMethod != null)
           AdvanceChannel(i, in_target_tick);
@@ -226,7 +252,7 @@ namespace YATE.Managers
       // render channels if required
       lock (m_audio_render_lock)
       {
-        for (int i = 0; i < ChannelCount; i++)
+        for (int i = 0; i < AudioChannelCount; i++)
         {
           if (m_channels[i].RenderingMethod != null)
           {
@@ -235,10 +261,9 @@ namespace YATE.Managers
             if (channel_info.SamplePosition < AudioBufferSampleLength)
             {
               channel_info?.RenderingMethod(m_rendering_buffer, channel_info.SamplePosition, AudioBufferSampleLength);
-              ulong l = (ulong)(AudioBufferSampleLength - channel_info.SamplePosition) * (ulong)cpu_clock / SampleRate;
-              ulong d = channel_info.TickPosition + l;
+              //ulong l = (ulong)(AudioBufferSampleLength - channel_info.SamplePosition) * (ulong)cpu_clock / SampleRate;
+              //ulong d = channel_info.TickPosition + l;
               channel_info.TickPosition = cpu_tick;
-
             }
 
             channel_info.SamplePosition = 0; // reset sample position
@@ -246,12 +271,25 @@ namespace YATE.Managers
         }
 
         // copy rendering buffer to the audio buffer
-        for (int i = 0; i < AudioBufferSampleLength; i++)
+        if (m_active_channels == 0)
         {
-          inout_audio_buffer[i] = (short)(m_rendering_buffer[i] / ChannelCount);
-          m_rendering_buffer[i] = 0;
+          for (int i = 0; i < AudioBufferSampleLength * StereoChannelCount; i++)
+          {
+            inout_audio_buffer[i] = 0;
+            m_rendering_buffer[i] = 0;
+          }
+        }
+        else
+        {
+          for (int i = 0; i < AudioBufferSampleLength * StereoChannelCount; i++)
+          {
+            inout_audio_buffer[i] = (short)(m_rendering_buffer[i] / m_active_channels);
+            m_rendering_buffer[i] = 0;
+          }
         }
       }
+
+      m_execution_manager.SetSoundEvent();
     }
 
     public void UpdateSettings(bool in_restart_tvc)

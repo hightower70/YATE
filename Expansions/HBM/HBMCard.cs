@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SAA1099
+namespace SAA1099Expansion
 {
   class HBMCard
   {
