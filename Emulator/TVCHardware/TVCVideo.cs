@@ -60,6 +60,8 @@ namespace YATE.Emulator.TVCHardware
 
     public const byte DimScanlineColorMultiplier = 192;
 
+    public const byte HalfIntensity = 128;
+
     public const int HorizontalTiming = 64000; // horizontal timing in ns
     public const int ScanlineVSyncPackPorch = 24; // first visible scanline after vertical sync and back porch
     public const int PixelHSyncPackPorch = 130; // first visible column after horizonjtal sync and back porch
@@ -67,13 +69,13 @@ namespace YATE.Emulator.TVCHardware
     public readonly Color[] TVCColors =
     {
       Color.FromArgb(255, 0, 0, 0),				// Black
-			Color.FromArgb(255, 0, 0, 128),			// DarkBlue
-			Color.FromArgb(255, 128, 0, 0),			// DarkRed
-			Color.FromArgb(255, 128, 0, 128),		// DarkPurple
-			Color.FromArgb(255, 0, 128, 0),			// DarkGreen
-			Color.FromArgb(255, 0, 128, 128),		// DarkCyan
-			Color.FromArgb(255, 128, 128, 0),		// DarkYellow
-			Color.FromArgb(255, 128, 128, 128), // DarkGray
+			Color.FromArgb(255, 0, 0, HalfIntensity),			// DarkBlue
+			Color.FromArgb(255, HalfIntensity, 0, 0),			// DarkRed
+			Color.FromArgb(255, HalfIntensity, 0, HalfIntensity),		// DarkPurple
+			Color.FromArgb(255, 0, HalfIntensity, 0),			// DarkGreen
+			Color.FromArgb(255, 0, HalfIntensity, HalfIntensity),		// DarkCyan
+			Color.FromArgb(255, HalfIntensity, HalfIntensity, 0),		// DarkYellow
+			Color.FromArgb(255, HalfIntensity, HalfIntensity, HalfIntensity), // DarkGray
 
 			Color.FromArgb(255, 0, 0, 0),				// Black
 			Color.FromArgb(255, 0, 0, 255),			// LightBlue
@@ -653,7 +655,7 @@ namespace YATE.Emulator.TVCHardware
                     m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
                     m_frame_buffer.UIntBuffer[frame_buffer_pos + frame_buffer_line_length] = current_dim_color;
                     m_frame_buffer.UIntBuffer[frame_buffer_pos++] = current_color;
-
+                      
                     color_index = data & 0x55;
                     current_color = m_current_graphics16_colors[color_index];
                     current_dim_color = m_current_graphics16_dim_colors[color_index];
@@ -756,7 +758,7 @@ namespace YATE.Emulator.TVCHardware
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int GenerateVideoMemoryAddress(int in_ma, int in_ra)
     {
-      return (in_ma & 0x3f) + (in_ra << 6) + ((in_ma << 2) & 0x3f00);
+      return (in_ma & 0x3f) + ((in_ra & 0x03) << 6) + ((in_ma << 2) & 0x3f00);
     }
 
     private void FillColorCache()

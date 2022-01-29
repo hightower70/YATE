@@ -47,9 +47,6 @@ namespace YATE.Emulator.TVCHardware
 			// cartridge init
 			Cartridge = new TVCCartridge();
 			Cartridge.Initialize(this);
-      //((TVCCartridge)Cartridge).ReadCartridgeFile(@"d:\Projects\Retro\TVCDOC\Multicart4\test.bin");
-
-
 
       Reset();
 		}
@@ -74,6 +71,10 @@ namespace YATE.Emulator.TVCHardware
       Cartridge?.Reset();
 		}
 
+    /// <summary>
+    /// Configuration settings has been changed
+    /// </summary>
+    /// <param name="in_restart_tvc"></param>
     public void SettingsChanged(ref bool in_restart_tvc)
     {
       Keyboard.SettingsChanged(ref in_restart_tvc);

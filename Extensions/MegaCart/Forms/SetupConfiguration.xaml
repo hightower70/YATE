@@ -1,0 +1,43 @@
+﻿<sp:SetupPageBase x:Class="MegaCart.Forms.SetupConfiguration"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MegaCart.Forms"
+						 xmlns:cc="clr-namespace:CustomControls;assembly=CustomControls"
+						 xmlns:sp="clr-namespace:YATECommon.SetupPage;assembly=YATECommon"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+	<UserControl.Resources>
+		<ResourceDictionary Source="pack://application:,,,/DarkSkin;component/MetroDarkStyle.xaml" />
+	</UserControl.Resources>
+	<Grid Background="{DynamicResource Background}">
+		<Grid Margin="5">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="35"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="49*"/>
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="80"/>
+				<ColumnDefinition Width="1*"/>
+			</Grid.ColumnDefinitions>
+
+			<!-- ROM settings -->
+			<cc:Title Grid.Row="0" Grid.ColumnSpan="2" Text="ROM Files"/>
+			<TextBlock Grid.Row="1" Grid.Column="0" Text="ROM File:" VerticalAlignment="Center"/>
+			<Grid Grid.Row="1" Grid.Column="1" >
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition/>
+					<ColumnDefinition Width="30"/>
+				</Grid.ColumnDefinitions>
+				<TextBox  Grid.Column="0" Text="{Binding Settings.ROMFileName}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
+				<Button x:Name="bROMBrowse" Grid.Column="1" Margin="3" Content="..." Width="22" Click="BROMBrowse_Click"/>
+			</Grid>
+		</Grid>
+	</Grid>
+</sp:SetupPageBase>

@@ -48,7 +48,8 @@ namespace YATE.Emulator.TVCHardware
 		public const int Page3StartAddress = 0xc000;
 
 		public const int PageLength = 0x4000;
-		public const int SysMemLength = 0x4000;
+    public const int VideoPageLength = 0x4000;
+    public const int SysMemLength = 0x4000;
 		public const int ExtMemLength = 0x2000;
 		public const int IOMemSize = 0x4000;
 
@@ -60,7 +61,7 @@ namespace YATE.Emulator.TVCHardware
 		private byte[] m_mem_sys;
 		private byte[] m_mem_ext;
 		private byte[][] m_mem_iomem;
-		private byte[] m_mem_video;
+		private byte[][] m_mem_video;
 		private byte[] m_mem_user;
 
 		private PageReader[] m_page_reader;
@@ -69,44 +70,56 @@ namespace YATE.Emulator.TVCHardware
 		private byte m_ext_mem_select;
 		private byte m_port03;
 
+    private byte m_port0f;
+    private byte[] m_page1_video_mem;
+    private byte[] m_page2_video_mem;
+
 		public byte Port02H { get; set; }
 
     private TVCConfigurationSettings m_settings;
 
-    public byte[] VisibleVideoMem
-		{
-			get { return m_mem_video; }
-		}
+    public byte[] VisibleVideoMem { get; private set; }
 
-		public TVCMemory(TVComputer in_tvc)
-		{
+    public TVCMemory(TVComputer in_tvc)
+    {
       // load configuration
       m_settings = SettingsFile.Default.GetSettings<TVCConfigurationSettings>();
 
       m_tvc = in_tvc;
 
-			m_page_reader = new PageReader[PageCount];
-			m_page_writer = new PageWriter[PageCount];
 
-			// reserve space for memories
-			m_mem_sys = new byte[SysMemLength];
-			m_mem_ext = new byte[ExtMemLength];
+      m_page_reader = new PageReader[PageCount];
+      m_page_writer = new PageWriter[PageCount];
 
-			m_mem_iomem = new byte[IOCardCount][];
-			for (int i = 0; i < IOCardCount; i++)
-				m_mem_iomem[i] = new byte[IOMemSize];
+      // reserve space for memories
+      m_mem_sys = new byte[SysMemLength];
+      m_mem_ext = new byte[ExtMemLength];
 
-			m_mem_user = new byte[PageCount * PageLength];
-			m_mem_video = new byte[VideoPageCount * PageLength];
+      m_mem_iomem = new byte[IOCardCount][];
+      for (int i = 0; i < IOCardCount; i++)
+        m_mem_iomem[i] = new byte[IOMemSize];
 
-			// register port handlers
-			m_tvc.Ports.AddPortWriter(0x02, PortWrite02H);
-			m_tvc.Ports.AddPortWriter(0x03, PortWrite03H);
-			m_tvc.Ports.AddPortReset(0x02, PortReset02H);
-			m_tvc.Ports.AddPortReset(0x03, PortReset03H);
+      m_mem_user = new byte[PageCount * PageLength];
+
+      m_mem_video = new byte[VideoPageCount][];
+      for (int i = 0; i < VideoPageCount; i++)
+        m_mem_video[i] = new byte[VideoPageLength];
+
+      VisibleVideoMem = m_mem_video[0];
+      m_page1_video_mem = m_mem_video[0];
+      m_page2_video_mem = m_mem_video[0];
+
+      // register port handlers
+      m_tvc.Ports.AddPortWriter(0x02, PortWrite02H);
+      m_tvc.Ports.AddPortWriter(0x03, PortWrite03H);
+      m_tvc.Ports.AddPortWriter(0x0F, PortWrite0FH);
+
+      m_tvc.Ports.AddPortReset(0x02, PortReset02H);
+      m_tvc.Ports.AddPortReset(0x03, PortReset03H);
+      m_tvc.Ports.AddPortReset(0x0F, PortReset0FH);
 
       LoadROM();
-		}
+    }
 
 		private void PortReset02H()
 		{
@@ -118,6 +131,11 @@ namespace YATE.Emulator.TVCHardware
 			PortWrite03H(0x03, 0);
 		}
 
+    private void PortReset0FH()
+    {
+      PortWrite0FH(0x0F, 0);
+    }
+
     /// <summary>
     /// Updates settings
     /// </summary>
@@ -125,13 +143,22 @@ namespace YATE.Emulator.TVCHardware
     public void SettingsChanged(ref bool in_restart_tvc)
     {
       // load configuration
-      m_settings = SettingsFile.Default.GetSettings<TVCConfigurationSettings>();
+      TVCConfigurationSettings new_settings = SettingsFile.Default.GetSettings<TVCConfigurationSettings>();
+
+      if (m_settings.HardwareVersion != new_settings.HardwareVersion)
+        in_restart_tvc = true;
 
       // update configuration
+      m_settings = new_settings;
+
       if (LoadROM())
         in_restart_tvc = true;
     }
 
+    /// <summary>
+    /// Loads ROM content
+    /// </summary>
+    /// <returns>Returns true if new content detected</returns>
     private bool LoadROM()
     {
       bool memory_changed = false;
@@ -189,16 +216,20 @@ namespace YATE.Emulator.TVCHardware
     /// </summary>
     public void ClearMemory()
 		{
-			// clear video memory
+			// clear main memory
 			for (int i = 0; i < m_mem_user.Length; i++)
 				m_mem_user[i] = 0;
 
-			// clear main memory
-			for (int i = 0; i < m_mem_user.Length; i++)
-				m_mem_video[i] = 0;
+      // clear video memory
+      for (int j = 0; j < VideoPageCount; j++)
+      {
+        for (int i = 0; i < VideoPageLength; i++)
+          m_mem_video[j][i] = 0;
+      }
 		}
 
-		public byte Read(ushort in_address, bool in_m1_state = false)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public byte Read(ushort in_address, bool in_m1_state = false)
 		{
 			byte page_index = (byte)(in_address >> 14);
 			ushort page_addres = (ushort)(in_address & 0x3fff);
@@ -206,7 +237,8 @@ namespace YATE.Emulator.TVCHardware
 			return m_page_reader[page_index](page_addres);
 		}
 
-		public void Write(ushort in_address, byte in_data)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(ushort in_address, byte in_data)
 		{
 			byte page_index = (byte)(in_address >> 14);
 			ushort page_addres = (ushort)(in_address & 0x3fff);
@@ -299,10 +331,10 @@ namespace YATE.Emulator.TVCHardware
 		// |                M E M O R Y  P A G I N G                       |
 		// +---7---+---6---+---5---+---4---+---3---+---2---+---1---+---0---+
 		// |     Page3		 | Page2 |     Page0     | Page1 |       |       |
-		// |    00 CART    | 0 VID |    00 SYS     | 1 U1  |   -   |   -   |
-		// |    01 SYS     | 1 U2  |    01 CART    |       |       |       |
+		// |    00 CART    | 0 VID |    00 SYS     | 0 U1  |   -   |   -   |
+		// |    01 SYS     | 1 U2  |    01 CART    | 1 VID |       |       |
 		// |    10 U3      |       |    10 U0      |       |       |       |
-		// |    11 EXT     |       |               |       |       |       |
+		// |    11 EXT     |       |    11 U3      |       |       |       |
 		// +-------+-------+-------+-------+-------+-------+-------+-------+
 		public void PortWrite02H(ushort in_address, byte in_data)
 		{
@@ -332,35 +364,41 @@ namespace YATE.Emulator.TVCHardware
 					break;
 			}
 
-			// Page1
-			m_page_reader[1] = MemU1Read;
-			m_page_writer[1] = MemU1Write;
-			/*
-			if ((in_data & 0x04) == 0)
-			{
-				m_active_pages[1] = m_mem_video[0];
-				m_writable_page[1] = true;
-			}
-			else
-			{
-				m_active_pages[1] = m_mem_user[1];
-				m_writable_page[1] = true;
-			}
-			*/
+      // Page1
+      switch (GetPage1Mapping())
+      {
+        case 0:
+          m_page_reader[1] = MemU1Read;
+          m_page_writer[1] = MemU1Write;
+          break;
 
-			// Page2
-			switch (GetPage2Mapping())
-			{
-				case 0:
-					m_page_reader[2] = MemVideoRead;
-					m_page_writer[2] = MemVideoWrite;
-					break;
+        case 1:
+          if (m_settings.HardwareVersion == 3) // Only 64k+
+          {
+            m_page_reader[1] = MemVideo1Read;
+            m_page_writer[1] = MemVideo1Write;
+          }
+          else
+          {
+            m_page_reader[1] = MemU1Read;
+            m_page_writer[1] = MemU1Write;
+          }
+          break;
+      }
 
-				case 1:
-					m_page_reader[2] = MemU2Read;
-					m_page_writer[2] = MemU2Write;
-					break;
-			}
+      // Page2
+      switch (GetPage2Mapping())
+      {
+        case 0:
+          m_page_reader[2] = MemVideo2Read;
+          m_page_writer[2] = MemVideo2Write;
+          break;
+
+        case 1:
+          m_page_reader[2] = MemU2Read;
+          m_page_writer[2] = MemU2Write;
+          break;
+      }
 
 			// Page 3
 			switch (GetPage3Mapping())
@@ -393,7 +431,16 @@ namespace YATE.Emulator.TVCHardware
 			return (Port02H >> 3) & 0x03;
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int GetPage1Mapping()
+    {
+      if (m_settings.HardwareVersion == 3)
+        return (Port02H >> 2) & 0x01;
+      else
+        return 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private int GetPage2Mapping()
 		{
 			return (Port02H >> 5) & 0x01;
@@ -422,6 +469,36 @@ namespace YATE.Emulator.TVCHardware
 			m_ext_mem_select = (byte)(in_data >> 6);
 		}
 
+    // PORT 0FH
+    // ========
+    //
+    // +-------+-------+-------+-------+-------+-------+-------+-------+
+    // |              V I D E O M E M  S E L E C T                     |
+    // +---7---+---6---+---5---+---4---+---3---+---2---+---1---+---0---+
+    // |   -   |   -   |      CRT      |     Page 2    |     Page 1    |
+    // |       |       |  00: VID0     |  00: VID0     |  00: VID0     |
+    // |       |       |  01: VID1     |  01: VID1     |  01: VID1     |
+    // |       |       |  10: VID2     |  10: VID2     |  10: VID2     |
+    // |       |       |  11: VID3     |  11: VID3     |  11: VID3     |
+    // +-------+-------+-------+-------+-------+-------+-------+-------+
+    public void PortWrite0FH(ushort in_address, byte in_data)
+    {
+      m_port0f = in_data;
+
+      if (m_settings.HardwareVersion == 3) // Only 64k+
+      {
+        VisibleVideoMem = m_mem_video[(in_data >> 4) & 0x03];
+        m_page1_video_mem = m_mem_video[(in_data) & 0x03];
+        m_page2_video_mem = m_mem_video[(in_data >> 2) & 0x03];
+      }
+      else
+      {
+        VisibleVideoMem = m_mem_video[0];
+        m_page1_video_mem = m_mem_video[0];
+        m_page2_video_mem = m_mem_video[0];
+      }
+    }
+
     private void MemNoWrite(ushort in_page_address, byte in_data)
 		{
 			// no write (readonly)
@@ -437,109 +514,143 @@ namespace YATE.Emulator.TVCHardware
 			return m_mem_sys[in_page_address];
 		}
 
-		/// <summary>
-		/// Page 0 RAM Read
-		/// </summary>
-		/// <param name="in_page_address"></param>
-		/// <returns></returns>
-		private byte MemU0Read(ushort in_page_address)
+    /// <summary>
+    /// Page 0 RAM Read
+    /// </summary>
+    /// <param name="in_page_address"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private byte MemU0Read(ushort in_page_address)
 		{
 			return m_mem_user[in_page_address + Page0StartAddress];
 		}
 
-		/// <summary>
-		/// Page 0 RAM write
-		/// </summary>
-		/// <param name="in_page_address"></param>
-		/// <param name="in_data"></param>
-		private void MemU0Write(ushort in_page_address, byte in_data)
+    /// <summary>
+    /// Page 0 RAM write
+    /// </summary>
+    /// <param name="in_page_address"></param>
+    /// <param name="in_data"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void MemU0Write(ushort in_page_address, byte in_data)
 		{
 			m_mem_user[in_page_address + Page0StartAddress] = in_data;
 		}
 
-		/// <summary>
-		/// Page 1 RAM read
-		/// </summary>
-		/// <param name="in_page_address"></param>
-		/// <returns></returns>
-		private byte MemU1Read(ushort in_page_address)
+    /// <summary>
+    /// Page 1 RAM read
+    /// </summary>
+    /// <param name="in_page_address"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private byte MemU1Read(ushort in_page_address)
 		{
 			return m_mem_user[in_page_address + Page1StartAddress];
 		}
 
-		/// <summary>
-		/// Page 1 RAM write
-		/// </summary>
-		/// <param name="in_page_address"></param>
-		/// <param name="in_data"></param>
-		private void MemU1Write(ushort in_page_address, byte in_data)
+    /// <summary>
+    /// Page 1 RAM write
+    /// </summary>
+    /// <param name="in_page_address"></param>
+    /// <param name="in_data"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void MemU1Write(ushort in_page_address, byte in_data)
 		{
 			m_mem_user[in_page_address + Page1StartAddress] = in_data;
 		}
 
-		/// <summary>
-		/// Page 2 RAM read
-		/// </summary>
-		/// <param name="in_page_address"></param>
-		/// <returns></returns>
-		private byte MemU2Read(ushort in_page_address)
+    /// <summary>
+    /// Page 2 RAM read
+    /// </summary>
+    /// <param name="in_page_address"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private byte MemU2Read(ushort in_page_address)
 		{
 			return m_mem_user[in_page_address + Page2StartAddress];
 		}
 
-		/// <summary>
-		/// Pagfe 2 RAM write
-		/// </summary>
-		/// <param name="in_page_address"></param>
-		/// <param name="in_data"></param>
-		private void MemU2Write(ushort in_page_address, byte in_data)
+    /// <summary>
+    /// Pagfe 2 RAM write
+    /// </summary>
+    /// <param name="in_page_address"></param>
+    /// <param name="in_data"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void MemU2Write(ushort in_page_address, byte in_data)
 		{
 			m_mem_user[in_page_address + Page2StartAddress] = in_data;
 		}
 
-		/// <summary>
-		/// Page 2 RAM write
-		/// </summary>
-		/// <param name="in_page_address"></param>
-		/// <returns></returns>
-		private byte MemU3Read(ushort in_page_address)
+    /// <summary>
+    /// Page 2 RAM write
+    /// </summary>
+    /// <param name="in_page_address"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private byte MemU3Read(ushort in_page_address)
 		{
 			return m_mem_user[in_page_address + Page3StartAddress];
 		}
 
-		/// <summary>
-		/// Page 3 RAM write
-		/// </summary>
-		/// <param name="in_page_address"></param>
-		/// <param name="in_data"></param>
-		private void MemU3Write(ushort in_page_address, byte in_data)
+    /// <summary>
+    /// Page 3 RAM write
+    /// </summary>
+    /// <param name="in_page_address"></param>
+    /// <param name="in_data"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void MemU3Write(ushort in_page_address, byte in_data)
 		{
 			m_mem_user[in_page_address + Page3StartAddress] = in_data;
 		}
 
-		/// <summary>
-		/// Video memory read
-		/// </summary>
-		/// <param name="in_address"></param>
-		/// <returns></returns>
-		private byte MemVideoRead(ushort in_address)
+    /// <summary>
+    /// Video memory page 1 read
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private byte MemVideo1Read(ushort in_address)
 		{
 			VideoMemAccessCount++;
-			return m_mem_video[in_address];
+			return m_page1_video_mem[in_address];
 		}
 
-		/// <summary>
-		/// Video memory write
-		/// </summary>
-		/// <param name="in_address"></param>
-		/// <param name="in_data"></param>
-		private void MemVideoWrite(ushort in_address, byte in_data)
+    /// <summary>
+    /// Video memory page 1 write
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <param name="in_data"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void MemVideo1Write(ushort in_address, byte in_data)
 		{
 			VideoMemAccessCount++;
-			m_mem_video[in_address] = in_data;
+			m_page1_video_mem[in_address] = in_data;
 		}
 
-		private byte MemExtRead(ushort in_page_address)
+    /// <summary>
+    /// Video memory page 2 read
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private byte MemVideo2Read(ushort in_address)
+    {
+      VideoMemAccessCount++;
+      return m_page2_video_mem[in_address];
+    }
+
+    /// <summary>
+    /// Video memory page 2 write
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <param name="in_data"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void MemVideo2Write(ushort in_address, byte in_data)
+    {
+      VideoMemAccessCount++;
+      m_page2_video_mem[in_address] = in_data;
+    }
+
+    private byte MemExtRead(ushort in_page_address)
 		{
 			if ((in_page_address & 0x2000) == 0)
 			{
@@ -586,7 +697,7 @@ namespace YATE.Emulator.TVCHardware
 		public int VideoMemAccessCount { get; set; } = 0;
 
 		private static readonly string[] m_page0_mapping_names = { "SYS", "CART", "U0", "U3" };
-		private static readonly string[] m_page1_mapping_names = { "U1" };
+		private static readonly string[] m_page1_mapping_names = { "U1", "VID" };
 		private static readonly string[] m_page2_mapping_names = { "VID", "U2" };
 		private static readonly string[] m_page3_mapping_names = { "CART", "SYS", "U3", "EXT" };
 
@@ -599,7 +710,7 @@ namespace YATE.Emulator.TVCHardware
 					return m_page0_mapping_names[GetPage0Mapping()];
 
 				case 1:
-					return m_page1_mapping_names[0];
+					return m_page1_mapping_names[GetPage1Mapping()];
 
 				case 2:
 					return m_page2_mapping_names[GetPage2Mapping()];

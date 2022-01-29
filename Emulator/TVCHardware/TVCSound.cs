@@ -252,7 +252,7 @@ namespace YATE.Emulator.TVCHardware
         }
 
         // check for counter overflow
-        if(m_counter >= CounterOverflowValue)
+        while(m_counter >= CounterOverflowValue)
         {
           m_counter = m_counter - CounterOverflowValue + m_register;
 

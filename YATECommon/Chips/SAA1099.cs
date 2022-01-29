@@ -328,7 +328,6 @@ namespace YATECommon.Chips
           break;
 
         default:  /* Error! */
-          Debug.WriteLine("SAA1099: Unknown operation");
           break;
       }
     }

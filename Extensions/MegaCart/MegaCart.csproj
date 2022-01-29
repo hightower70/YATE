@@ -4,17 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{5E33F1CE-0749-439B-AF0F-403711B08367}</ProjectGuid>
+    <ProjectGuid>{E017B698-5AF9-436A-BB35-2C5E5ADCF4FB}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>KiloCart</RootNamespace>
-    <AssemblyName>KiloCart.expansion</AssemblyName>
+    <RootNamespace>MegaCart</RootNamespace>
+    <AssemblyName>MegaCart.expansion</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,12 +24,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <OutputPath>..\..\bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
@@ -56,10 +60,10 @@
     <Compile Include="Forms\SetupInformation.xaml.cs">
       <DependentUpon>SetupInformation.xaml</DependentUpon>
     </Compile>
-    <Compile Include="KiloCartSettings.cs" />
+    <Compile Include="MegaCartSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SetupConfigurationDataProvider.cs" />
-    <Compile Include="TVCKiloCart.cs" />
+    <Compile Include="TVCMegaCart.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="Forms\SetupAbout.xaml">

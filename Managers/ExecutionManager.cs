@@ -62,6 +62,9 @@ namespace YATE.Managers
 
 		public readonly Window ParentWindow;
 
+
+    private SemaphoreSlim m_audio_sync = new SemaphoreSlim(0, AudioManager.AudioBufferCount);
+
     #endregion
 
     #region · Constructor ·
@@ -171,7 +174,8 @@ namespace YATE.Managers
     public void SetSoundEvent()
     {
       m_sound_event = true;
-      m_thread_event.Set();
+      if (m_audio_sync.CurrentCount < AudioManager.AudioBufferCount)
+        m_audio_sync.Release();
     }
 
 		public void StepInto()
@@ -324,7 +328,8 @@ namespace YATE.Managers
 
               //delay_time += TVC.CPUTickToMillisec(ellapsed_tick) - m_stopwatch.Elapsed.TotalMilliseconds;
 
-              m_thread_event.WaitOne(1000);
+              //m_thread_event.WaitOne(1000);
+              m_audio_sync.Wait(50);
 
               /*
 							if (delay_time > 0)
@@ -390,12 +395,6 @@ namespace YATE.Managers
 						m_instruction_start_pc = TVC.CPU.Registers.PC;
 						m_instruction_t_cycle = 0;
 								 
-						if (TVC.CPU.Registers.PC == BreakpointAddress)
-						{
-							breakpoint_exit = true;
-							m_execution_state = ExecutionState.Paused;
-						}
-
             // do sound interrupt handling
             TVC.Sound.PeriodicCallback();
           }
@@ -408,6 +407,12 @@ namespace YATE.Managers
           if (TVC.Sound != null)
             TVC.Sound.PeriodicCallback();
 
+          if (TVC.CPU.InstructionDone && TVC.CPU.Registers.PC == BreakpointAddress)
+          {
+            breakpoint_exit = true;
+            m_execution_state = ExecutionState.Paused;
+          }
+
           // handle clock stretching (video memory access)
           if (TVC.Memory.VideoMemAccessCount > 0)
           {
@@ -418,7 +423,7 @@ namespace YATE.Managers
         } while (((long)m_target_cycle - m_cpu_t_cycle) > 0 && m_thread_running && !breakpoint_exit);
 
         TVC.PeriodicCallback();
-        TVC.Keyboard.Update();
+        //TVC.Keyboard.Update();
 
         TVC.Sound.PeriodicCallback();
 			}

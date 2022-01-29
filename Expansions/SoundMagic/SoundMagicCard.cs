@@ -9,7 +9,9 @@ namespace SoundMagic
   public class SoundMagicCard : ITVCCard
   {
     public const int RomSize = 32 * 1024;   // 32k is the max ROM size
+
     const uint SN_CLOCK = 3579545;
+    const int YM_CLOCK = 3579545;
 
     private ITVComputer m_tvcomputer;
     private SoundMagicSettings m_settings;
@@ -17,11 +19,11 @@ namespace SoundMagic
     private byte m_page_register = 0xff;
     private byte[] m_card_rom;
 
-    private SN76489 m_SN76489;
-    private int m_SN76489_audio_channel_index;
+    private int m_audio_channel_index;
 
+    private SN76489 m_SN76489;
     private SAA1099 m_SAA1099;
-    private int m_SAA1099_audio_channel_index;
+    private YM3812 m_YM3812;
 
     public SoundMagicCard() 
     {
@@ -33,6 +35,8 @@ namespace SoundMagic
       m_SAA1099 = new SAA1099();
       m_SAA1099.Initialize(sample_rate);
 
+      m_YM3812 = new YM3812();
+      m_YM3812.Initialize(YM_CLOCK);
     }
 
     public void SetSettings(SoundMagicSettings in_settings)
@@ -118,22 +122,27 @@ namespace SoundMagic
       {
         case 0:
         case 1:
-          TVCManagers.Default.AudioManager.AdvanceChannel(m_SN76489_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_audio_channel_index, m_tvcomputer.GetCPUTicks());
           m_SN76489.WriteRegister(in_byte);
           break;
 
         case 2:
-          TVCManagers.Default.AudioManager.AdvanceChannel(m_SAA1099_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_audio_channel_index, m_tvcomputer.GetCPUTicks());
           m_SAA1099.WriteControlRegister(in_byte);
           break;
 
         case 3:
-          TVCManagers.Default.AudioManager.AdvanceChannel(m_SAA1099_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_audio_channel_index, m_tvcomputer.GetCPUTicks());
           m_SAA1099.WriteAddressRegister(in_byte);
           break;
 
         case 4:
+          m_YM3812.WriteControlRegister(in_byte);
+          break;
+
         case 5:
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          m_YM3812.WriteDataRegister(in_byte);
           break;
 
         case 6:
@@ -156,41 +165,33 @@ namespace SoundMagic
     {
       m_tvcomputer = in_parent;
 
-      m_SN76489_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderSN76489Audio);
-      m_SAA1099_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderSAA1099Audio);
-
+      m_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderAudio);
     }
 
     public void Remove(ITVComputer in_parent)
     {
-      TVCManagers.Default.AudioManager.CloseChannel(m_SN76489_audio_channel_index);
-      TVCManagers.Default.AudioManager.CloseChannel(m_SAA1099_audio_channel_index);
+      TVCManagers.Default.AudioManager.CloseChannel(m_audio_channel_index);
     }
 
 
-    private void RenderSAA1099Audio(int[] inout_buffer, int in_start_sample_index, int in_end_sample_index)
+    private void RenderAudio(int[] inout_buffer, int in_start_sample_index, int in_end_sample_index)
     {
+      int left_sample = 0, right_sample = 0;
       int sample_pos = in_start_sample_index * 2;
 
       // render samples
       for (int sample_index = in_start_sample_index; sample_index < in_end_sample_index; sample_index++)
       {
-        m_SAA1099.RenderAudioStream(ref inout_buffer[sample_pos], ref inout_buffer[sample_pos+1]);
-        sample_pos += 2;
+        left_sample = 0;
+        right_sample = 0;
+
+        m_SN76489.RenderAudioStream(ref left_sample, ref right_sample);
+        m_SAA1099.RenderAudioStream(ref left_sample, ref right_sample);
+        m_YM3812.RenderAudioStream(ref left_sample, ref right_sample);
+
+        inout_buffer[sample_pos++] += left_sample / 3;
+        inout_buffer[sample_pos++] += right_sample / 3;
       }
     }
-
-    private void RenderSN76489Audio(int[] inout_buffer, int in_start_sample_index, int in_end_sample_index)
-    {
-      int sample_pos = in_start_sample_index * 2;
-
-      // render samples
-      for (int sample_index = in_start_sample_index; sample_index < in_end_sample_index; sample_index++)
-      {
-        m_SN76489.RenderAudioStream(ref inout_buffer[sample_pos], ref inout_buffer[sample_pos+1]);
-        sample_pos += 2;
-      }
-    }
-
   }
 }

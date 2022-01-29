@@ -20,6 +20,7 @@
 // ----------------
 // Multi Channel Audio Manager Class
 ///////////////////////////////////////////////////////////////////////////////
+using System.Threading;
 using System.Windows;
 using YATE.Drivers;
 using YATE.Forms;
