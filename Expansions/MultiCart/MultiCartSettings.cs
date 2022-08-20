@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2019-2020 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2019-2022 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -30,9 +30,11 @@ namespace MultiCart
   {
     private string m_ROM1_file_name;
     private string m_ROM2_file_name;
+    private int m_RAM_size;
 
     public string ROM1FileName { get { return m_ROM1_file_name; } set { m_ROM1_file_name = value; OnPropertyChanged(); } }
     public string ROM2FileName { get { return m_ROM2_file_name; } set { m_ROM2_file_name = value; OnPropertyChanged(); } }
+    public int RAMSize { get { return m_RAM_size; } set { m_RAM_size = value; OnPropertyChanged(); } }
 
     public MultiCartSettings() : base(SettingsCategory.TVC, ExpansionMain.ModuleName)
     {
@@ -45,6 +47,8 @@ namespace MultiCart
 
       ROM1FileName = "";
       ROM2FileName = "";
+
+      RAMSize = 3;
     }
 
     #region · INotifyPropertyChanged Members ·

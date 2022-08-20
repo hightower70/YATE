@@ -83,6 +83,19 @@ namespace MultiCart
     {
       in_computer.RemoveCartridge();
     }
+
+    /// <summary>
+    /// Called when settings has been changed
+    /// </summary>
+    public override void SettingsChanged(ref bool in_restart_tvc)
+    {
+      // update settings
+      Settings = ParentManager.Settings.GetSettings<MultiCartSettings>(ExpansionIndex);
+
+      // activate settings
+      if (m_multicart.SetSettings((MultiCartSettings)Settings))
+        in_restart_tvc = true;
+    }
   }
 }
 

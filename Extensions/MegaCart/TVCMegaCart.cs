@@ -23,15 +23,10 @@ namespace MegaCart
     {
       m_settings = in_settings;
 
-      // load ROM
-      Rom = new byte[MaxCartRomSize];
-      for (int i = 0; i < Rom.Length; i++)
-        Rom[i] = 0xff;
+       // initialize members
+      m_page_register = 0;
 
       bool settings_changed = LoadROMContent(m_settings.ROMFileName, 0);
-
-      // initialize members
-      m_page_register = 0;
 
       return settings_changed;
     }
@@ -39,10 +34,14 @@ namespace MegaCart
     private bool LoadROMContent(string in_rom_file_name, int in_address)
     {
       bool changed = false;
-      byte[] old_rom = null;
 
       // save old rom
-      old_rom = Rom;
+      byte[] old_rom = Rom;
+
+      // load ROM
+      Rom = new byte[MaxCartRomSize];
+      for (int i = 0; i < Rom.Length; i++)
+        Rom[i] = 0xff;
 
       ROMFile.LoadMemoryFromFile(in_rom_file_name, Rom);
 
@@ -53,7 +52,13 @@ namespace MegaCart
 
     public byte MemoryRead(ushort in_address)
     {
-      return Rom[in_address + (m_page_register << 14)];
+      byte retval = Rom[in_address + (m_page_register << 14)];
+
+      // emulate hw bug
+      //if ((in_address & PAGE_REGISTER_ADDRESS_MASK) >= PAGE_REGISTER_MIN_ADDRESS)
+      //  m_page_register = (byte)(retval & PAGE_REGISTER_MASK); 
+
+      return retval;
     }
 
     public void MemoryWrite(ushort in_address, byte in_byte)

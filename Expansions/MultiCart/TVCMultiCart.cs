@@ -21,12 +21,18 @@ namespace Multicart
     private int m_register_start_address = 0;
     private bool m_ram_select = false;
     private bool m_register_locked = false;
+    private int m_ram_size;
 
     private int m_chip_id_sequence;
     private bool m_chip_id_mode;
 
-    public void SetSettings(MultiCartSettings in_settings)
+    public bool SetSettings(MultiCartSettings in_settings)
     {
+      bool restart_tvc = false;
+
+      if (m_settings != null && m_settings.RAMSize != in_settings.RAMSize)
+        restart_tvc = true;
+
       m_settings = in_settings;
 
       // load ROM
@@ -48,6 +54,10 @@ namespace Multicart
       m_register_locked = false;
       m_chip_id_sequence = 0;
       m_chip_id_mode = false;
+
+      m_ram_size = (int)(64 * 1024 * Math.Pow(2, m_settings.RAMSize));
+
+      return restart_tvc;
     }
 
     private void LoadROMContent(string in_rom_file_name, int in_address)
@@ -88,7 +98,9 @@ namespace Multicart
 
         if (m_ram_select)
         {
-          return Ram[(m_page_start_address + in_address) & RamAddressMask];
+          int address = (m_page_start_address + in_address) & RamAddressMask;
+          address %= m_ram_size;
+          return Ram[address];
         }
         else
           return Rom[m_page_start_address + in_address];
@@ -105,7 +117,9 @@ namespace Multicart
       {
         if (m_ram_select)
         {
-          Ram[(m_page_start_address + in_address) & RamAddressMask] = in_byte;
+          int address = (m_page_start_address + in_address) & RamAddressMask;
+          address %= m_ram_size;
+            Ram[address] = in_byte;
         }
         else
         {

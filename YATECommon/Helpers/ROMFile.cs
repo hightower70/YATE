@@ -62,7 +62,7 @@ namespace YATECommon.Helpers
 
           // fill the remaining bytes with 0xFF
           while (length < in_memory.Length)
-            in_memory[length] = 0xff;
+            in_memory[length++] = 0xff;
         }
         catch
         {
