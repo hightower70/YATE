@@ -93,6 +93,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Dialogs\AboutDialog.xaml.cs">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Forms\BreakpointSetForm.xaml.cs">
       <DependentUpon>BreakpointSetForm.xaml</DependentUpon>
     </Compile>
@@ -208,6 +211,10 @@
     <Compile Include="Settings\SetupTVCConfigurationDataProvider.cs" />
     <None Include="YATE_1_TemporaryKey.pfx" />
     <None Include="YATE_TemporaryKey.pfx" />
+    <Page Include="Dialogs\AboutDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Dialogs\AddExpansionDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

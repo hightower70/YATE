@@ -333,5 +333,14 @@ namespace YATE.Forms
 
       form.Show();
     }
+
+    private void miAbout_Click(object sender, RoutedEventArgs e)
+    {
+      AboutDialog dialog = new AboutDialog();
+
+      dialog.Owner = this;
+
+      dialog.ShowDialog();
+    }
   }
 }

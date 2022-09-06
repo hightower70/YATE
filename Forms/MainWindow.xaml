@@ -102,7 +102,7 @@
 				<MenuItem x:Name="miOptions" Header="Options" Click="miOptions_Click" />
 			</MenuItem>
 			
-			<MenuItem Header="_Help" HorizontalAlignment="Right">
+			<MenuItem Header="_Help" HorizontalAlignment="Right" Click="miAbout_Click">
 				<MenuItem Header="_About" />
 			</MenuItem>
 		</Menu>
