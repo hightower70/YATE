@@ -80,7 +80,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoundQuartett", "Expansions
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MegaCart", "MegaCart", "{E0CDB784-01DB-433D-8A4E-36F30C8607F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MegaCart", "Extensions\MegaCart\MegaCart.csproj", "{E017B698-5AF9-436A-BB35-2C5E5ADCF4FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MegaCart", "Expansions\MegaCart\MegaCart.csproj", "{E017B698-5AF9-436A-BB35-2C5E5ADCF4FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
