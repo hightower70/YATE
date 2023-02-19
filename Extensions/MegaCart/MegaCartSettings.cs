@@ -28,9 +28,8 @@ namespace MegaCart
 {
   public class MegaCartSettings : ExpansionSettingsBase, INotifyPropertyChanged
   {
-    private string m_rom_file_name;
-
-    public string ROMFileName { get { return m_rom_file_name; } set { m_rom_file_name = value; OnPropertyChanged(); } }
+    private string m_ROM_file_name;
+    public string ROMFileName { get { return m_ROM_file_name; } set { m_ROM_file_name = value; OnPropertyChanged(); } }
 
     public MegaCartSettings() : base(SettingsCategory.TVC, ExpansionMain.ModuleName)
     {

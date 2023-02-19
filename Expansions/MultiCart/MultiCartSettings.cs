@@ -31,9 +31,11 @@ namespace MultiCart
     private string m_ROM1_file_name;
     private string m_ROM2_file_name;
     private int m_RAM_size;
+    private bool m_autosave_flash_content;
 
     public string ROM1FileName { get { return m_ROM1_file_name; } set { m_ROM1_file_name = value; OnPropertyChanged(); } }
     public string ROM2FileName { get { return m_ROM2_file_name; } set { m_ROM2_file_name = value; OnPropertyChanged(); } }
+    public bool AutosaveFlashContent { get { return m_autosave_flash_content; } set { m_autosave_flash_content = value; OnPropertyChanged(); } }
     public int RAMSize { get { return m_RAM_size; } set { m_RAM_size = value; OnPropertyChanged(); } }
 
     public MultiCartSettings() : base(SettingsCategory.TVC, ExpansionMain.ModuleName)
@@ -47,6 +49,8 @@ namespace MultiCart
 
       ROM1FileName = "";
       ROM2FileName = "";
+
+      m_autosave_flash_content = true;
 
       RAMSize = 3;
     }

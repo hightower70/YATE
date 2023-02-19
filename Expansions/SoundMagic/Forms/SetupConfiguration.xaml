@@ -11,7 +11,7 @@
 	<UserControl.Resources>
 		<ResourceDictionary Source="pack://application:,,,/DarkSkin;component/MetroDarkStyle.xaml" />
 	</UserControl.Resources>
-	<Grid>
+	<Grid Background="{DynamicResource Background}">
 		<Grid Margin="5">
 			<Grid.RowDefinitions>
 				<RowDefinition Height="35"/>
@@ -29,23 +29,20 @@
 
 			<!-- ROM settings -->
 			<cc:Title Grid.Row="0" Grid.ColumnSpan="2" Text="ROM Files"/>
-			<TextBlock Grid.Row="1" Grid.Column="0" Text="ROM1 File:" VerticalAlignment="Center"/>
+			<TextBlock Grid.Row="1" Grid.Column="0" Text="ROM File:" VerticalAlignment="Center"/>
 			<Grid Grid.Row="1" Grid.Column="1" >
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition/>
 					<ColumnDefinition Width="30"/>
 				</Grid.ColumnDefinitions>
-				<TextBox  Grid.Column="0" Text="{Binding Settings.ROM1FileName}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-				<Button x:Name="bROM1Browse" Grid.Column="1" Margin="3" Content="..." Width="22" />
+				<TextBox  Grid.Column="0" Text="{Binding Settings.ROMFileName}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
+				<Button x:Name="bROMBrowse" Grid.Column="1" Margin="0,3,4,3" Content="..." Width="22" HorizontalAlignment="Right" Click="BROMBrowse_Click" />
 			</Grid>
-			<TextBlock Grid.Row="2" Grid.Column="0" Text="ROM2 File:" VerticalAlignment="Center"/>
 			<Grid Grid.Row="2" Grid.Column="1" >
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition/>
 					<ColumnDefinition Width="30"/>
 				</Grid.ColumnDefinitions>
-				<TextBox  Grid.Column="0" Text="{Binding Settings.ROM2FileName}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
-				<Button x:Name="bROM2Browse" Grid.Column="1" Margin="4,3,4,0" Content="..." Width="22" Height="24" VerticalAlignment="Top" />
 			</Grid>
 		</Grid>
 	</Grid>

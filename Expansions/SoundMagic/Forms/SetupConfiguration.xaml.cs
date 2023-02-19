@@ -28,6 +28,26 @@ namespace SoundMagic.Forms
       m_data_provider.Save();
     }
 
+    private void BROMBrowse_Click(object sender, RoutedEventArgs e)
+    {
+      Microsoft.Win32.OpenFileDialog dlg = CreateFileDialog();
+
+      if (!string.IsNullOrEmpty(m_data_provider.Settings.ROMFileName))
+      {
+        dlg.InitialDirectory = Path.GetDirectoryName(m_data_provider.Settings.ROMFileName);
+      }
+
+      // Show open file dialog box
+      bool? result = null;
+      result = dlg.ShowDialog();
+
+      // Process open file dialog box results
+      if (result == true)
+      {
+        m_data_provider.Settings.ROMFileName = dlg.FileName;
+      }
+    }
+
     private Microsoft.Win32.OpenFileDialog CreateFileDialog()
     {
       Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog
@@ -37,5 +57,7 @@ namespace SoundMagic.Forms
 
       return dlg;
     }
+
+    
   }
 }

@@ -68,7 +68,7 @@ namespace SoundMagic
     /// <param name="in_computer"></param>
     public override void Install(ITVComputer in_computer)
     {
-      m_sound_magic = new SoundMagicCard();
+      m_sound_magic = new SoundMagicCard(this);
       m_sound_magic.SetSettings((SoundMagicSettings)Settings);
       in_computer.InsertCard(((SoundMagicSettings)Settings).SlotIndex, m_sound_magic);
     }
@@ -80,6 +80,19 @@ namespace SoundMagic
     public override void Remove(ITVComputer in_computer)
     {
       m_sound_magic.Remove(in_computer);
+    }
+
+    /// <summary>
+    /// Called when settings has been changed
+    /// </summary>
+    public override void SettingsChanged(ref bool in_restart_tvc)
+    {
+      // update settings
+      Settings = ParentManager.Settings.GetSettings<SoundMagicSettings>(ExpansionIndex);
+
+      // activate settings
+      if (m_sound_magic.SetSettings((SoundMagicSettings)Settings))
+        in_restart_tvc = true;
     }
   }
 }

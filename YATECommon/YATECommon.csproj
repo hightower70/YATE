@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Chips\AY8910.cs" />
+    <Compile Include="Chips\SST39SF040.cs" />
     <Compile Include="Chips\YM3812.cs" />
     <Compile Include="Chips\I8251.cs" />
     <Compile Include="Chips\I8255.cs" />

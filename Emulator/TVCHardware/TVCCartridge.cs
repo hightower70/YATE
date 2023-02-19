@@ -107,7 +107,7 @@ namespace YATE.Emulator.TVCHardware
     /// </summary>
     public void Remove(ITVComputer in_parent)
     {
-      // no remove
+      // non relevant
     }
 
     /// <summary>
@@ -148,6 +148,11 @@ namespace YATE.Emulator.TVCHardware
       {
         Memory[i] = 0xff;
       }
+    }
+
+    public void PeriodicCallback(ulong in_cpu_tick)
+    { 
+      // non relevant
     }
   }
 }

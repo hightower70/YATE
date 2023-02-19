@@ -17,8 +17,8 @@
 				<RowDefinition Height="35"/>
 				<RowDefinition Height="30"/>
 				<RowDefinition Height="30"/>
-				<RowDefinition Height="35"/>
 				<RowDefinition Height="30"/>
+				<RowDefinition Height="35"/>
 				<RowDefinition Height="30"/>
 				<RowDefinition Height="49*"/>
 			</Grid.RowDefinitions>
@@ -47,11 +47,12 @@
 				<TextBox  Grid.Column="0" Text="{Binding Settings.ROM2FileName}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
 				<Button x:Name="bROM2Browse" Grid.Column="1" Margin="4,3,4,0" Content="..." Width="22" Height="24" VerticalAlignment="Top" Click="BROM2Browse_Click"/>
 			</Grid>
+			<CheckBox Grid.Row="3" Grid.Column="1" Margin="4,3,4,0" Content="Autosave FLASH ROM content" IsChecked="{Binding Settings.AutosaveFlashContent}"/>
 
 			<!-- RAM Settings -->
-			<cc:Title Grid.Row="3" Grid.ColumnSpan="2" Text="RAM Settings"/>
-			<TextBlock Grid.Row="4" Grid.Column="0" Text="RAM Size:" VerticalAlignment="Center"/>
-			<ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="cbRAMSize"  Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding RAMSizeList}" SelectedIndex="{Binding Settings.RAMSize}" />
+			<cc:Title Grid.Row="4" Grid.ColumnSpan="2" Text="RAM Settings"/>
+			<TextBlock Grid.Row="5" Grid.Column="0" Text="RAM Size:" VerticalAlignment="Center"/>
+			<ComboBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" x:Name="cbRAMSize"  Margin="5,3,5,3" VerticalContentAlignment="Center" ItemsSource="{Binding RAMSizeList}" SelectedIndex="{Binding Settings.RAMSize}" />
 		</Grid>
 	</Grid>
 </sp:SetupPageBase>

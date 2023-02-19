@@ -1,4 +1,26 @@
-﻿using System;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2013-2023 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// ROM File helper functions (load, save, compare)
+///////////////////////////////////////////////////////////////////////////////
+using System;
 using System.IO;
 using System.Reflection;
 
@@ -8,7 +30,19 @@ namespace YATECommon.Helpers
   /// Binary ROM file handling helpers
   /// </summary>
   public class ROMFile
-  {
+  {        
+    /// <summary>
+    /// Fills memory with the given value
+    /// </summary>
+    /// <param name="in_memory">Memory to fill in</param>
+    /// <param name="in_data">Value for filling (0xff is the default)</param>
+    public static void FillMemory(byte[] in_memory, byte in_data=0xff)
+    {
+      for (int i = 0; i < in_memory.Length; i++)
+        in_memory[i] = in_data;
+    }
+
+
     /// <summary>
     /// Loads binary content from the given resource file
     /// </summary>
@@ -68,6 +102,28 @@ namespace YATECommon.Helpers
         {
           success = false;
         }
+      }
+
+      return success;
+    }
+
+    /// <summary>
+    /// Saves memory content to a binary file
+    /// </summary>
+    /// <param name="in_file_name">Name of the file</param>
+    /// <param name="in_memory">Memory array</param>
+    /// <returns></returns>
+    public static bool SaveMemoryToFile( string in_file_name, byte[] in_memory)
+    {
+      bool success = true;
+
+      try
+      {
+        File.WriteAllBytes(in_file_name, in_memory);
+      }
+      catch
+      {
+        success = false;
       }
 
       return success;

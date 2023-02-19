@@ -230,7 +230,7 @@ namespace YATECommon.Chips
 			}
 
 			// handle noise divisor (counter)
-			if ((m_noise_control & 3) != 3)
+			//if ((m_noise_control & 3) != 3)
 			{
 				noise_register_shift_count = 0;
 
@@ -239,20 +239,24 @@ namespace YATECommon.Chips
 					switch (m_noise_control & 3)
 					{
 						case 0:
-							noise_divisor = 512;
+							noise_divisor = 2 * CLOCK_DIVISOR * 16;
 							break;
 
 						case 1:
-							noise_divisor = 1024;
+							noise_divisor = 4 * CLOCK_DIVISOR * 16;
 							break;
 
 						case 2:
-							noise_divisor = 2048;
+							noise_divisor = 8 * CLOCK_DIVISOR * 16;
 							break;
 
-						default:
-							noise_divisor = 2048;
-							break;
+            case 3:
+              noise_divisor = (ushort)(m_frequency[2] * CLOCK_DIVISOR * 2);
+              break;
+
+            default:
+              noise_divisor = 2048;
+              break;
 					}
 
 					m_noise_counter = (ushort)(noise_divisor / CLOCK_DIVISOR + m_noise_counter - clock_cycles);

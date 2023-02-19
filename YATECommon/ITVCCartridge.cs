@@ -34,6 +34,7 @@ namespace YATECommon
 		// Cartridge maintenance functions
 		void Initialize(ITVComputer in_parent);							// initializes cartridge (cartridge installation)
 		void Remove(ITVComputer in_parent);									// removes cartridge (cartridge removal)
-		void Reset();																				// Computer reset
-	}
+		void Reset();                                       // Computer reset
+    void PeriodicCallback(ulong in_cpu_tick);           // Called periodically by the emulator core
+  }
 }

@@ -11,7 +11,7 @@
 	<UserControl.Resources>
 		<ResourceDictionary Source="pack://application:,,,/DarkSkin;component/MetroDarkStyle.xaml" />
 	</UserControl.Resources>
-	<Grid Margin="5">
+	<Grid Background="{DynamicResource Background}" Margin="5">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="35"/>
 			<RowDefinition Height="30"/>

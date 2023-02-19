@@ -20,13 +20,17 @@
 // ----------------
 // SoundMagic card configuration
 ///////////////////////////////////////////////////////////////////////////////
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using YATECommon.Settings;
 
 namespace SoundMagic
 {
   public class SoundMagicSettings : CardSettingsBase
   {
+    private string m_rom_file_name;
 
+    public string ROMFileName { get { return m_rom_file_name; } set { m_rom_file_name = value; OnPropertyChanged(); } }
 
     public SoundMagicSettings() : base(SettingsCategory.TVC, ExpansionMain.ModuleName)
     {
@@ -37,6 +41,18 @@ namespace SoundMagic
     {
       base.SetDefaultValues();
 
+      ROMFileName = "";
     }
+
+    #region · INotifyPropertyChanged Members ·
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    #endregion
   }
 }

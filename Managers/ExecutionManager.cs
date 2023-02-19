@@ -12,7 +12,7 @@ namespace YATE.Managers
   public class ExecutionManager : IExecutionManager, IDisposable
 	{
 		#region · Constants · 
-		private int DebugEventPeriod = 200; // Debug event preiod in ms
+		private int DebugEventPeriod = 200; // Debug event period in ms
 		#endregion
 
 		#region · Types · 

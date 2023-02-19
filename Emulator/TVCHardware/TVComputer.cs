@@ -196,6 +196,8 @@ namespace YATE.Emulator.TVCHardware
 				if (Cards[i] != null)
 					Cards[i].PeriodicCallback(CPU.TotalTState);
 			}
+
+      Cartridge.PeriodicCallback(CPU.TotalTState);
 		}
 
 		/// <summary>

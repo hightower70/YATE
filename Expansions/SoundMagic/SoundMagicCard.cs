@@ -1,8 +1,28 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2013-2023 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// Sound Magic main amulation class
+///////////////////////////////////////////////////////////////////////////////
 using YATECommon;
 using YATECommon.Chips;
+using YATECommon.Helpers;
 
 namespace SoundMagic
 {
@@ -14,10 +34,12 @@ namespace SoundMagic
     const int YM_CLOCK = 3579545;
 
     private ITVComputer m_tvcomputer;
-    private SoundMagicSettings m_settings;
+    private ExpansionMain m_expansion_main;
 
     private byte m_page_register = 0xff;
     private byte[] m_card_rom;
+
+    public SoundMagicSettings Settings { get; private set; }
 
     private int m_audio_channel_index;
 
@@ -25,9 +47,10 @@ namespace SoundMagic
     private SAA1099 m_SAA1099;
     private YM3812 m_YM3812;
 
-    public SoundMagicCard() 
+    public SoundMagicCard(ExpansionMain in_expansion_main)
     {
       uint sample_rate = TVCManagers.Default.AudioManager.SampleRate;
+      m_expansion_main = in_expansion_main;
 
       m_SN76489 = new SN76489();
       m_SN76489.Initialize(sample_rate, SN_CLOCK);
@@ -39,56 +62,46 @@ namespace SoundMagic
       m_YM3812.Initialize(YM_CLOCK);
     }
 
-    public void SetSettings(SoundMagicSettings in_settings)
+    public bool SetSettings(SoundMagicSettings in_settings)
     {
-      m_settings = in_settings;
+      Settings = in_settings;
 
-      // load ROM
-      m_card_rom = new byte[RomSize];
-      for (int i = 0; i < m_card_rom.Length; i++)
-        m_card_rom[i] = 0xff;
+      // load ROM content
+      bool settings_changed = LoadROM();
 
-      LoadCardRomFromResource("SoundMagic.Resources.sndmx-fw-v1.0.1.bin");
+      return settings_changed;
     }
 
-    private void LoadROMContent(string in_rom_file_name)
+    public void StoreSettings()
     {
-      if (!string.IsNullOrEmpty(in_rom_file_name))
-      {
-        byte[] data = File.ReadAllBytes(in_rom_file_name);
-
-        int length = data.Length;
-
-        if (data.Length > m_card_rom.Length)
-          length = m_card_rom.Length;
-
-        Array.Copy(data, 0, m_card_rom, 0, length);
-      }
+      m_expansion_main.ParentManager.Settings.SetSettings(Settings);
     }
 
     /// <summary>
-    /// Loads card ROM content from the given resource file
+    /// Loads ROM content of the file
     /// </summary>
-    /// <param name="in_resource_name"></param>
-    public void LoadCardRomFromResource(string in_resource_name)
+    /// <returns></returns>
+    private bool LoadROM()
     {
-      // load default key mapping
-      Assembly assembly = Assembly.GetExecutingAssembly();
+      bool changed = false;
+      byte[] old_rom = m_card_rom;       // save old rom content
 
-      using (Stream stream = assembly.GetManifestResourceStream(in_resource_name))
+      // load ROM
+      m_card_rom = new byte[RomSize];
+      ROMFile.FillMemory(m_card_rom);
+
+      if (string.IsNullOrEmpty(Settings.ROMFileName))
       {
-        using (BinaryReader binary_reader = new BinaryReader(stream))
-        {
-          byte[] data = binary_reader.ReadBytes((int)stream.Length);
-
-          int byte_to_copy = data.Length;
-
-          if (byte_to_copy > m_card_rom.Length)
-            byte_to_copy = m_card_rom.Length;
-
-          Array.Copy(data, 0, m_card_rom, 0, byte_to_copy);
-        }
+        ROMFile.LoadMemoryFromResource("SoundMagic.Resources.sndmx-fw-v1.0.1.bin", m_card_rom);
       }
+      else
+      {
+        ROMFile.LoadMemoryFromFile(Settings.ROMFileName, m_card_rom);
+      }
+
+      changed = !ROMFile.IsMemoryEqual(old_rom, m_card_rom);
+
+      return changed;
     }
 
     public byte MemoryRead(ushort in_address)
