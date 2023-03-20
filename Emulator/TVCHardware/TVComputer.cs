@@ -250,6 +250,7 @@ namespace YATE.Emulator.TVCHardware
 		{
       // insert cartridge
       Cartridge = in_cartridge;
+			Cartridge.Initialize(this);
 		}
 
 		/// <summary>
@@ -257,6 +258,10 @@ namespace YATE.Emulator.TVCHardware
 		/// </summary>
 		public void RemoveCartridge()
 		{
+			// remove old cartridge
+			if (Cartridge != null)
+				Cartridge.Remove(this);
+
       // restore original cartridge
       Cartridge = new TVCCartridge();
       Cartridge.Initialize(this);

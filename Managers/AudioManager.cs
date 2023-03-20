@@ -205,24 +205,28 @@ namespace YATE.Managers
       {
         ChannelInfo channel_info = m_channels[in_channel_index];
 
-        ulong tick_count = in_target_tick - channel_info.TickPosition;
-
-        int sample_count = (int)(tick_count * SampleRate / cpu_clock);
-
-        // maximize sample count to buffer length
-        if (channel_info.SamplePosition + sample_count > AudioBufferSampleLength)
+        if (channel_info.RenderingMethod != null)
         {
-          sample_count = AudioBufferSampleLength - channel_info.SamplePosition;
-        }
 
-        if (sample_count > 0)
-        {
-          int end_sample_position = channel_info.SamplePosition + sample_count;
+          ulong tick_count = in_target_tick - channel_info.TickPosition;
 
-          channel_info?.RenderingMethod(m_rendering_buffer, channel_info.SamplePosition, end_sample_position);
+          int sample_count = (int)(tick_count * SampleRate / cpu_clock);
 
-          channel_info.SamplePosition = end_sample_position;
-          channel_info.TickPosition += (ulong)sample_count * cpu_clock / SampleRate;
+          // maximize sample count to buffer length
+          if (channel_info.SamplePosition + sample_count > AudioBufferSampleLength)
+          {
+            sample_count = AudioBufferSampleLength - channel_info.SamplePosition;
+          }
+
+          if (sample_count > 0)
+          {
+            int end_sample_position = channel_info.SamplePosition + sample_count;
+
+            channel_info?.RenderingMethod(m_rendering_buffer, channel_info.SamplePosition, end_sample_position);
+
+            channel_info.SamplePosition = end_sample_position;
+            channel_info.TickPosition += (ulong)sample_count * cpu_clock / SampleRate;
+          }
         }
       }
     }

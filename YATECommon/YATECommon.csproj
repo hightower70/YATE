@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>YATECommon</RootNamespace>
     <AssemblyName>YATECommon</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -38,6 +38,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -58,8 +59,15 @@
     <Compile Include="Drivers\Joystick.cs" />
     <Compile Include="Drivers\JoystickNative.cs" />
     <Compile Include="Drivers\JoystickState.cs" />
+    <Compile Include="Helpers\EnumValueDescription.cs" />
+    <Compile Include="Helpers\EnumValueExtension.cs" />
+    <Compile Include="Helpers\IntegerExpressionEvaluator.cs" />
+    <Compile Include="Helpers\IntergerExpresionEvaluatorException.cs" />
     <Compile Include="Helpers\ROMFile.cs" />
+    <Compile Include="IDebuggableMemory.cs" />
+    <Compile Include="ITVCDebugger.cs" />
     <Compile Include="ITVCPorts.cs" />
+    <Compile Include="Settings\IndexedEmulatorSettingsBase.cs" />
     <Compile Include="TVCJoystick.cs" />
     <Compile Include="Drivers\JoystickChannel.cs" />
     <Compile Include="Expansions\ExpansionBase.cs" />
@@ -92,6 +100,7 @@
     <Compile Include="TVCCharacterCodePage.cs" />
     <Compile Include="Files\TVCFiles.cs" />
     <Compile Include="TVCManagers.cs" />
+    <Compile Include="TVCMemoryType.cs" />
     <Compile Include="TVComputerConstants.cs" />
   </ItemGroup>
   <ItemGroup>

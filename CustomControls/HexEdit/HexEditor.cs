@@ -67,10 +67,10 @@
     /// <summary>
     /// Defines the data source which is used to read the data to display within this control.
     /// </summary>
-    public static readonly DependencyProperty DataSourceProperty =
-        DependencyProperty.Register(nameof(DataSource), typeof(BinaryReader), typeof(HexEditor),
-            new FrameworkPropertyMetadata(OnDataSourceChanged));
-
+    public static readonly DependencyProperty DataProviderProperty =
+        DependencyProperty.Register(nameof(DataProvider), typeof(IHexEditorDataProvider), typeof(HexEditor),
+            new FrameworkPropertyMetadata(OnDataProviderChanged));
+                               
     /// <summary>
     /// Defines the type of the data to display.
     /// </summary>
@@ -205,7 +205,7 @@
     private double lastVerticalScrollValue = 0;
 
     private ScrollBar verticalScrollBar;
-
+   
     #endregion
 
     /// <summary>
@@ -214,6 +214,12 @@
     static HexEditor()
     {
       DefaultStyleKeyProperty.OverrideMetadata(typeof(HexEditor), new FrameworkPropertyMetadata(typeof(HexEditor)));
+    }
+
+
+    public void Refresh()
+    {
+      InvalidateVisual();
     }
 
     /// <inheritdoc/>
@@ -233,7 +239,7 @@
     public static RoutedUICommand CopyCommand => ApplicationCommands.Copy;
 
     /// <summary>
-    /// Gets or sets the address at which the data in the <see cref="DataSource"/> begins.
+    /// Gets or sets the address at which the data in the <see cref="DataProvider"/> begins.
     /// </summary>
     public ulong Address
     {
@@ -301,12 +307,12 @@
     /// <summary>
     /// Gets or sets the data source which is used to read the data to display within this control.
     /// </summary>
-    public BinaryReader DataSource
+    public IHexEditorDataProvider DataProvider
     {
-      get => (BinaryReader)GetValue(DataSourceProperty);
+      get => (IHexEditorDataProvider)GetValue(DataProviderProperty);
 
-      set => SetValue(DataSourceProperty, value);
-    }
+      set => SetValue(DataProviderProperty, value);
+    }    
 
     /// <summary>
     /// Gets or sets the type of the data to display.
@@ -354,7 +360,7 @@
     }
 
     /// <summary>
-    /// Gets or sets the offset from the <see cref="DataSource"/> of the first visible data element being displayed.
+    /// Gets or sets the offset from the <see cref="DataProvider"/> of the first visible data element being displayed.
     /// </summary>
     public long Offset
     {
@@ -369,7 +375,7 @@
     public ulong SelectedAddress => Address + (ulong)SelectedOffset;
 
     /// <summary>
-    /// Gets the offset from <see cref="DataSource"/> of the <see cref="SelectedAddress"/>.
+    /// Gets the offset from <see cref="DataProvider"/> of the <see cref="SelectedAddress"/>.
     /// </summary>
     public long SelectedOffset => Math.Min(SelectionStart, SelectionEnd);
 
@@ -384,7 +390,7 @@
     }
 
     /// <summary>
-    /// Gets the offset from <see cref="DataSource"/> of where the user selection has ended.
+    /// Gets the offset from <see cref="DataProvider"/> of where the user selection has ended.
     /// </summary>
     public long SelectionEnd
     {
@@ -412,7 +418,7 @@
     }
 
     /// <summary>
-    /// Gets the offset from <see cref="DataSource"/> of where the user selection has started.
+    /// Gets the offset from <see cref="DataProvider"/> of where the user selection has started.
     /// </summary>
     public long SelectionStart
     {
@@ -492,18 +498,18 @@
       {
         StringBuilder builder = new StringBuilder();
 
-        long savedDataSourcePositionBeforeReadingData = DataSource.BaseStream.Position;
+        long savedDataSourcePositionBeforeReadingData = DataProvider.Position;
 
-        DataSource.BaseStream.Position = Math.Min(SelectionStart, SelectionEnd);
+        DataProvider.Position = Math.Min(SelectionStart, SelectionEnd);
 
-        while (DataSource.BaseStream.Position < Math.Max(SelectionStart, SelectionEnd))
+        while (DataProvider.Position < Math.Max(SelectionStart, SelectionEnd))
         {
           var formattedData = ReadFormattedData();
 
           builder.Append(formattedData);
         }
 
-        DataSource.BaseStream.Position = savedDataSourcePositionBeforeReadingData;
+        DataProvider.Position = savedDataSourcePositionBeforeReadingData;
 
         Clipboard.SetText(builder.ToString());
       }
@@ -590,7 +596,7 @@
               if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
               {
                 SelectionStart = 0;
-                SelectionEnd = DataSource.BaseStream.Length;
+                SelectionEnd = DataProvider.Length;
 
                 e.Handled = true;
               }
@@ -631,7 +637,7 @@
             {
               if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
               {
-                SelectionEnd = DataSource.BaseStream.Length;
+                SelectionEnd = DataProvider.Length;
 
                 if (!Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift))
                 {
@@ -934,12 +940,12 @@
 
       canvas.Children.Clear();
 
-      if (DataSource != null)
+      if (DataProvider != null)
       {
-        long savedDataSourcePosition = DataSource.BaseStream.Position;
+        long savedDataSourcePosition = DataProvider.Position;
 
         // Adjust the data source position based on the current offset
-        DataSource.BaseStream.Position = Offset;
+        DataProvider.Position = Offset;
 
         DrawingVisual drawingVisual = new DrawingVisual();
 
@@ -1039,7 +1045,7 @@
 
           Typeface cachedTypeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
 
-          var headerFormattedText = new FormattedText(GetFormattedHeader(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Brushes.Gray);
+          var headerFormattedText = new FormattedText(GetFormattedHeader(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Brushes.Gray, VisualTreeHelper.GetDpi(this).PixelsPerDip);
           drawingContext.DrawText(headerFormattedText, origin);
 
           origin.Y += cachedFormattedChar.Height;
@@ -1051,9 +1057,9 @@
           {
             if (ShowAddress)
             {
-              if (DataSource.BaseStream.Position + BytesPerColumn <= DataSource.BaseStream.Length)
+              if (DataProvider.Position + BytesPerColumn <= DataProvider.Length)
               {
-                ulong address = Address + (ulong)DataSource.BaseStream.Position;
+                ulong address = Address + (ulong)DataProvider.Position;
 
                 ulong ho32Bit = (address + AddressOffset) >> 32;
                 ulong lo32Bit = (address + AddressOffset) & 0xFFFFFFFF;
@@ -1065,9 +1071,9 @@
                 FormattedText formattedText;
 
                 if (address >= selection_start_line_address && address <= selection_end_line_address)
-                  formattedText = new FormattedText(textToFormat, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Brushes.AliceBlue);
+                  formattedText = new FormattedText(textToFormat, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Brushes.AliceBlue, VisualTreeHelper.GetDpi(this).PixelsPerDip);
                 else
-                  formattedText = new FormattedText(textToFormat, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, AddressBrush);
+                  formattedText = new FormattedText(textToFormat, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, AddressBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
                 drawingContext.DrawText(formattedText, origin);
 
@@ -1075,7 +1081,7 @@
               }
             }
 
-            long savedDataSourcePositionBeforeReadingData = DataSource.BaseStream.Position;
+            long savedDataSourcePositionBeforeReadingData = DataProvider.Position;
 
             if (ShowData)
             {
@@ -1092,9 +1098,9 @@
               // Draw text up until selection start point
               while (column < Columns)
               {
-                if (DataSource.BaseStream.Position + BytesPerColumn <= DataSource.BaseStream.Length)
+                if (DataProvider.Position + BytesPerColumn <= DataProvider.Length)
                 {
-                  if (DataSource.BaseStream.Position >= SelectedOffset)
+                  if (DataProvider.Position >= SelectedOffset)
                   {
                     break;
                   }
@@ -1125,10 +1131,10 @@
                 ++column;
               }
 
-              var evenFormattedText = new FormattedText(evenColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Foreground);
+              var evenFormattedText = new FormattedText(evenColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Foreground, VisualTreeHelper.GetDpi(this).PixelsPerDip);
               drawingContext.DrawText(evenFormattedText, origin);
 
-              var oddFormattedText = new FormattedText(oddColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, AlternatingDataColumnTextBrush);
+              var oddFormattedText = new FormattedText(oddColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, AlternatingDataColumnTextBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
               drawingContext.DrawText(oddFormattedText, origin);
 
               origin.X += evenFormattedText.WidthIncludingTrailingWhitespace;
@@ -1141,9 +1147,9 @@
                 // Draw text starting from selection start point
                 while (column < Columns)
                 {
-                  if (DataSource.BaseStream.Position + BytesPerColumn <= DataSource.BaseStream.Length)
+                  if (DataProvider.Position + BytesPerColumn <= DataProvider.Length)
                   {
-                    if (DataSource.BaseStream.Position >= SelectedOffset + SelectionLength)
+                    if (DataProvider.Position >= SelectedOffset + SelectionLength)
                     {
                       break;
                     }
@@ -1161,7 +1167,7 @@
                   ++column;
                 }
 
-                evenFormattedText = new FormattedText(evenColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, SelectionTextBrush);
+                evenFormattedText = new FormattedText(evenColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, SelectionTextBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
                 drawingContext.DrawText(evenFormattedText, origin);
 
                 origin.X += evenFormattedText.WidthIncludingTrailingWhitespace;
@@ -1174,7 +1180,7 @@
                   // Draw text after end of selection
                   while (column < Columns)
                   {
-                    if (DataSource.BaseStream.Position + BytesPerColumn <= DataSource.BaseStream.Length)
+                    if (DataProvider.Position + BytesPerColumn <= DataProvider.Length)
                     {
                       var textToFormat = ReadFormattedData();
 
@@ -1202,10 +1208,10 @@
                     ++column;
                   }
 
-                  evenFormattedText = new FormattedText(evenColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Foreground);
+                  evenFormattedText = new FormattedText(evenColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Foreground, VisualTreeHelper.GetDpi(this).PixelsPerDip);
                   drawingContext.DrawText(evenFormattedText, origin);
 
-                  oddFormattedText = new FormattedText(oddColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, AlternatingDataColumnTextBrush);
+                  oddFormattedText = new FormattedText(oddColumnBuilder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, AlternatingDataColumnTextBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
                   drawingContext.DrawText(oddFormattedText, origin);
 
                   origin.X += evenFormattedText.WidthIncludingTrailingWhitespace;
@@ -1223,7 +1229,7 @@
               if (ShowData)
               {
                 // Reset the stream to read one byte at a time
-                DataSource.BaseStream.Position = savedDataSourcePositionBeforeReadingData;
+                DataProvider.Position = savedDataSourcePositionBeforeReadingData;
               }
 
               var builder = new StringBuilder(Columns * DataWidth);
@@ -1233,9 +1239,9 @@
               // Draw text up until selection start point
               while (column < Columns)
               {
-                if (DataSource.BaseStream.Position + BytesPerColumn <= DataSource.BaseStream.Length)
+                if (DataProvider.Position + BytesPerColumn <= DataProvider.Length)
                 {
-                  if (DataSource.BaseStream.Position >= SelectedOffset)
+                  if (DataProvider.Position >= SelectedOffset)
                   {
                     break;
                   }
@@ -1247,7 +1253,7 @@
                 ++column;
               }
 
-              var formattedText = new FormattedText(builder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Foreground);
+              var formattedText = new FormattedText(builder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Foreground, VisualTreeHelper.GetDpi(this).PixelsPerDip);
               drawingContext.DrawText(formattedText, origin);
 
               if (column < Columns)
@@ -1259,9 +1265,9 @@
                 // Draw text starting from selection start point
                 while (column < Columns)
                 {
-                  if (DataSource.BaseStream.Position + BytesPerColumn <= DataSource.BaseStream.Length)
+                  if (DataProvider.Position + BytesPerColumn <= DataProvider.Length)
                   {
-                    if (DataSource.BaseStream.Position >= SelectedOffset + SelectionLength)
+                    if (DataProvider.Position >= SelectedOffset + SelectionLength)
                     {
                       break;
                     }
@@ -1273,7 +1279,7 @@
                   ++column;
                 }
 
-                formattedText = new FormattedText(builder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, SelectionTextBrush);
+                formattedText = new FormattedText(builder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, SelectionTextBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
                 drawingContext.DrawText(formattedText, origin);
 
                 if (column < Columns)
@@ -1285,7 +1291,7 @@
                   // Draw text after end of selection
                   while (column < Columns)
                   {
-                    if (DataSource.BaseStream.Position + BytesPerColumn <= DataSource.BaseStream.Length)
+                    if (DataProvider.Position + BytesPerColumn <= DataProvider.Length)
                     {
                       var textToFormat = ReadFormattedText();
                       builder.Append(textToFormat);
@@ -1294,7 +1300,7 @@
                     ++column;
                   }
 
-                  formattedText = new FormattedText(builder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Foreground);
+                  formattedText = new FormattedText(builder.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, cachedTypeface, FontSize, Foreground, VisualTreeHelper.GetDpi(this).PixelsPerDip);
                   drawingContext.DrawText(formattedText, origin);
                 }
               }
@@ -1304,7 +1310,7 @@
             origin.Y += cachedFormattedChar.Height;
           }
 
-          DataSource.BaseStream.Position = savedDataSourcePosition;
+          DataProvider.Position = savedDataSourcePosition;
 
           drawingContext.Pop();
           drawingContext.Pop();
@@ -1379,7 +1385,7 @@
     {
       var hexViewer = (HexEditor)d;
 
-      if (hexViewer.DataSource != null)
+      if (hexViewer.DataProvider != null)
       {
         long selectionStart = (long)value;
 
@@ -1387,7 +1393,7 @@
         selectionStart -= selectionStart % hexViewer.BytesPerColumn;
 
         // Selection start cannot be at the end of the stream so adjust by data width number of bytes
-        value = selectionStart.Clamp(0, (hexViewer.DataSource.BaseStream.Length / hexViewer.BytesPerColumn * hexViewer.BytesPerColumn) - hexViewer.BytesPerColumn);
+        value = selectionStart.Clamp(0, (hexViewer.DataProvider.Length / hexViewer.BytesPerColumn * hexViewer.BytesPerColumn) - hexViewer.BytesPerColumn);
       }
       else
       {
@@ -1401,7 +1407,7 @@
     {
       var hexViewer = (HexEditor)d;
 
-      if (hexViewer.DataSource != null)
+      if (hexViewer.DataProvider!= null)
       {
         long selectionEnd = (long)value;
 
@@ -1409,7 +1415,7 @@
         selectionEnd -= selectionEnd % hexViewer.BytesPerColumn;
 
         // Unlike selection start the selection end can be at the end of the stream
-        value = selectionEnd.Clamp(0, hexViewer.DataSource.BaseStream.Length / hexViewer.BytesPerColumn * hexViewer.BytesPerColumn);
+        value = selectionEnd.Clamp(0, hexViewer.DataProvider.Length / hexViewer.BytesPerColumn * hexViewer.BytesPerColumn);
       }
       else
       {
@@ -1435,11 +1441,11 @@
     {
       var hexViewer = (HexEditor)d;
 
-      if (hexViewer.DataSource != null)
+      if (hexViewer.DataProvider != null)
       {
         long offset = (long)value;
 
-        value = offset.Clamp(0, hexViewer.DataSource.BaseStream.Length);
+        value = offset.Clamp(0, hexViewer.DataProvider.Length);
       }
       else
       {
@@ -1493,7 +1499,7 @@
       hexViewer.InvalidateVisual();
     }
 
-    private static void OnDataSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnDataProviderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
       var hexViewer = (HexEditor)d;
 
@@ -1529,7 +1535,7 @@
           {
             for (var k = 0; k < DataWidth; ++k)
             {
-              byte value = DataSource.ReadByte();
+              byte value = DataProvider.ReadByte();
 
               if (value > 31 && value < 127)
               {
@@ -1578,28 +1584,28 @@
                           {
                             case 1:
                               {
-                                //result = $"{DataSource.ReadSByte():+#;-#;0}".PadLeft(4);
+                                //result = $"{DataProvider.ReadSByte():+#;-#;0}".PadLeft(4);
                               }
 
                               break;
 
                             case 2:
                               {
-                                //result = $"{DataSource.ReadInt16():+#;-#;0}".PadLeft(6);
+                                //result = $"{DataProvider.ReadInt16():+#;-#;0}".PadLeft(6);
                               }
 
                               break;
 
                             case 4:
                               {
-                                //result = $"{DataSource.ReadInt32():+#;-#;0}".PadLeft(11);
+                                //result = $"{DataProvider.ReadInt32():+#;-#;0}".PadLeft(11);
                               }
 
                               break;
 
                             case 8:
                               {
-                                //result = $"{DataSource.ReadInt64():+#;-#;0}".PadLeft(21);
+                                //result = $"{DataProvider.ReadInt64():+#;-#;0}".PadLeft(21);
                               }
 
                               break;
@@ -1626,21 +1632,21 @@
 
                             case 2:
                               {
-                                //result = $"{DataSource.ReadUInt16()}".PadLeft(5);
+                                //result = $"{DataProvider.ReadUInt16()}".PadLeft(5);
                               }
 
                               break;
 
                             case 4:
                               {
-                                //result = $"{DataSource.ReadUInt32()}".PadLeft(10);
+                                //result = $"{DataProvider.ReadUInt32()}".PadLeft(10);
                               }
 
                               break;
 
                             case 8:
                               {
-                                //result = $"{DataSource.ReadUInt64()}".PadLeft(20);
+                                //result = $"{DataProvider.ReadUInt64()}".PadLeft(20);
                               }
 
                               break;
@@ -1676,21 +1682,21 @@
 
                       case 2:
                         {
-                          //result = $"{DataSource.ReadUInt16(),0:X4}";
+                          //result = $"{DataProvider.ReadUInt16(),0:X4}";
                         }
 
                         break;
 
                       case 4:
                         {
-                          //result = $"{DataSource.ReadUInt32(),0:X8}";
+                          //result = $"{DataProvider.ReadUInt32(),0:X8}";
                         }
 
                         break;
 
                       case 8:
                         {
-                          //result = $"{DataSource.ReadUInt64(),0:X16}";
+                          //result = $"{DataProvider.ReadUInt64(),0:X16}";
                         }
 
                         break;
@@ -1719,7 +1725,7 @@
               {
                 case 4:
                   {
-                    //var bytes = BitConverter.GetBytes(DataSource.ReadUInt32());
+                    //var bytes = BitConverter.GetBytes(DataProvider.ReadUInt32());
 
                     //var value = BitConverter.ToSingle(bytes, 0);
 
@@ -1730,7 +1736,7 @@
 
                 case 8:
                   {
-                    //var bytes = BitConverter.GetBytes(DataSource.ReadUInt64());
+                    //var bytes = BitConverter.GetBytes(DataProvider.ReadUInt64());
 
                     //var value = BitConverter.ToSingle(bytes, 0);
 
@@ -1782,28 +1788,28 @@
                         {
                           case 1:
                             {
-                              result = $"{DataSource.ReadSByte():+#;-#;0}".PadLeft(4);
+                              result = $"{DataProvider.ReadSByte():+#;-#;0}".PadLeft(4);
                             }
 
                             break;
 
                           case 2:
                             {
-                              result = $"{DataSource.ReadInt16():+#;-#;0}".PadLeft(6);
+                              result = $"{DataProvider.ReadInt16():+#;-#;0}".PadLeft(6);
                             }
 
                             break;
 
                           case 4:
                             {
-                              result = $"{DataSource.ReadInt32():+#;-#;0}".PadLeft(11);
+                              result = $"{DataProvider.ReadInt32():+#;-#;0}".PadLeft(11);
                             }
 
                             break;
 
                           case 8:
                             {
-                              result = $"{DataSource.ReadInt64():+#;-#;0}".PadLeft(21);
+                              result = $"{DataProvider.ReadInt64():+#;-#;0}".PadLeft(21);
                             }
 
                             break;
@@ -1823,28 +1829,28 @@
                         {
                           case 1:
                             {
-                              result = $"{DataSource.ReadByte()}".PadLeft(3);
+                              result = $"{DataProvider.ReadByte()}".PadLeft(3);
                             }
 
                             break;
 
                           case 2:
                             {
-                              result = $"{DataSource.ReadUInt16()}".PadLeft(5);
+                              result = $"{DataProvider.ReadUInt16()}".PadLeft(5);
                             }
 
                             break;
 
                           case 4:
                             {
-                              result = $"{DataSource.ReadUInt32()}".PadLeft(10);
+                              result = $"{DataProvider.ReadUInt32()}".PadLeft(10);
                             }
 
                             break;
 
                           case 8:
                             {
-                              result = $"{DataSource.ReadUInt64()}".PadLeft(20);
+                              result = $"{DataProvider.ReadUInt64()}".PadLeft(20);
                             }
 
                             break;
@@ -1873,28 +1879,28 @@
                   {
                     case 1:
                       {
-                        result = $"{DataSource.ReadByte(),0:X2}";
+                        result = $"{DataProvider.ReadByte(),0:X2}";
                       }
 
                       break;
 
                     case 2:
                       {
-                        result = $"{DataSource.ReadUInt16(),0:X4}";
+                        result = $"{DataProvider.ReadUInt16(),0:X4}";
                       }
 
                       break;
 
                     case 4:
                       {
-                        result = $"{DataSource.ReadUInt32(),0:X8}";
+                        result = $"{DataProvider.ReadUInt32(),0:X8}";
                       }
 
                       break;
 
                     case 8:
                       {
-                        result = $"{DataSource.ReadUInt64(),0:X16}";
+                        result = $"{DataProvider.ReadUInt64(),0:X16}";
                       }
 
                       break;
@@ -1923,7 +1929,7 @@
             {
               case 4:
                 {
-                  var bytes = BitConverter.GetBytes(DataSource.ReadUInt32());
+                  var bytes = BitConverter.GetBytes(DataProvider.ReadUInt32());
 
                   var value = BitConverter.ToSingle(bytes, 0);
 
@@ -1934,7 +1940,7 @@
 
               case 8:
                 {
-                  var bytes = BitConverter.GetBytes(DataSource.ReadUInt64());
+                  var bytes = BitConverter.GetBytes(DataProvider.ReadUInt64());
 
                   var value = BitConverter.ToSingle(bytes, 0);
 
@@ -2490,7 +2496,7 @@
       if ((ShowAddress || ShowData || ShowText) && canvas != null)
       {
         // TODO: We should not be updating this every time. Cache it once if the font on the control changes. Same with typeface and use it throughout.
-        cachedFormattedChar = new FormattedText("X", CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, new Typeface(FontFamily, FontStyle, FontWeight, FontStretch), FontSize, Foreground);
+        cachedFormattedChar = new FormattedText("X", CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, new Typeface(FontFamily, FontStyle, FontWeight, FontStretch), FontSize, Foreground, VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
         maxVisibleRows = Math.Max(0, (int)(canvas.ActualHeight / cachedFormattedChar.Height));
 
@@ -2537,10 +2543,10 @@
 
     private void UpdateScrollBar()
     {
-      if ((ShowAddress || ShowData || ShowText) && DataSource != null && Columns > 0 && MaxVisibleRows > 0)
+      if ((ShowAddress || ShowData || ShowText) && DataProvider!= null && Columns > 0 && MaxVisibleRows > 0)
       {
-        long q = DataSource.BaseStream.Length / BytesPerRow;
-        long r = DataSource.BaseStream.Length % BytesPerRow;
+        long q = DataProvider.Length / BytesPerRow;
+        long r = DataProvider.Length % BytesPerRow;
 
         // Each scroll value represents a single drawn row
         verticalScrollBar.Maximum = q + (r > 0 ? 1 : 0) - MaxVisibleRows;

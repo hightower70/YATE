@@ -144,7 +144,7 @@ namespace YATECommon.Chips
 				case 4: // tone 2: frequency
 								// check for zero frequency
 					m_frequency[register_index / 2] = m_registers[register_index];
-					break;
+          break;
 
 				case 1: // tone 0: attenuation
 				case 3: // tone 1: attenuation
@@ -194,7 +194,7 @@ namespace YATECommon.Chips
 			// handle channels 0,1,2
 			for (i = 0; i < 3; i++)
 			{
-				if (m_frequency[i] == 0)
+				if (m_frequency[i] == 0 || m_frequency[i] == 1)
 				{
 					m_output[i] = 1;
 				}

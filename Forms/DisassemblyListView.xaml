@@ -1,0 +1,28 @@
+﻿<Window x:Class="YATE.Forms.DisassemblyListView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:YATE.Forms"
+			  xmlns:c="clr-namespace:CustomControls;assembly=CustomControls"
+				xmlns:yc="clr-namespace:YATE.Controls"
+        mc:Ignorable="d"
+        Title="DisassemblyListView" Height="450" Width="800"
+				Style="{DynamicResource WindowStyle}" >
+	<Grid Background="{DynamicResource Background}" >
+		<Grid.RowDefinitions>
+			<RowDefinition Height="30"/>
+			<RowDefinition/>
+		</Grid.RowDefinitions>
+		<StackPanel Orientation="Horizontal" DataContext="{Binding ElementName=dlbMain}">
+			<TextBlock Margin="5" Text="Memory Start:" VerticalAlignment="Center"/>
+			<TextBox Margin="5" IsReadOnly="true" Text="0xFFFF" Width="45" VerticalAlignment="Center"/>
+			<TextBlock Text="End:" Margin="5" VerticalAlignment="Center"/>
+			<TextBox Margin="5" IsReadOnly="true" Text="0xFFFF" Width="45" VerticalAlignment="Center"/>
+			<Button Content="Change" VerticalAlignment="Center" Height="22"/>
+		</StackPanel>
+
+		<yc:DisassemblyListBox Grid.Row="1" x:Name="dlbMain" />
+
+	</Grid>
+</Window>

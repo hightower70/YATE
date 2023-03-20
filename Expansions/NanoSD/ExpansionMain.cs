@@ -81,6 +81,19 @@ namespace NanoSD
     {
       in_computer.RemoveCard(((NanoSDCardSettings)Settings).SlotIndex);
     }
+
+    /// <summary>
+    /// Called when settings has been changed
+    /// </summary>
+    public override void SettingsChanged(ref bool in_restart_tvc)
+    {
+      // update settings
+      Settings = ParentManager.Settings.GetSettings<NanoSDCardSettings>(ExpansionIndex);
+
+      // activate settings
+      if (m_nano_sd_card.SetSettings((NanoSDCardSettings)Settings))
+        in_restart_tvc = true;
+    }
   }
 }
 

@@ -8,6 +8,7 @@
 		<ResourceDictionary Source="ButtonStyle.xaml"/>
 		<ResourceDictionary Source="ListBoxStyle.xaml"/>
 		<ResourceDictionary Source="ScrollBarStyle.xaml"/>
+		<ResourceDictionary Source="AnnotatedScrollBarStyle.xaml"/>
 		<ResourceDictionary Source="TextBoxStyle.xaml"/>
 		<ResourceDictionary Source="TabControlStyle.xaml"/>
 		<ResourceDictionary Source="ComboBoxStyle.xaml"/>
@@ -43,7 +44,8 @@
 	<Style TargetType="Window" BasedOn="{StaticResource WindowStyle}"/>
   <Style TargetType="ListBox" BasedOn="{StaticResource StandardListBox}"/>
   <Style TargetType="ScrollBar" BasedOn="{StaticResource StandardScrollBar}"/>
-  <Style TargetType="TextBox" BasedOn="{StaticResource StandardTextBox}"/>
+	<Style TargetType="c:AnnotatedScrollBar" BasedOn="{StaticResource StandardAnnotatedScrollBar}"/>
+	<Style TargetType="TextBox" BasedOn="{StaticResource StandardTextBox}"/>
 	<Style TargetType="Button" BasedOn="{StaticResource StandardButton}"/>
 	<!--<Style TargetType="c:ReadOnlyTextBox" BasedOn="{StaticResource StandardTextBox}"/>-->
 	<Style TargetType="TabControl" BasedOn="{StaticResource StandardTabControl}"/>

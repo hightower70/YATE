@@ -35,7 +35,8 @@ namespace YATE.Managers
 			RunningFullSpeed
 		}
 
-		public delegate void DebuggerBreakEventDelegate(TVComputer in_sender);
+		public delegate void DebuggerPeriodicEventDelegate(TVComputer in_sender);
+		public delegate void DebuggerStoppedEventDelegate(TVComputer in_sender);
 
 		#endregion
 
@@ -162,13 +163,14 @@ namespace YATE.Managers
 
 		#endregion
 
-		public DebuggerBreakEventDelegate DebuggerBreakEvent;
+		public DebuggerPeriodicEventDelegate DebuggerPeriodicEvent;
+		public DebuggerStoppedEventDelegate DebuggerStoppedEvent;
 
 		public void Initialize()
 		{
 			TVC.Initialize();
 
-			DebuggerBreakEvent?.Invoke(TVC);
+			DebuggerPeriodicEvent?.Invoke(TVC);
 		}
 
     public void SetSoundEvent()
@@ -185,7 +187,17 @@ namespace YATE.Managers
 			do
 			{
 				TCycle += TVC.CPU.Step();
-			} while (!TVC.CPU.InstructionDone || instruction_start_pc == TVC.CPU.Registers.PC);
+
+        // handle pending interrupts
+        if (TVC.CPU.InstructionDone)
+				{
+					if (TVC.Interrupt.IsIntActive())
+						m_cpu_t_cycle += (uint)TVC.CPU.Int();
+				}
+
+				TVC.PeriodicCallback();
+
+      } while (!TVC.CPU.InstructionDone || instruction_start_pc == TVC.CPU.Registers.PC);
 
 			AddInstructionToExecutionHistory(instruction_start_pc, TCycle);
 
@@ -254,8 +266,6 @@ namespace YATE.Managers
 
 		private void SimulationThread()
 		{
-			double delay_time;
-
 			m_disassembler = new Z80Disassembler();
 			m_disassembler.ReadByte = ReadMemory;
 
@@ -266,7 +276,6 @@ namespace YATE.Managers
 
 			m_debug_event_timestamp = DateTime.Now;
 
-			delay_time = 0;
 
 			while (m_thread_running)
 			{
@@ -279,7 +288,8 @@ namespace YATE.Managers
 						m_last_execution_state = m_execution_state;
 						m_execution_state = ExecutionState.Paused;
 						m_execution_state_changed_event.Set();
-						break;
+            GenerateDebugEvent(true);
+            break;
 
 					case ExecutionStateRequest.Restore:
 						m_execution_state_request = ExecutionStateRequest.NoChange;
@@ -455,10 +465,18 @@ namespace YATE.Managers
 
 					m_context.Post(delegate
 					{
-						DebuggerBreakEvent?.Invoke(TVC);
+						DebuggerPeriodicEvent?.Invoke(TVC);
 					}, null);
 				}
-			}
+
+				if(in_force_event)
+				{
+          m_context.Post(delegate
+          {
+            DebuggerStoppedEvent?.Invoke(TVC);
+          }, null);
+        }
+      }
 		}
 
 

@@ -7,7 +7,8 @@
 		<ResourceDictionary>
 			<ResourceDictionary.MergedDictionaries>
 				<ResourceDictionary Source="pack://application:,,,/DarkSkin;component/MetroDarkStyle.xaml" />
-					<ResourceDictionary Source="Resources/StringResources.xaml" />
+				<ResourceDictionary Source="/Controls/DisassemblyListBox/Themes/Generic.xaml"/>
+				<ResourceDictionary Source="Resources/StringResources.xaml" />
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</Application.Resources>

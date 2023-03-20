@@ -57,8 +57,8 @@ namespace HBE
     private I8255 m_ppi1;
     private I8255 m_ppi2;
 
-    private EPROMType m_eprom_type;
-    private EPROMMode m_eprom_mode;
+    //private EPROMType m_eprom_type;
+    //private EPROMMode m_eprom_mode;
     private ushort m_eprom_address;
     private byte m_eprom_data;
     private byte[] m_eprom_buffer;
@@ -91,8 +91,8 @@ namespace HBE
 
       // init internal variables
       m_eprom_buffer = new byte[MaxEEPROMSize];
-      m_eprom_type = EPROMType.Unknown;
-      m_eprom_mode = EPROMMode.Unknown;
+      //m_eprom_type = EPROMType.Unknown;
+      //m_eprom_mode = EPROMMode.Unknown;
 
       // Create PPI chips
       m_ppi1 = new I8255();
@@ -103,7 +103,7 @@ namespace HBE
       m_ppi1.PortBChanged += PPI1PortBChanged;
       m_ppi1.PortCChanged += PPI1PortCChanged;
 
-      m_eprom_mode = EPROMMode.Unknown;
+      //m_eprom_mode = EPROMMode.Unknown;
     }
 
     /// <summary>

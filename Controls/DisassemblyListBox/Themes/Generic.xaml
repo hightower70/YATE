@@ -1,0 +1,208 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:YATE.Controls"
+		xmlns:c="clr-namespace:CustomControls;assembly=CustomControls"
+		xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+
+	<Style x:Key="AddressStyle" TargetType="{x:Type TextBlock}">
+		<Setter Property="Foreground" Value="Cyan"/>
+	</Style>
+
+	<Style x:Key="AddressBorderStyle" TargetType="{x:Type Border}">
+		<Setter Property="Background" Value="{DynamicResource BackgroundHighlighted}"/>
+		<Setter Property="BorderBrush" Value="DarkGray"/>
+		<Setter Property="BorderThickness" Value="0,0,1,0"/>
+		<Setter Property="Padding" Value="1,1,0,1"/>
+	</Style>
+
+	<Style x:Key="MnemonicStyle" TargetType="{x:Type TextBlock}">
+		<Setter Property="Margin" Value="0,0,8,0"/>
+		<Setter Property="Foreground" Value="{DynamicResource ASMMnemonicColor}"/>
+	</Style>
+
+	<Style x:Key="Operand1Style" TargetType="{x:Type TextBlock}">
+		<Setter Property="Foreground" Value="{DynamicResource ASMRegisterColor}"/>
+		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.NumericOperand}" Value="1">
+				<Setter Property="Foreground" Value="{DynamicResource ASMNumericColor}"/>
+			</DataTrigger>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.JumpOperand}" Value="1">
+				<Setter Property="TextDecorations" Value="Underline"/>
+				<Setter Property="Cursor" Value="Hand"/>
+			</DataTrigger>
+		</Style.Triggers>
+	</Style>
+
+	<Style x:Key="OperandSeparatorStyle" TargetType="{x:Type TextBlock}">
+		<Setter Property="Margin" Value="0,0,4,0"/>
+		<Setter Property="Visibility" Value="Visible"/>
+		<Setter Property="Foreground" Value="{DynamicResource Foreground}"/>
+		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.Operand2}" Value="{x:Static sys:String.Empty}">
+				<Setter Property="Visibility" Value="Collapsed"/>
+			</DataTrigger>
+		</Style.Triggers>
+	</Style>
+
+	<Style x:Key="Operand2Style" TargetType="{x:Type TextBlock}">
+		<Setter Property="Foreground" Value="{DynamicResource ASMRegisterColor}"/>
+		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.NumericOperand}" Value="2">
+				<Setter Property="Foreground" Value="{DynamicResource ASMNumericColor}"/>
+			</DataTrigger>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.JumpOperand}" Value="2">
+				<Setter Property="TextDecorations" Value="Underline"/>
+				<Setter Property="Cursor" Value="Hand"/>
+			</DataTrigger>
+		</Style.Triggers>
+	</Style>
+	
+	<Style x:Key="TstateStyle" TargetType="{x:Type TextBlock}">
+		<Setter Property="Foreground" Value="{DynamicResource ASMTstateColor}"/>
+		<Setter Property="FontSize" Value="9"/>
+		<Setter Property="VerticalAlignment" Value="Top"/>
+		<Setter Property="Margin" Value="3,0,0,0"/>
+	</Style>
+
+
+	<Style x:Key="CommentStyle" TargetType="{x:Type TextBlock}">
+		<Setter Property="Foreground" Value="{DynamicResource ASMCommentColor}"/>
+	</Style>
+
+	<Style TargetType="ListBoxItem" >
+		<Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+		<Setter Property="BorderThickness" Value="0"/>
+		<Setter Property="Padding" Value="0"/>
+		<Setter Property="Margin" Value="0"/>
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="ListBoxItem">
+					<Grid SnapsToDevicePixels="True">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="48" />
+							<ColumnDefinition Width="*"/>
+						</Grid.ColumnDefinitions>
+						<Border x:Name="PART_LineAddress" Grid.Column="0" SnapsToDevicePixels="True" Style="{DynamicResource AddressBorderStyle}">
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="16"/>
+									<ColumnDefinition Width="*"/>
+								</Grid.ColumnDefinitions>
+								<Ellipse Grid.Column="0" Fill="Red" Stroke="White" StrokeThickness="1" Width="12" Height="12" HorizontalAlignment="Center" Visibility="{Binding IsBreakpoint, Converter={x:Static c:BooleanToVisibilityConverter.Instance}}"/>
+								<Path Width="12" Height="12" Stroke="DarkOrange" StrokeThickness="1" Fill="Yellow" Data="M 2,4 L5,4 5,2 6,2 10,6 6,10 5,10 6,8 2,8 Z" Visibility="{Binding IsExecuting, Converter={x:Static c:BooleanToVisibilityConverter.Instance}}"/>
+								<TextBlock Grid.Column="1" Style="{DynamicResource AddressStyle}" Text="{Binding DisassemblyInstruction.Address, StringFormat={}{0:X4}}" SnapsToDevicePixels="True" />
+								<!-- Text="{Binding DisassemblyInstruction.Address, StringFormat={}{0:X4}}" -->
+							</Grid>
+						</Border>
+						<Border Grid.Column="1" Name="LineDisplay" BorderThickness="1" Margin="1,0,0,0" Background="{DynamicResource Background}" BorderBrush="{DynamicResource Background}" SnapsToDevicePixels="True">
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="90"/>
+									<ColumnDefinition Width="*"/>
+								</Grid.ColumnDefinitions>
+								<TextBlock Grid.Column="0" Text="{Binding DisassemblyInstruction.Bytes}" Foreground="DarkGray" Margin="2,0,2,0" SnapsToDevicePixels="True"/>
+								<StackPanel Grid.Column="1" Orientation="Horizontal" SnapsToDevicePixels="True" Margin="2,0,0,0">
+									<TextBlock Text="{Binding DisassemblyInstruction.Mnemonic}" Style="{DynamicResource MnemonicStyle}"/>
+									<TextBlock x:Name="PART_Operand1" Text="{Binding DisassemblyInstruction.Operand1}" Style="{DynamicResource Operand1Style}"/>
+									<TextBlock Text="," Style="{DynamicResource OperandSeparatorStyle}"/>
+									<TextBlock x:Name="PART_Operand2" Text="{Binding DisassemblyInstruction.Operand2}" Style="{DynamicResource Operand2Style}"/>
+									<TextBlock Text="{Binding DisassemblyInstruction.TstatesString}" Style="{DynamicResource TstateStyle}"/>
+									<TextBlock Text="{Binding DisassemblyInstruction.CommentString}" Style="{DynamicResource CommentStyle}"/>
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Grid>
+					<ControlTemplate.Triggers>
+						<!--<MultiTrigger>
+										<MultiTrigger.Conditions>
+											<Condition Property="IsMouseOver" Value="True" />
+											<Condition Property="IsSelected" Value="False"/>
+										</MultiTrigger.Conditions>
+										<Setter TargetName="LineDisplay" Property="Background" Value="{DynamicResource BackgroundHighlighted}" />
+										<Setter TargetName="LineDisplay" Property="BorderBrush" Value="{DynamicResource BorderBrushHighlighted}" />
+									</MultiTrigger>-->
+						<Trigger Property="IsSelected" Value="True">
+							<Setter TargetName="LineDisplay" Property="Background" Value="{DynamicResource BackgroundSelected}" />
+							<Setter TargetName="LineDisplay" Property="BorderBrush" Value="{DynamicResource BorderBrushSelected}" />
+						</Trigger>
+					</ControlTemplate.Triggers>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
+	</Style>
+
+	<Style TargetType="{x:Type local:DisassemblyListBox}">
+		<Setter Property="Background" Value="AliceBlue"/>
+		<Setter Property="Background" Value="{DynamicResource Background}"/>
+		<Setter Property="BorderThickness" Value="0"/>
+		<Setter Property="FontFamily" Value="Consolas"/>
+		<Setter Property="Padding" Value="0"/>
+		<Setter Property="Margin" Value="0"/>
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="{x:Type local:DisassemblyListBox}">
+					<Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+						<local:DisassemblyListBoxScrollViewer x:Name="LB_ScrollViewer" Focusable="False">
+							<ScrollViewer.Template>
+								<ControlTemplate TargetType="{x:Type local:DisassemblyListBoxScrollViewer}">
+									<Grid>
+										<Grid.RowDefinitions>
+											<RowDefinition Height="*"/>
+											<RowDefinition Height="Auto"/>
+										</Grid.RowDefinitions>
+										<Grid.ColumnDefinitions>
+											<ColumnDefinition Width="*"/>
+											<ColumnDefinition Width="Auto"/>
+										</Grid.ColumnDefinitions>
+
+										<ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+																							CanContentScroll="{TemplateBinding CanContentScroll}" />
+
+										<!--<Rectangle Grid.Column="1" Grid.Row="1" Fill="{x:Null}"/>-->
+
+										<c:AnnotatedScrollBar x:Name="PART_VerticalScrollBar" Width="18"
+																			IsTabStop="False"
+																			Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+																			Grid.Column="1" Grid.Row="0" Orientation="Vertical"
+																			ViewportSize="{TemplateBinding ViewportHeight}"
+																			Maximum="{TemplateBinding ScrollableHeight}"
+																			Minimum="0"
+																			Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+																			Background="{DynamicResource BackgroundHighlighted}"/>
+
+										<ScrollBar x:Name="PART_HorizontalScrollBar" Height="18"
+																			IsTabStop="False"
+																			Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
+																			Grid.Column="0" Grid.Row="1" Orientation="Horizontal"
+																			ViewportSize="{TemplateBinding ViewportWidth}"
+																			Maximum="{TemplateBinding ScrollableWidth}"
+																			Minimum="0"
+																			Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" 
+																			Background="{DynamicResource BackgroundHighlighted}"/>
+
+									</Grid>
+								</ControlTemplate>
+							</ScrollViewer.Template>
+							<ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+						</local:DisassemblyListBoxScrollViewer>
+					</Border>
+					<ControlTemplate.Triggers>
+						<Trigger Property="IsEnabled" Value="False">
+							<Setter Property="Background" TargetName="Bd" Value="White"/>
+							<Setter Property="BorderBrush" TargetName="Bd" Value="#FFD9D9D9"/>
+						</Trigger>
+						<MultiTrigger>
+							<MultiTrigger.Conditions>
+								<Condition Property="IsGrouping" Value="True"/>
+								<Condition Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="False"/>
+							</MultiTrigger.Conditions>
+							<Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
+						</MultiTrigger>
+					</ControlTemplate.Triggers>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
+	</Style>
+</ResourceDictionary>

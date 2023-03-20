@@ -4,14 +4,20 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:YATE.Forms"
+				xmlns:yc="clr-namespace:YATE.Controls"
 				xmlns:c="clr-namespace:CustomControls;assembly=CustomControls"
         mc:Ignorable="d"
         Title="HexEditForm" Height="450" Width="620"
 				DataContext="{Binding RelativeSource={RelativeSource Self}}"
-				Style="{DynamicResource WindowStyle}" >
+				Style="{DynamicResource WindowStyle}" Closing="Window_Closing" >
     <Grid Background="{DynamicResource Background}">
-		<c:HexEditor x:Name="hexEdit"  
-						DataSource="{Binding Reader}"
-            Columns="{Binding RelativeSource={RelativeSource Self}, Path=MaxVisibleColumns}"/>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="32"/>
+			<RowDefinition/>
+		</Grid.RowDefinitions>
+		<yc:TVCMemorySelector x:Name="tmsMemorySelector" Grid.Row="0" />
+
+		<c:HexEditor Grid.Row="1" x:Name="heEditor" Columns="{Binding RelativeSource={RelativeSource Self}, Path=MaxVisibleColumns}"/>
+		<!--DataProvider="{Binding Reader}" -->
 	</Grid>
 </Window>

@@ -33,6 +33,8 @@ namespace YATECommon
     public IExecutionManager ExecutionManager { get; private set; }
     public ICartridgeManager CartridgeManager { get; private set; }
 
+    public IDebugManager DebugManager { get; private set; }
+
 
     public void SetMainWindow(Window in_window)
     {
@@ -57,6 +59,11 @@ namespace YATECommon
     public void SetCartridgeManager(ICartridgeManager in_cartridge_manager)
     {
       CartridgeManager = in_cartridge_manager;
+    }
+
+    public void SetDebugManager(IDebugManager in_debug_manager)
+    {
+      DebugManager = in_debug_manager;
     }
 
     #region · Singleton members ·

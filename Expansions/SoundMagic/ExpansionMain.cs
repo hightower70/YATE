@@ -80,6 +80,7 @@ namespace SoundMagic
     public override void Remove(ITVComputer in_computer)
     {
       m_sound_magic.Remove(in_computer);
+      in_computer.RemoveCard(((SoundMagicSettings)Settings).SlotIndex);
     }
 
     /// <summary>

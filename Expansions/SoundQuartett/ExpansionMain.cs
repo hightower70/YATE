@@ -79,6 +79,7 @@ namespace SoundQuartett
     public override void Remove(ITVComputer in_computer)
     {
       m_sound_quartett.Remove(in_computer);
+      in_computer.RemoveCard(((SoundQuartettSettings)Settings).SlotIndex);
     }
   }
 }

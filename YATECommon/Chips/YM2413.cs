@@ -876,7 +876,7 @@ namespace YATECommon.Chips
         }
         static void OPLLWriteReg(int r, int v)
         {
-            int inst;
+            //int inst;
             int chan;
             int slot;
             r &= 0xff;

@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CustomControls</RootNamespace>
     <AssemblyName>CustomControls</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -53,6 +53,9 @@
     <Compile Include="CircularProgressbar\CircularProgressBar.xaml.cs">
       <DependentUpon>CircularProgressBar.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EditableLabel\EditableLabel.xaml.cs">
+      <DependentUpon>EditableLabel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ExceptionDialog\ExceptionDialog.xaml.cs">
       <DependentUpon>ExceptionDialog.xaml</DependentUpon>
     </Compile>
@@ -71,6 +74,7 @@
     <Compile Include="HexEdit\DataSignedness.cs" />
     <Compile Include="HexEdit\DataType.cs" />
     <Compile Include="HexEdit\HexEditor.cs" />
+    <Compile Include="HexEdit\IHexEditorDataProvider.cs" />
     <Compile Include="HexEdit\TextColumnFormat.cs" />
     <Compile Include="HexEdit\Utilities.cs" />
     <Compile Include="ImageButton\ImageButton.cs" />
@@ -112,6 +116,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CustomMessageBox\CustomMessageBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="EditableLabel\EditableLabel.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -25,6 +25,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using YATECommon;
+using YATECommon.Helpers;
 
 namespace NanoSD
 {
@@ -65,26 +66,46 @@ namespace NanoSD
       m_arduino_cpu.FileSystemChanged(e.FullPath);
     }
 
-    public void SetSettings(NanoSDCardSettings in_settings)
+    public bool SetSettings(NanoSDCardSettings in_settings)
     {
+      bool changed = false;
+      byte[] old_rom = null;
+
+      // save old rom
+      old_rom = Rom;
+
       Settings = in_settings;
 
       // load ROM
       Rom = new byte[MaxRomSize];
-      for (int i = 0; i < Rom.Length; i++)
-        Rom[i] = 0xff;
+      ROMFile.FillMemory(Rom);
+
+      if (string.IsNullOrEmpty(Settings.ROMFileName))
+      {
+        ROMFile.LoadMemoryFromResource("NanoSD.Resources.NanoSDROM.bin", Rom);
+      }
+      else
+      {
+        ROMFile.LoadMemoryFromFile(Settings.ROMFileName, Rom);
+      }
+
+      changed = !ROMFile.IsMemoryEqual(old_rom, Rom);
 
       //LoadROMFromFile(m_settings.ROMFileName, 0);
       LoadCardRomFromResource("NanoSD.Resources.NanoSDROM.bin");
 
       // file system watcher
       if (Directory.Exists(Settings.FilesystemFolder))
-      {                                  
+      {
+        m_file_system_watcher.EnableRaisingEvents = false;
         m_file_system_watcher.Path = Settings.FilesystemFolder;
         m_file_system_watcher.EnableRaisingEvents = true;
+        m_arduino_cpu.FileSystemChanged(Settings.FilesystemFolder);
       }
       else
         m_file_system_watcher.EnableRaisingEvents = false;
+
+      return changed;
     }
 
     public void StoreSettings()

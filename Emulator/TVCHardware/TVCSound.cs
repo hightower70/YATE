@@ -31,7 +31,7 @@ namespace YATE.Emulator.TVCHardware
   {
     #region · Constants ·
 
-    private const int CounterOverflowValue = 0x1000;
+    private const int CounterOverflowValue = 0x0FFF;
     private const int PostscalerOverflowValue = 0x0010;
 
     /// <summary>Calculated DAC values from real resistors, maximizing at 32700</summary>
@@ -254,13 +254,20 @@ namespace YATE.Emulator.TVCHardware
         // check for counter overflow
         while(m_counter >= CounterOverflowValue)
         {
-          m_counter = m_counter - CounterOverflowValue + m_register;
-
-          // poscaler increment
-          m_post_scaler++;
-          if (m_post_scaler >= PostscalerOverflowValue)
+          if (CounterOverflowValue == m_register)
           {
-            m_post_scaler -= PostscalerOverflowValue;
+            m_counter = 0;
+          }
+          else
+          {
+            m_counter = m_counter - CounterOverflowValue + m_register;
+
+            // poscaler increment
+            m_post_scaler++;
+            if (m_post_scaler >= PostscalerOverflowValue)
+            {
+              m_post_scaler -= PostscalerOverflowValue;
+            }
           }
         }
 

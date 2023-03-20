@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.168
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YATE", "YATE.csproj", "{E495FCF3-BBEF-4E3B-A803-F023986E0BCE}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -65,8 +65,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NanoSD", "NanoSD", "{A6F65468-89E2-45A3-9390-79A0C61A03E5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NanoSD", "Expansions\NanoSD\NanoSD.csproj", "{04FBB8C6-704C-4853-BDA2-881F017B96E8}"
-EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "YATEInstall", "..\YATEInstall\YATEInstall.vdproj", "{603CC22E-C3E5-4589-B33D-E4D483F24D17}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "KiloCart", "KiloCart", "{2B1D79F6-0430-4F61-A0C9-470BEEF8CC0A}"
 EndProject
@@ -194,10 +192,6 @@ Global
 		{04FBB8C6-704C-4853-BDA2-881F017B96E8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{04FBB8C6-704C-4853-BDA2-881F017B96E8}.Release|x86.ActiveCfg = Release|Any CPU
 		{04FBB8C6-704C-4853-BDA2-881F017B96E8}.Release|x86.Build.0 = Release|Any CPU
-		{603CC22E-C3E5-4589-B33D-E4D483F24D17}.Debug|Any CPU.ActiveCfg = Debug
-		{603CC22E-C3E5-4589-B33D-E4D483F24D17}.Debug|x86.ActiveCfg = Debug
-		{603CC22E-C3E5-4589-B33D-E4D483F24D17}.Release|Any CPU.ActiveCfg = Release
-		{603CC22E-C3E5-4589-B33D-E4D483F24D17}.Release|x86.ActiveCfg = Release
 		{5E33F1CE-0749-439B-AF0F-403711B08367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5E33F1CE-0749-439B-AF0F-403711B08367}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E33F1CE-0749-439B-AF0F-403711B08367}.Debug|x86.ActiveCfg = Debug|Any CPU

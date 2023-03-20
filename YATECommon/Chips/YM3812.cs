@@ -595,7 +595,7 @@ namespace YATECommon.Chips
       }
       else
       {
-        int i1 = 1;
+        //int i1 = 1;
       }
       OPL.P_CH[chan].SLOT[0].op1_out[1] = 0;
       if (env < 0x180)

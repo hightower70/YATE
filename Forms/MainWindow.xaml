@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         Title="YATE" Height="800" Width="1250"
 				Icon="/YATE;component/Resources/MainIcon.png"
-				Style="{DynamicResource WindowStyle}" Loaded="Window_Loaded" Closing="Window_Closing" PreviewKeyDown="Window_KeyDown" PreviewKeyUp="Window_KeyUp">
+				Style="{DynamicResource WindowStyle}" Loaded="Window_Loaded" Closing="Window_Closing" PreviewKeyDown="Window_KeyDown" PreviewKeyUp="Window_KeyUp" Closed="Window_Closed">
 	<Window.Resources>
 		<Style TargetType="TextBlock" x:Key="LabelStyle">
 			<Setter Property="Foreground" Value="OrangeRed"/>
@@ -93,6 +93,7 @@
 
 			<MenuItem Header="_View" x:Name="miView">
 				<MenuItem x:Name="miHexEdit" Header="New Hex Editor" Click="MiHexEditor_Click"  />
+				<MenuItem x:Name="miDisassemblyView" Header="New Disassembly View" Click="miDisassemblyView_Click"  />
 			</MenuItem>
 
 			<MenuItem Header="_Expansions" x:Name="miExpansions">

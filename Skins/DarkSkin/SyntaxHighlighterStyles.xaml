@@ -28,4 +28,13 @@
 		<Setter Property="PagePadding" Value="0"/>
 	</Style>
 
+	<!-- ASM Syntax Highlighter Styles -->
+	<SolidColorBrush x:Key="ASMBytesColor" Color="DarkGray"/>
+	<SolidColorBrush x:Key="ASMMnemonicColor" Color="LimeGreen"/>
+	<SolidColorBrush x:Key="ASMRegisterColor" Color="OrangeRed"/>
+	<SolidColorBrush x:Key="ASMNumericColor" Color="DeepSkyBlue"/>
+	<SolidColorBrush x:Key="ASMOperandSeparatorColor" Color="LightGray"/>
+	<SolidColorBrush x:Key="ASMCommentColor" Color="#505050"/>
+	<SolidColorBrush x:Key="ASMTstateColor" Color="DarkGray"/>
+
 </ResourceDictionary>

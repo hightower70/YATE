@@ -20,6 +20,7 @@
 // ----------------
 // SST39SF040 Flash ROM Chip Emulation
 ///////////////////////////////////////////////////////////////////////////////
+using System.Runtime.CompilerServices;
 using YATECommon.Helpers;
 
 namespace YATECommon.Chips
@@ -121,6 +122,7 @@ namespace YATECommon.Chips
     /// </summary>
     /// <param name="in_address">Address to write</param>
     /// <param name="in_byte">Data byte to write</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void MemoryWrite(int in_address, byte in_byte)
     {
       if (in_address >= FlashSize || in_address < 0)
@@ -303,6 +305,7 @@ namespace YATECommon.Chips
     /// </summary>
     /// <param name="in_address"></param>
     /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte MemoryRead(int in_address)
     {
       switch (m_flash_mode)

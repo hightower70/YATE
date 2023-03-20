@@ -29,6 +29,7 @@ namespace YATECommon.Settings
     public enum SettingsCategory
     {
       Emulator,
+      EmulatorIndexed,
       TVC
     };
 

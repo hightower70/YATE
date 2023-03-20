@@ -15,10 +15,12 @@ doc/
 Files/
 disk/
 disk2/
+disk3/
 cas/
 roms/
 cart/
 DiskImage/
+publish/
 
 
 # User-specific files (MonoDevelop/Xamarin Studio)

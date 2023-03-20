@@ -120,8 +120,7 @@ namespace GameCard
 
       // load ROM
       Rom = new byte[MaxRomSize];
-      for (int i = 0; i < Rom.Length; i++)
-        Rom[i] = 0xff;
+      ROMFile.FillMemory(Rom);
 
       if (string.IsNullOrEmpty(Settings.ROMFileName))
       {

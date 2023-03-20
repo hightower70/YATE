@@ -42,8 +42,12 @@ namespace YATECommon.Settings
     private const string EmulatorSettingsElementName = "Emulator";
     private const string TVCSettingsElementName = "TVC";
 
-    public const string ExpanstionActiveAttribute = "Active";
+    public const string ExpansionActiveAttribute = "Active";
     public const string ExpansionIndexAtribute = "ExpansionIndex";
+
+    public const string IndexedEmulatorActiveAttribute = "Active";
+    public const string IndexedEmulatorIndexAtribute = "Index";
+
     #endregion
 
     #region · Types ·
@@ -77,7 +81,7 @@ namespace YATECommon.Settings
     /// Adds content of a settings class to the settings file
     /// </summary>
     /// <param name="in_settings_data"></param>
-    public void SetSettings(SettingsBase in_settings_data, int in_expansion_index = -1)
+    public void SetSettings(SettingsBase in_settings_data, int in_index = -1)
     {
       XmlNode parent_node = null;
       XmlNode settings_node = null;
@@ -88,6 +92,11 @@ namespace YATECommon.Settings
         case SettingsBase.SettingsCategory.Emulator:
           parent_node = m_xml_doc.DocumentElement.SelectSingleNode('/' + RootElementName + '/' + EmulatorSettingsElementName);
           settings_node = parent_node.SelectSingleNode(in_settings_data.ModuleName);
+          break;
+
+        case SettingsBase.SettingsCategory.EmulatorIndexed:
+          parent_node = m_xml_doc.DocumentElement.SelectSingleNode('/' + RootElementName + '/' + EmulatorSettingsElementName);
+          settings_node = parent_node.SelectSingleNode(in_settings_data.ModuleName + "[@Index = '" + ((IndexedEmulatorSettingsBase)in_settings_data).Index.ToString() + "']");
           break;
 
         case SettingsBase.SettingsCategory.TVC:
@@ -111,17 +120,6 @@ namespace YATECommon.Settings
       {
         SerializeEntry(parent_node, in_settings_data);
       }
-
-
-
-      /*
-      string key = GetSettigsKey(in_settings_data);
-
-      // replace setings to the new class
-      if (m_settings.ContainsKey(key))
-        m_settings.Remove(key);
-
-      m_settings.Add(key, in_settings_data);*/
     }
 
     /// <summary>
@@ -129,7 +127,7 @@ namespace YATECommon.Settings
     /// </summary>
     /// <param name="in_settings_data"></param>
     /// <returns></returns>
-    public T GetSettings<T>(int in_expansion_index = -1) where T : SettingsBase, new()
+    public T GetSettings<T>(int in_index = -1) where T : SettingsBase, new()
     {
       XmlNode root_node = null;
       bool success = true;
@@ -158,10 +156,14 @@ namespace YATECommon.Settings
             settings_node = root_node.SelectSingleNode('/' + RootElementName + '/' + EmulatorSettingsElementName + '/' + result.ModuleName);
             break;
 
+          case SettingsBase.SettingsCategory.EmulatorIndexed:
+            settings_node = root_node.SelectSingleNode('/' + RootElementName + '/' + EmulatorSettingsElementName + '/' + result.ModuleName + "[@Index = '" + in_index.ToString() + "']");
+            break;
+
           case SettingsBase.SettingsCategory.TVC:
             if (result is ExpansionSettingsBase)
             {
-              settings_node = root_node.SelectSingleNode('/' + RootElementName + '/' + TVCSettingsElementName + "[@Active = 'true']" + '/' + result.ModuleName + "[@ExpansionIndex = '" + in_expansion_index.ToString() + "']");
+              settings_node = root_node.SelectSingleNode('/' + RootElementName + '/' + TVCSettingsElementName + "[@Active = 'true']" + '/' + result.ModuleName + "[@ExpansionIndex = '" + in_index.ToString() + "']");
             }
             else
             {
@@ -315,7 +317,7 @@ namespace YATECommon.Settings
 
 				if(in_module.ExpansionIndex < node_list.Count)
 				{
-					node_list[in_module.ExpansionIndex].Attributes[ExpanstionActiveAttribute].Value = "true";
+					node_list[in_module.ExpansionIndex].Attributes[ExpansionActiveAttribute].Value = "true";
 				}
 			}
 			catch
