@@ -43,7 +43,10 @@
 	</Window.Resources>
 	<Window.InputBindings>
 		<KeyBinding Key="F5" Command="{Binding ExecutionControl.DebugRunCommand}" />
-		<KeyBinding Key="F10" Command="{Binding ExecutionControl.DebugStepIntoCommand}" />
+		<KeyBinding Key="F5" Command="{Binding ExecutionControl.DebugPauseCommand}" Modifiers="Shift" />
+		<KeyBinding Key="F10" Command="{Binding ExecutionControl.DebugStepOverCommand}" />
+		<KeyBinding Key="F11" Command="{Binding ExecutionControl.DebugStepIntoCommand}" />
+		<KeyBinding Key="F12" Command="{Binding ExecutionControl.DebugStepOutCommand}" />
 	</Window.InputBindings>
 
 	<Grid Background="{DynamicResource Background}">
@@ -58,7 +61,7 @@
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
 
-		<Menu IsMainMenu="True" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3">
+		<Menu x:Name="mMain" IsMainMenu="True" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3">
 			<Menu.ItemsPanel>
 				<ItemsPanelTemplate>
 					<DockPanel HorizontalAlignment="Stretch"/>
@@ -77,18 +80,12 @@
 			</MenuItem>
 
 			<MenuItem Header="_Debug">
-				<MenuItem Header="Run" />
-				<MenuItem Header="Pause"  />
+				<MenuItem Header="Run" Command="{Binding ExecutionControl.DebugRunCommand}" />
+				<MenuItem Header="Pause" Command="{Binding ExecutionControl.DebugPauseCommand}" />
 				<Separator/>
-				<MenuItem Header="Source List Target"  >
-					<c:RadioMenuItem Header="User RAM" GroupName="SourceListTarget" />
-					<c:RadioMenuItem Header="Cartridge ROM"  GroupName="SourceListTarget"/>
-					<c:RadioMenuItem Header="Expansion Card #0 ROM" GroupName="SourceListTarget"/>
-					<c:RadioMenuItem Header="Expansion Card #1 ROM" GroupName="SourceListTarget"/>
-					<c:RadioMenuItem Header="Expansion Card #2 ROM" GroupName="SourceListTarget"/>
-					<c:RadioMenuItem Header="Expansion Card #3 ROM" GroupName="SourceListTarget"/>
-				</MenuItem>
-				<MenuItem Header="Source List Load"  />
+				<MenuItem Header="Step into" Command="{Binding ExecutionControl.DebugStepIntoCommand}" />
+				<MenuItem Header="Step over" Command="{Binding ExecutionControl.DebugStepOverCommand}" />
+				<MenuItem Header="Step out" Command="{Binding ExecutionControl.DebugStepOutCommand}" />
 			</MenuItem>
 
 			<MenuItem Header="_View" x:Name="miView">

@@ -19,7 +19,7 @@ namespace YATE.Emulator.TVCHardware
 
 		public Z80 CPU { get; private set; }
 		public ITVCPorts Ports { get; private set; }
-		public TVCMemory Memory { get; private set; }
+		public ITVCMemory Memory { get; private set; }
 		public TVCVideo Video { get; private set; }
 		public TVCKeyboard Keyboard { get; private set; }
 		public TVCInterrupt Interrupt { get; private set; }
@@ -28,12 +28,12 @@ namespace YATE.Emulator.TVCHardware
     public ITVCCard MemoryExpansion { get; private set; }
     public TVCSound Sound { get; private set; }
 
-    public void Initialize()
+		public void Initialize()
 		{
 			Ports = new TVCPorts();
 			Memory = new TVCMemory(this);
 
-			CPU = new Z80(Memory, (IZ80Port)Ports, null, true);
+			CPU = new Z80(Memory as TVCMemory, (IZ80Port)Ports, null, true);
 
       Video = new TVCVideo(this);
       Keyboard = new TVCKeyboard(this);
@@ -78,7 +78,7 @@ namespace YATE.Emulator.TVCHardware
     public void SettingsChanged(ref bool in_restart_tvc)
     {
       Keyboard.SettingsChanged(ref in_restart_tvc);
-      Memory.SettingsChanged(ref in_restart_tvc);
+      ((TVCMemory)Memory).SettingsChanged(ref in_restart_tvc);
 
     }
 
@@ -88,7 +88,7 @@ namespace YATE.Emulator.TVCHardware
 		public void ColdReset()
 		{
 			// clear memory
-			Memory.ClearMemory();
+			((TVCMemory)Memory).ClearMemory();
 
 			Reset();
 		}

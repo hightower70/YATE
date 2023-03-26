@@ -27,6 +27,12 @@ namespace YATE.Settings
 {
   class SetupTVCConfigurationDataProvider
   {
+    public const int TVCHardwareVersion32k = 0;
+    public const int TVCHardwareVersion64k = 1;
+    public const int TVCHardwareVersion64kPaging = 2;
+    public const int TVCHardwareVersion64kplus = 3;
+
+
     public TVCConfigurationSettings Settings { get; private set; }
 
     public string[] ComputerVersionList { get; private set; }

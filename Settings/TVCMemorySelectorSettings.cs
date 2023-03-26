@@ -21,7 +21,7 @@ namespace YATE.Settings
 
       StartAddress = "0";
 
-      EndAddress = "65535";
+      EndAddress = "0xffff";
     }
   }
 }

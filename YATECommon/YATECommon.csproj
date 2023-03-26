@@ -59,13 +59,16 @@
     <Compile Include="Drivers\Joystick.cs" />
     <Compile Include="Drivers\JoystickNative.cs" />
     <Compile Include="Drivers\JoystickState.cs" />
+    <Compile Include="Helpers\ItemsControlExtensions.cs" />
     <Compile Include="Helpers\EnumValueDescription.cs" />
     <Compile Include="Helpers\EnumValueExtension.cs" />
     <Compile Include="Helpers\IntegerExpressionEvaluator.cs" />
     <Compile Include="Helpers\IntergerExpresionEvaluatorException.cs" />
     <Compile Include="Helpers\ROMFile.cs" />
+    <Compile Include="IBreakpointManager.cs" />
     <Compile Include="IDebuggableMemory.cs" />
     <Compile Include="ITVCDebugger.cs" />
+    <Compile Include="ITVCMemory.cs" />
     <Compile Include="ITVCPorts.cs" />
     <Compile Include="Settings\IndexedEmulatorSettingsBase.cs" />
     <Compile Include="TVCJoystick.cs" />

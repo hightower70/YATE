@@ -2,7 +2,7 @@
 using YATECommon;
 using YATECommon.Chips;
 
-namespace SAA1099Expansion
+namespace MemoryExpansion32k
 {
   public class SAA1099Expansion
   {

@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExpansionMain.cs" />
+    <Compile Include="ExpansionRAM.cs" />
     <Compile Include="Forms\SetupAbout.xaml.cs">
       <DependentUpon>SetupAbout.xaml</DependentUpon>
     </Compile>

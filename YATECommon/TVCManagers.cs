@@ -32,8 +32,9 @@ namespace YATECommon
     public ExpansionManager ExpansionManager { get; private set; }
     public IExecutionManager ExecutionManager { get; private set; }
     public ICartridgeManager CartridgeManager { get; private set; }
-
     public IDebugManager DebugManager { get; private set; }
+
+    public IBreakpointManager BreakpointManager { get; private set; }
 
 
     public void SetMainWindow(Window in_window)
@@ -64,6 +65,11 @@ namespace YATECommon
     public void SetDebugManager(IDebugManager in_debug_manager)
     {
       DebugManager = in_debug_manager;
+    }
+
+    public void SetBreakpointManager(IBreakpointManager in_breakpoint_manager)
+    {
+      BreakpointManager = in_breakpoint_manager;
     }
 
     #region · Singleton members ·

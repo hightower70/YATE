@@ -33,7 +33,7 @@
 			<Setter.Value>
 				<ControlTemplate TargetType="{x:Type TextBox}">
 					<Grid Background="{TemplateBinding Background}" SnapsToDevicePixels="true">
-						<TextBlock Foreground="{StaticResource SearchTextForeground}" Margin="5,0,0,0" 
+						<TextBlock Foreground="{DynamicResource SearchTextForeground}" Margin="5,0,0,0" 
                                    VerticalAlignment="Center" Name="search" Text="Search ..." Visibility="Hidden"/>
 						<ScrollViewer x:Name="PART_ContentHost" Margin="1"/>
 					</Grid>
@@ -46,7 +46,7 @@
 						</Trigger>
 						<Trigger Property="IsMouseOver" Value="true">
 							<Setter Property="Background" Value="{DynamicResource TextBoxBackgroundSelected}" />
-							<Setter TargetName="search" Property="Foreground" Value="{StaticResource Foreground}" />
+							<Setter TargetName="search" Property="Foreground" Value="{DynamicResource Foreground}" />
 						</Trigger>
 						<Trigger Property="IsFocused" Value="true">
 							<Setter Property="Background" Value="{DynamicResource TextBoxBackgroundSelected}" />

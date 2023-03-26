@@ -201,7 +201,7 @@ namespace YATE.Controls
 
             if(line_index >=0)
             {
-              (ItemsSource as DisassemblyLineCollection)[line_index].IsBreakpoint = true;
+              (ItemsSource as List<DisassemblyLine>)[line_index].IsBreakpoint = true;
               m_vertical_scroll_bar.AddAnnotation(line_index, false, Brushes.Red);
             }
           }
@@ -214,7 +214,7 @@ namespace YATE.Controls
 
             if (line_index >= 0)
             {
-              (ItemsSource as DisassemblyLineCollection)[line_index].IsBreakpoint = false;
+              (ItemsSource as List<DisassemblyLine>)[line_index].IsBreakpoint = false;
               m_vertical_scroll_bar.RemoveAnnotation(line_index, false, Brushes.Red);
             }
           }

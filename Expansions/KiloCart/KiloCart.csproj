@@ -56,6 +56,7 @@
     <Compile Include="Forms\SetupInformation.xaml.cs">
       <DependentUpon>SetupInformation.xaml</DependentUpon>
     </Compile>
+    <Compile Include="KilocartMemory.cs" />
     <Compile Include="KiloCartSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SetupConfigurationDataProvider.cs" />

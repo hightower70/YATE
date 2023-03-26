@@ -20,9 +20,7 @@
 // ----------------
 // Multicart Memory Emulation
 ///////////////////////////////////////////////////////////////////////////////
-using MultiCart;
 using System;
-using System.Runtime;
 using System.Runtime.CompilerServices;
 using YATECommon;
 using YATECommon.Chips;
@@ -66,7 +64,7 @@ namespace MultiCart
     #endregion
 
     /// <summary>
-    /// Default cosntructor
+    /// Default constructor
     /// </summary>
     public MultiCartMemory()
     {
@@ -291,10 +289,7 @@ namespace MultiCart
     }
 
 
-    public TVCMemoryType MemoryType
-    {
-      get => TVCMemoryType.Cart;
-    }
+    public TVCMemoryType MemoryType { get => TVCMemoryType.Cart; }
 
 
     public byte DebugReadMemory(int in_page_index, int in_address)

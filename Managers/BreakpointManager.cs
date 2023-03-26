@@ -2,11 +2,11 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Data;
+using YATECommon;
 
 namespace YATE.Managers
 {
-  public class BreakpointManager : INotifyPropertyChanged
+  public class BreakpointManager : IBreakpointManager, INotifyPropertyChanged
   {
     public enum BreakpointChangedMode
     {
@@ -28,6 +28,7 @@ namespace YATE.Managers
 
     #endregion
 
+    #region · Singleton members ·
     private static BreakpointManager m_default;
     public static BreakpointManager Default
     {
@@ -40,6 +41,7 @@ namespace YATE.Managers
         return m_default;
       }
     }
+    #endregion
 
     public BreakpointManager()
     {

@@ -337,7 +337,7 @@ namespace YATE.Emulator.Z80CPU
 			new OpCode( "CALL P,@"          , 10 , 17 , OpCodeFlags.Jumps | OpCodeFlags.Continues), /* F4 */
 			new OpCode( "PUSH AF"           , 11 ,  0 ), /* F5 */
 			new OpCode( "OR #"              ,  7 ,  0 ), /* F6 */
-			new OpCode( "RST 0x30"          , 11 ,  0 , OpCodeFlags.Restarts), /* F7 */
+			new OpCode( "RST 0x30, #"       , 11 ,  0 , OpCodeFlags.Restarts), /* F7 */
 			new OpCode( "RET M"             ,  5 , 11 , OpCodeFlags.Returns | OpCodeFlags.Continues), /* F8 */
 			new OpCode( "LD SP,HL"          ,  6 ,  0 ), /* F9 */
 			new OpCode( "JP M,@"            , 10 ,  0 , OpCodeFlags.Jumps | OpCodeFlags.Continues), /* FA */
@@ -345,7 +345,7 @@ namespace YATE.Emulator.Z80CPU
 			new OpCode( "CALL M,@"          , 10 , 17 , OpCodeFlags.Jumps | OpCodeFlags.Continues), /* FC */
 			new OpCode( "shift FD"          ,  4 ,  0 ), /* FD */
 			new OpCode( "CP #"              ,  7 ,  0 ), /* FE */
-			new OpCode( "RST 0x38, #"       , 11 ,  0 , OpCodeFlags.Restarts), /* FF */
+			new OpCode( "RST 0x38"          , 11 ,  0 , OpCodeFlags.Restarts), /* FF */
 		};
 
 

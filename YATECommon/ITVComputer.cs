@@ -16,6 +16,9 @@
     void InsertCard(int in_slot_index, ITVCCard in_card);
     void RemoveCard(int in_slot_index);
 
+    // main RAM memory
+    ITVCMemory Memory { get; }
+
     // ports handling
     ITVCPorts Ports { get; }
 

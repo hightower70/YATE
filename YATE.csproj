@@ -154,6 +154,7 @@
     </Compile>
     <Compile Include="Drivers\WaveNative.cs" />
     <Compile Include="Drivers\WaveOut.cs" />
+    <Compile Include="Settings\DisassemblyListViewSettings.cs" />
     <Compile Include="Settings\HexViewSettings.cs" />
     <Compile Include="Settings\TVCJoystick2Settings.cs" />
     <Compile Include="Settings\TVCJoystick1Settings.cs" />

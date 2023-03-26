@@ -14,17 +14,17 @@ namespace CustomControls.HexEdit
 
     byte ReadByte();
 
-    sbyte ReadSByte();
+    //sbyte ReadSByte();
 
-    Int16 ReadInt16();
+    //Int16 ReadInt16();
 
-    Int32 ReadInt32();
+    //Int32 ReadInt32();
 
-    Int64 ReadInt64();
+    //Int64 ReadInt64();
 
-    UInt16 ReadUInt16();
+    //UInt16 ReadUInt16();
 
-    UInt32 ReadUInt32();
-    UInt64 ReadUInt64();
+    //UInt32 ReadUInt32();
+    //UInt64 ReadUInt64();
   }
 }

@@ -20,11 +20,11 @@
 // ----------------
 // Main interface class for 32k RAM expansion card
 ///////////////////////////////////////////////////////////////////////////////
-using SAA1099Expansion.Forms;
+using MemoryExpansion32k.Forms;
 using YATECommon;
 using YATECommon.Expansions;
 
-namespace SAA1099Expansion
+namespace MemoryExpansion32k
 {
   public class ExpansionMain : ExpansionBase
   {
@@ -32,6 +32,7 @@ namespace SAA1099Expansion
 
     #region · Data members ·
     private ExpansionSetupPageInfo[] m_settings_page_info;
+    private HBMCard m_hbm_card;
     #endregion
 
     public ExpansionMain()
@@ -64,6 +65,8 @@ namespace SAA1099Expansion
     /// </summary>
     public override void Install(ITVComputer in_computer)
     {
+      m_hbm_card = new HBMCard();
+      m_hbm_card.Install(in_computer);
     }
 
     /// <summary>
@@ -71,6 +74,7 @@ namespace SAA1099Expansion
     /// </summary>
     public override void Remove(ITVComputer in_computer)
     {
+      m_hbm_card.Remove(in_computer);
     }
   }
 }

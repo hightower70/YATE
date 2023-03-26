@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using YATECommon;
+using YATECommon.Helpers;
 
 namespace YATE.Managers
 {
@@ -8,11 +9,13 @@ namespace YATE.Managers
   {
     public TVCMemoryType MemoryType { get; set; }
     public ushort Address { get; set; }
+    public ushort Page { get; set; }
 
-    public BreakpointInfo(TVCMemoryType in_memory_type, ushort in_address)
+    public BreakpointInfo(TVCMemoryType in_memory_type, ushort in_address, ushort in_page = 0)
     {
       MemoryType = in_memory_type;
       Address = in_address;
+      Page = in_page;
     }
 
     public override bool Equals(object obj)
@@ -20,7 +23,7 @@ namespace YATE.Managers
       BreakpointInfo breakpoint_info = obj as BreakpointInfo;
       if (breakpoint_info != null)
       {
-        return (MemoryType == breakpoint_info.MemoryType && Address == breakpoint_info.Address);
+        return (MemoryType == breakpoint_info.MemoryType && Address == breakpoint_info.Address && Page == breakpoint_info.Page);
       }
 
       return false;
@@ -28,15 +31,12 @@ namespace YATE.Managers
 
     public override string ToString()
     {
-      return string.Format("0x{0:X4} ({1})", Address, MemoryType.ToString());
+      return string.Format("0x{0:X4} ({1},0x{2:X4})", Address, MemoryType.ToString(),Page);
     }
 
     public override int GetHashCode()
     {
-      int hashcode = 1430287;
-      hashcode = hashcode * 7302013 ^ Address.GetHashCode();
-      hashcode = hashcode * 7302013 ^ MemoryType.GetHashCode();
-      return hashcode;
+      return HashCodeHelper.Hash<ushort, TVCMemoryType, ushort>(Address, MemoryType, Page);
     }
 
     #region · INotifyPropertyHandler ·

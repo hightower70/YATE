@@ -13,6 +13,10 @@ using YATECommon.Settings;
 using YATECommon;
 using System.Windows.Input;
 using Forms;
+using System.Globalization;
+using System.Linq;
+using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace YATE.Forms
 {
@@ -30,6 +34,7 @@ namespace YATE.Forms
     private KeyboardHook m_keyboard_hook;
 
     public IndexedWindowManager m_hex_edit_window_manager = new IndexedWindowManager();
+    public IndexedWindowManager m_disassembly_list_view_window_manager = new IndexedWindowManager();
 
     public MainWindow()
     {
@@ -53,6 +58,8 @@ namespace YATE.Forms
 
       TVCManagers.Default.SetMainWindow(this);
 
+      // Debug manager
+      TVCManagers.Default.SetDebugManager(new DebugManager());
 
       // Create Cartridge contol
       TVCManagers.Default.SetCartridgeManager(new TVCCartridgeManager());
@@ -68,8 +75,6 @@ namespace YATE.Forms
       TVCManagers.Default.ExecutionManager.Initialize();
       ((ExecutionManager)TVCManagers.Default.ExecutionManager).TVC.Video.FrameReady += FrameReady;
 
-      // Debug manager
-      TVCManagers.Default.SetDebugManager(new DebugManager());
     }
 
 
@@ -90,6 +95,9 @@ namespace YATE.Forms
       TVCManagers.Default.ExpansionManager.AddMainModule(typeof(MainModule));
       TVCManagers.Default.ExpansionManager.LoadExpansions();
       TVCManagers.Default.ExpansionManager.InstallExpansions(ExecutionControl.TVC);
+
+      // init keyboard shortcut
+      SetInputGestureTextsRecursive(mMain.Items, InputBindings);
 
       //  Start Audio control
       TVCManagers.Default.AudioManager.Start();
@@ -217,7 +225,7 @@ namespace YATE.Forms
         // Open document
         string filename = dlg.FileName;
 
-        TVCFiles.LoadProgramFile(filename, ExecutionControl.TVC.Memory);
+        TVCFiles.LoadProgramFile(filename, ExecutionControl.TVC.Memory as TVCMemory);
       }
     }
 
@@ -243,19 +251,19 @@ namespace YATE.Forms
         switch (dlg.FilterIndex)
         {
           case 1:
-            TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory);
+            TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory as TVCMemory);
             break;
 
           case 2:
-            TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory, BASFile.EncodingType.Ansi);
+            TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory as TVCMemory, BASFile.EncodingType.Ansi);
             break;
 
           case 3:
-            TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory, BASFile.EncodingType.Utf8);
+            TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory as TVCMemory, BASFile.EncodingType.Utf8);
             break;
 
           case 4:
-            TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory, BASFile.EncodingType.Unicode);
+            TVCFiles.SaveProgramFile(filename, ExecutionControl.TVC.Memory as TVCMemory , BASFile.EncodingType.Unicode);
             break;
         }
       }
@@ -281,7 +289,7 @@ namespace YATE.Forms
         string filename = dialog.SelectedFileName;
 
         // load program 
-        TVCFiles.LoadProgramFile(filename, ExecutionControl.TVC.Memory);
+        TVCFiles.LoadProgramFile(filename, ExecutionControl.TVC.Memory as TVCMemory);
 
         // autostart program is enabled
         GamebaseSettings settings = SettingsFile.Default.GetSettings<GamebaseSettings>();
@@ -330,6 +338,8 @@ namespace YATE.Forms
     {
       HexEditForm form = new HexEditForm(m_hex_edit_window_manager);
 
+      form.Owner = this;
+
       form.Show();
     }
 
@@ -344,11 +354,9 @@ namespace YATE.Forms
 
     private void miDisassemblyView_Click(object sender, RoutedEventArgs e)
     {
-      DisassemblyListView dialog = new DisassemblyListView();
+      DisassemblyListView form = new DisassemblyListView(m_disassembly_list_view_window_manager);
 
-      dialog.Owner = this;
-
-      dialog.Show();
+      form.Show();
     }
 
     private void Window_Closed(object sender, System.EventArgs e)
@@ -358,6 +366,49 @@ namespace YATE.Forms
       {
         App.Current.Windows[intCounter].Close();
       }
+    }
+
+    private void SetInputGestureTextsRecursive(ItemCollection items, InputBindingCollection inputBindings)
+    {
+      foreach (var item in items)
+      {
+        var menuItem = item as MenuItem;
+        if (menuItem != null)
+        {
+          if (menuItem.Command != null)
+          {
+            // try to find an InputBinding with the same command and take the Gesture from there
+            foreach (KeyBinding keyBinding in inputBindings.OfType<KeyBinding>())
+            {
+              // we cant just do keyBinding.Command == menuItem.Command here, because the Command Property getter creates a new RelayCommand every time
+              // so we compare the bindings from XAML if they have the same target
+              if (CheckCommandPropertyBindingEquality(keyBinding, menuItem))
+              {
+                // let a new Keygesture create the String
+                menuItem.InputGestureText = new KeyGesture(keyBinding.Key, keyBinding.Modifiers).GetDisplayStringForCulture(CultureInfo.CurrentCulture);
+              }
+            }
+          }
+
+          // recurse into submenus
+          if (menuItem.Items != null)
+            SetInputGestureTextsRecursive(menuItem.Items, inputBindings);
+        }
+      }
+    }
+
+    private static bool CheckCommandPropertyBindingEquality(KeyBinding keyBinding, MenuItem menuItem)
+    {
+      // get the binding for 'Command' property
+      var keyBindingCommandBinding = BindingOperations.GetBindingExpression(keyBinding, InputBinding.CommandProperty);
+      var menuItemCommandBinding = BindingOperations.GetBindingExpression(menuItem, MenuItem.CommandProperty);
+
+      if (keyBindingCommandBinding == null || menuItemCommandBinding == null)
+        return false;
+
+      // commands are the same if they're defined in the same class and have the same name
+      return keyBindingCommandBinding.ResolvedSource == menuItemCommandBinding.ResolvedSource
+          && keyBindingCommandBinding.ResolvedSourcePropertyName == menuItemCommandBinding.ResolvedSourcePropertyName;
     }
   }
 }

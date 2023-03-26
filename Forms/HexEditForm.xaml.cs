@@ -33,41 +33,6 @@ namespace YATE.Forms
     {
       return m_memory.DebugReadMemory(m_page_index, (int)Position++);
     }
-
-    public short ReadInt16()
-    {
-      throw new NotImplementedException();
-    }
-
-    public int ReadInt32()
-    {
-      throw new NotImplementedException();
-    }
-
-    public long ReadInt64()
-    {
-      throw new NotImplementedException();
-    }
-
-    public sbyte ReadSByte()
-    {
-      throw new NotImplementedException();
-    }
-
-    public ushort ReadUInt16()
-    {
-      throw new NotImplementedException();
-    }
-
-    public uint ReadUInt32()
-    {
-      throw new NotImplementedException();
-    }
-
-    public ulong ReadUInt64()
-    {
-      throw new NotImplementedException();
-    }
   }
 
 
@@ -76,8 +41,6 @@ namespace YATE.Forms
   /// </summary>
   public partial class HexEditForm : Window, INotifyPropertyChanged
   {
-    //private BinaryReader binaryReader;
-
     private HexViewSettings m_settings;
     private IndexedWindowManager m_window_manager;
     private int m_window_index;

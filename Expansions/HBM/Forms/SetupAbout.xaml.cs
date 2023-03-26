@@ -1,6 +1,6 @@
 ﻿using YATECommon.SetupPage;
 
-namespace SAA1099Expansion.Forms
+namespace MemoryExpansion32k.Forms
 {
 	/// <summary>
 	/// Interaction logic for SetupAbout.xaml

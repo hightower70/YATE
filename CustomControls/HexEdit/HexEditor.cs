@@ -1770,7 +1770,7 @@
 
     private string ReadFormattedData()
     {
-      string result;
+      string result = string.Empty;
 
       switch (DataType)
       {
@@ -1788,28 +1788,28 @@
                         {
                           case 1:
                             {
-                              result = $"{DataProvider.ReadSByte():+#;-#;0}".PadLeft(4);
+                              //result = $"{DataProvider.ReadSByte():+#;-#;0}".PadLeft(4);
                             }
 
                             break;
 
                           case 2:
                             {
-                              result = $"{DataProvider.ReadInt16():+#;-#;0}".PadLeft(6);
+                              //result = $"{DataProvider.ReadInt16():+#;-#;0}".PadLeft(6);
                             }
 
                             break;
 
                           case 4:
                             {
-                              result = $"{DataProvider.ReadInt32():+#;-#;0}".PadLeft(11);
+                              //result = $"{DataProvider.ReadInt32():+#;-#;0}".PadLeft(11);
                             }
 
                             break;
 
                           case 8:
                             {
-                              result = $"{DataProvider.ReadInt64():+#;-#;0}".PadLeft(21);
+                              //result = $"{DataProvider.ReadInt64():+#;-#;0}".PadLeft(21);
                             }
 
                             break;
@@ -1836,21 +1836,21 @@
 
                           case 2:
                             {
-                              result = $"{DataProvider.ReadUInt16()}".PadLeft(5);
+                              //result = $"{DataProvider.ReadUInt16()}".PadLeft(5);
                             }
 
                             break;
 
                           case 4:
                             {
-                              result = $"{DataProvider.ReadUInt32()}".PadLeft(10);
+                              //result = $"{DataProvider.ReadUInt32()}".PadLeft(10);
                             }
 
                             break;
 
                           case 8:
                             {
-                              result = $"{DataProvider.ReadUInt64()}".PadLeft(20);
+                              //result = $"{DataProvider.ReadUInt64()}".PadLeft(20);
                             }
 
                             break;
@@ -1886,21 +1886,21 @@
 
                     case 2:
                       {
-                        result = $"{DataProvider.ReadUInt16(),0:X4}";
+                        //result = $"{DataProvider.ReadUInt16(),0:X4}";
                       }
 
                       break;
 
                     case 4:
                       {
-                        result = $"{DataProvider.ReadUInt32(),0:X8}";
+                        //result = $"{DataProvider.ReadUInt32(),0:X8}";
                       }
 
                       break;
 
                     case 8:
                       {
-                        result = $"{DataProvider.ReadUInt64(),0:X16}";
+                        //result = $"{DataProvider.ReadUInt64(),0:X16}";
                       }
 
                       break;
@@ -1928,23 +1928,23 @@
             switch (DataWidth)
             {
               case 4:
-                {
+                {         /*
                   var bytes = BitConverter.GetBytes(DataProvider.ReadUInt32());
 
                   var value = BitConverter.ToSingle(bytes, 0);
 
-                  result = $"{value:E08}".PadLeft(16);
+                  result = $"{value:E08}".PadLeft(16);     */
                 }
 
                 break;
 
               case 8:
-                {
+                {                                            /*
                   var bytes = BitConverter.GetBytes(DataProvider.ReadUInt64());
 
                   var value = BitConverter.ToSingle(bytes, 0);
 
-                  result = $"{value:E16}".PadLeft(24);
+                  result = $"{value:E16}".PadLeft(24);         */
                 }
 
                 break;

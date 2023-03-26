@@ -103,15 +103,17 @@ namespace YATE.Forms
 		private void UpdateBytes(Z80DisassemblerInstruction in_instruction, int in_index)
 		{
 			TextBlock text_block= FindName("Data" + in_index.ToString()) as TextBlock;
+			TVCMemory memory = ((TVCMemory)m_execution_control.TVC.Memory);
 
-			string value = string.Empty;
+
+      string value = string.Empty;
 
 			if (in_instruction != null)
 			{
 
 				for (int i = 0; i < in_instruction.Length; i++)
 				{
-					byte b = m_execution_control.TVC.Memory.DebuggerMemoryRead((ushort)(in_instruction.Address + i));
+					byte b = memory.DebuggerMemoryRead((ushort)(in_instruction.Address + i));
 
 					if (!string.IsNullOrEmpty(value))
 						value += ' ';
@@ -244,7 +246,7 @@ namespace YATE.Forms
 		{
 			in_execution_control.DebuggerPeriodicEvent += DebuggerBreakEventDelegate;
 			m_execution_control = in_execution_control;
-			m_disassembler.ReadByte = in_execution_control.TVC.Memory.DebuggerMemoryRead;
+			m_disassembler.ReadByte = ((TVCMemory)in_execution_control.TVC.Memory).DebuggerMemoryRead;
 
 			UpdateExecutionHistory();
 		}

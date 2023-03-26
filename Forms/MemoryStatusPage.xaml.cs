@@ -53,7 +53,7 @@ namespace YATE.Forms
 		{
 			get
 			{
-				return m_execution_control.TVC.Memory.Port02H.ToString("X2");
+				return ((TVCMemory)m_execution_control.TVC.Memory).Port02H.ToString("X2");
 			}
 			set
 			{
@@ -62,22 +62,22 @@ namespace YATE.Forms
 
 		public string Page0MappedName
 		{
-			get { return m_execution_control.TVC.Memory.GetPageMappingNameString(0); }
+			get { return ((TVCMemory)m_execution_control.TVC.Memory).GetPageMappingNameString(0); }
 		}
 
 		public string Page1MappedName
 		{
-			get { return m_execution_control.TVC.Memory.GetPageMappingNameString(1); }
+			get { return ((TVCMemory)m_execution_control.TVC.Memory).GetPageMappingNameString(1); }
 		}
 
 		public string Page2MappedName
 		{
-			get { return m_execution_control.TVC.Memory.GetPageMappingNameString(2); }
+			get { return ((TVCMemory)m_execution_control.TVC.Memory).GetPageMappingNameString(2); }
 		}
 
 		public string Page3MappedName
 		{
-			get { return m_execution_control.TVC.Memory.GetPageMappingNameString(3); }
+			get { return ((TVCMemory)m_execution_control.TVC.Memory).GetPageMappingNameString(3); }
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;

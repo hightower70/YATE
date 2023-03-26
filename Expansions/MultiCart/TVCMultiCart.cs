@@ -75,8 +75,7 @@ namespace Multicart
 
     public void Reset()
     {
-      if (!m_memory.IsRegisterLocked)
-        m_memory.SetRegister(0);
+      // no RESET available on CART
     }
 
     public void Initialize(ITVComputer in_parent)

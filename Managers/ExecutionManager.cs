@@ -92,8 +92,10 @@ namespace YATE.Managers
 			m_execution_state_request = ExecutionStateRequest.NoChange;
 			m_execution_state_changed_event = new AutoResetEvent(false);
 
-			DebugStepIntoCommand = new ExecutionManagerCommand(DebugStepExecute);
-			DebugPauseCommand = new ExecutionManagerCommand(DebugPauseExecute);
+			DebugStepIntoCommand = new ExecutionManagerCommand(DebugStepIntoExecute);
+      DebugStepOverCommand = new ExecutionManagerCommand(DebugStepOverExecute);
+      DebugStepOutCommand = new ExecutionManagerCommand(DebugStepOutExecute);
+      DebugPauseCommand = new ExecutionManagerCommand(DebugPauseExecute);
 			DebugRunCommand = new ExecutionManagerCommand(DebugRunExecute);
 			DebugResetCommand = new ExecutionManagerCommand(DebugResetExecute);
 			DebugRunFullSpeedCommand = new ExecutionManagerCommand(DebugRunFullSpeedExecute);
@@ -139,16 +141,32 @@ namespace YATE.Managers
 		// Step into
 		public ExecutionManagerCommand DebugStepIntoCommand { get; private set; }
 
-		public void DebugStepExecute(object parameter)
+		public void DebugStepIntoExecute(object parameter)
 		{
 			StepInto();
 		}
 
-		#endregion
+    // Step over
+    public ExecutionManagerCommand DebugStepOverCommand { get; private set; }
 
-		#region · Properties · 
+    public void DebugStepOverExecute(object parameter)
+    {
+      StepOver();
+    }
 
-		public TVComputer TVC { get; private set; }
+    // Step out
+    public ExecutionManagerCommand DebugStepOutCommand { get; private set; }
+
+    public void DebugStepOutExecute(object parameter)
+    {
+      StepOut();
+    }
+
+    #endregion
+
+    #region · Properties · 
+
+    public TVComputer TVC { get; private set; }
 
     public ITVComputer ITVC { get { return TVC; } }
 
@@ -184,27 +202,49 @@ namespace YATE.Managers
 		{
 			ushort instruction_start_pc = TVC.CPU.Registers.PC;
 			uint TCycle = 0;
-			do
+
+			TCycle += TVC.CPU.Step();
+
+			// handle pending interrupts
+			if (TVC.CPU.InstructionDone)
 			{
-				TCycle += TVC.CPU.Step();
+				if (TVC.Interrupt.IsIntActive())
+					m_cpu_t_cycle += (uint)TVC.CPU.Int();
+			}
 
-        // handle pending interrupts
-        if (TVC.CPU.InstructionDone)
-				{
-					if (TVC.Interrupt.IsIntActive())
-						m_cpu_t_cycle += (uint)TVC.CPU.Int();
-				}
+			TVC.PeriodicCallback();
 
-				TVC.PeriodicCallback();
+			if (TVC.CPU.InstructionDone)
+				AddInstructionToExecutionHistory(instruction_start_pc, TCycle);
 
-      } while (!TVC.CPU.InstructionDone || instruction_start_pc == TVC.CPU.Registers.PC);
-
-			AddInstructionToExecutionHistory(instruction_start_pc, TCycle);
-
-      GenerateDebugEvent(true);
+			GenerateDebugEvent(true);
 		}
 
 		public void StepOver()
+		{
+      ushort instruction_start_pc = TVC.CPU.Registers.PC;
+      uint TCycle = 0;
+      do
+      {
+        TCycle += TVC.CPU.Step();
+
+        // handle pending interrupts
+        if (TVC.CPU.InstructionDone)
+        {
+          if (TVC.Interrupt.IsIntActive())
+            m_cpu_t_cycle += (uint)TVC.CPU.Int();
+        }
+
+        TVC.PeriodicCallback();
+
+      } while (!TVC.CPU.InstructionDone || instruction_start_pc == TVC.CPU.Registers.PC);
+
+      AddInstructionToExecutionHistory(instruction_start_pc, TCycle);
+
+      GenerateDebugEvent(true);
+    }
+
+		public void StepOut()
 		{
 
 		}
@@ -258,16 +298,11 @@ namespace YATE.Managers
 		private Stopwatch m_stopwatch;
 
 		Z80Disassembler m_disassembler;
-	
-		private byte ReadMemory(ushort in_address)
-		{
-			return TVC.Memory.Read(in_address);
-		}
 
 		private void SimulationThread()
 		{
 			m_disassembler = new Z80Disassembler();
-			m_disassembler.ReadByte = ReadMemory;
+			m_disassembler.ReadByte = ((TVCMemory)TVC.Memory).Read;
 
 			m_stopwatch = new Stopwatch();
 
@@ -384,11 +419,12 @@ namespace YATE.Managers
 			uint frame_start_cycle = m_cpu_t_cycle;
 			bool breakpoint_exit = false;
       bool frame_finished = false;
+			TVCMemory tvc_memory = (TVCMemory)TVC.Memory;
 
 			while (m_thread_running && !breakpoint_exit && !frame_finished)
 			{
 				m_target_cycle += 200;	 //TODO: calculate from video timing
-				TVC.Memory.VideoMemAccessCount = 0;
+				tvc_memory.VideoMemAccessCount = 0;
 
         frame_finished = TVC.Video.RenderScanline();
 
@@ -424,10 +460,10 @@ namespace YATE.Managers
           }
 
           // handle clock stretching (video memory access)
-          if (TVC.Memory.VideoMemAccessCount > 0)
+          if (tvc_memory.VideoMemAccessCount > 0)
           {
-            m_cpu_t_cycle += (uint)(TVC.Memory.VideoMemAccessCount + 1);
-            TVC.Memory.VideoMemAccessCount = 0;
+            m_cpu_t_cycle += (uint)(tvc_memory.VideoMemAccessCount + 1);
+            tvc_memory.VideoMemAccessCount = 0;
           }
 
         } while (((long)m_target_cycle - m_cpu_t_cycle) > 0 && m_thread_running && !breakpoint_exit);
@@ -490,10 +526,11 @@ namespace YATE.Managers
 			ExecutionHistoryEntry history_entry = ExecutionHistory.GetNextEmptySlot();
 			history_entry.PC = in_instruction_start_pc;
 			history_entry.TCycle = in_instruction_t_cycle;
+			TVCMemory tvc_memory = (TVCMemory)TVC.Memory;
 
 			for (int i = 0; i < ExecutionHistoryEntry.HistoryEntryByteBufferLength; i++)
 			{
-				history_entry.Bytes[i] = TVC.Memory.Read((ushort)(in_instruction_start_pc + i));
+				history_entry.Bytes[i] = tvc_memory.Read((ushort)(in_instruction_start_pc + i));
 			}
 		}
 

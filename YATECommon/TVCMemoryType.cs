@@ -10,15 +10,18 @@ namespace YATECommon
     [Description("Cart")]
     Cart,
 
-    [Description("Basic ROM")]
-    BasicROM,
+    [Description("System ROM")]
+    SystemROM,
 
-    [Description("Extension ROM")]
-    ExtROM,
+    Video,
 
-    Slot0,
-    Slot1,
-    Slot2,
-    Slot3
+    [Description("Extension ROM & Slot 0")]
+    ExtSlot0,
+    [Description("Extension ROM & Slot 1")]
+    ExtSlot1,
+    [Description("Extension ROM & Slot 2")]
+    ExtSlot2,
+    [Description("Extension ROM & Slot 3")]
+    ExtSlot3
   }
 }

@@ -20,11 +20,11 @@
 // ----------------
 // Main interface class for 32k RAM expansion card
 ///////////////////////////////////////////////////////////////////////////////
-using SAA1099Expansion.Forms;
+using MemoryExpansion32k.Forms;
 using YATECommon;
 using YATECommon.Expansions;
 
-namespace SAA1099Expansion
+namespace MemoryExpansion32k
 {
   public class ExpansionMain : ExpansionBase
   {
