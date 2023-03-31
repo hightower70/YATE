@@ -80,7 +80,7 @@ namespace KiloCart
       // no RESET available on CART
     }
 
-    public void Initialize(ITVComputer in_parent)
+    public void Insert(ITVComputer in_parent)
     {
       TVCManagers.Default.DebugManager.RegisterDebuggableMemory(m_memory);
     }

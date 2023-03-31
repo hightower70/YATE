@@ -56,7 +56,7 @@ namespace YATE.Forms
       m_window_index = m_window_manager.AcquireWindowIndex();
       m_settings = SettingsFile.Default.GetSettings<HexViewSettings>(m_window_index);
 
-      (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerStoppedEvent += DebuggerStoppedEventHandler;
+      (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerEvent += DebuggerEventHandler;
 
       tmsMemorySelector.SetSelector(m_settings.MemorySelection);
       CreateDataProvider();
@@ -71,7 +71,7 @@ namespace YATE.Forms
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
-      (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerStoppedEvent -= DebuggerStoppedEventHandler;
+      (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerEvent -= DebuggerEventHandler;
 
       SettingsFile.Default.SetSettings(m_settings, m_window_index);
       SettingsFile.Default.Save();
@@ -79,9 +79,10 @@ namespace YATE.Forms
       m_window_manager.ReleaseWindowIndex(m_window_index);
     }
 
-    private void DebuggerStoppedEventHandler(TVComputer in_sender)
+    private void DebuggerEventHandler(TVComputer in_sender, DebugEventType in_event_type)
     {
-      heEditor.Refresh();
+      if (in_event_type == DebugEventType.Paused)
+        heEditor.Refresh();
     }
 
     private void MemorySelectionChanged(object sender, MemorySelectionChangedEventType in_selection_changed_type)

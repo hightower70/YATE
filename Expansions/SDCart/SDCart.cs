@@ -18,71 +18,94 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// SD Card handler Cartride man emulation class
+// SD Card handler Cartride main emulation class
 ///////////////////////////////////////////////////////////////////////////////
 using System;
 using System.IO;
 using YATECommon;
+using YATECommon.Helpers;
 
 namespace SDCart
 {
-  public class SDCart : ITVCCartridge
+  public class SDCart : ITVCCartridge, IDebuggableMemory
   {
-    public const int MaxCartRomSize = 1024 * 1024;
+    #region · Constants ·
+    public const int RomPageCount = 4;
+    public const int RomPageSize = 16384;
+    public const int RomSize = RomPageCount * RomPageSize;
+    #endregion
 
+    #region · Data members ·
     public byte[] Rom { get; private set; }
 
     public SDCartSettings Settings { get; private set; }
 
-    private ushort m_map_register = 0;
+    private ushort m_page_register = 0;
+    private int m_page_index = 0;
+    private int m_page_address = 0;
     private CoProcessor m_coproc;
 
-    public void SetSettings(SDCartSettings in_settings)
+    private readonly string[] m_rom_page_names;
+
+    #endregion
+
+    #region · Constructor ·
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public SDCart()
     {
+      Rom = new byte[RomSize];
+      ROMFile.FillMemory(Rom);
+
+      string[] rom_page_names = new string[RomPageCount];
+      for (int i = 0; i < rom_page_names.Length; i++)
+      {
+        rom_page_names[i] = String.Format("ROM[{0}]", i);
+      }
+      m_rom_page_names = rom_page_names;
+    }
+
+    #endregion
+
+    public bool SetSettings(SDCartSettings in_settings)
+    {
+      bool restart_required = false;
       Settings = in_settings;
 
       m_coproc = new CoProcessor(this);
 
       // load ROM
-      Rom = new byte[MaxCartRomSize];
-      for (int i = 0; i < Rom.Length; i++)
-        Rom[i] = 0xff;
-
-      LoadROMContent(@"d:\Projects\Retro\SDCART\CartProgram\sdcart.bin", 0);
+      ROMFile.LoadMemoryFromResource("SDCart.Resources.sdcart.bin", Rom, ref restart_required);
 
       // initialize members
-      m_map_register = 0;
+      m_page_register = 0;
+
+      return restart_required;
     }
 
-    private void LoadROMContent(string in_rom_file_name, int in_address)
+    public void SetPageRegister(byte in_register)
     {
-      if (!string.IsNullOrEmpty(in_rom_file_name))
-      {
-        byte[] data = File.ReadAllBytes(in_rom_file_name);
-
-        int length = data.Length;
-
-        if ((in_address + data.Length) > Rom.Length)
-          length = Rom.Length - in_address;
-
-        Array.Copy(data, 0, Rom, in_address, length);
-      }
+      m_page_register = in_register;
+      m_page_index = in_register;
+      m_page_address = RomPageSize * m_page_index;
     }
 
     public byte MemoryRead(ushort in_address)
     {
       ushort address = (ushort)(in_address & ~0xc000);
 
-      if((address & 0x2000) == 0)
+      if ((address & 0x2000) == 0)
       {
         // ROM access
-        return Rom[address | m_map_register];
+        return Rom[address + m_page_address];
       }
       else
       {
         int range = (address >> 11) & 3;
 
-        switch(range)
+        switch (range)
         {
           case 0:
             return m_coproc.CoProcRead();
@@ -114,19 +137,43 @@ namespace SDCart
       // non relevant
     }
 
-    public void Initialize(ITVComputer in_parent)
+    public void Insert(ITVComputer in_parent)
     {
-      // non relevant
+      TVCManagers.Default.DebugManager.RegisterDebuggableMemory(this);
     }
 
     public void Remove(ITVComputer in_parent)
     {
-      // non relevant
+      TVCManagers.Default.DebugManager.UnregisterDebuggableMemory(this);
     }
 
     public void PeriodicCallback(ulong in_cpu_tick)
     {
       // non relevant
     }
+
+    #region · IDebuggableMemory implementation ·
+    public TVCMemoryType MemoryType { get { return TVCMemoryType.Cart; } }
+
+    public int AddressOffset { get { return 0xc000; } }
+
+    public int MemorySize { get { return RomPageSize; } }
+
+    public int PageCount { get { return RomPageCount; } }
+
+    public int PageIndex { get { return m_page_index; } }
+
+    public string[] PageNames { get { return m_rom_page_names; } }
+    public byte DebugReadMemory(int in_page_index, int in_address)
+    {
+      return Rom[in_page_index * RomPageSize + in_address];
+    }
+
+    public void DebugWriteMemory(int in_page_index, int in_address, byte in_data)
+    {
+      Rom[in_page_index * RomPageSize + in_address] = in_data;
+    }
+
+    #endregion
   }
 }

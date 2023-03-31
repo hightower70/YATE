@@ -244,7 +244,7 @@ namespace YATE.Forms
 
 		private void RegisterDebugEventHandler(ExecutionManager in_execution_control)
 		{
-			in_execution_control.DebuggerPeriodicEvent += DebuggerBreakEventDelegate;
+			in_execution_control.DebuggerAnimationEvent += DebuggerBreakEventDelegate;
 			m_execution_control = in_execution_control;
 			m_disassembler.ReadByte = ((TVCMemory)in_execution_control.TVC.Memory).DebuggerMemoryRead;
 

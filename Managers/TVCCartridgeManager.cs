@@ -77,7 +77,7 @@ namespace YATE.Managers
 				string file_name = dlg.FileName;
 
         // stop execution
-        m_execution_manager.ChangeExecutionState(ExecutionManager.ExecutionStateRequest.Pause);
+        m_execution_manager.ChangeExecutionState(ExecutionManager.ExecutionStateRequests.Pause);
 
         try
         {
@@ -94,7 +94,7 @@ namespace YATE.Managers
 				m_execution_manager.TVC.ColdReset();
 
 				// restore execution state
-				m_execution_manager.ChangeExecutionState(ExecutionManager.ExecutionStateRequest.Restore);
+				m_execution_manager.ChangeExecutionState(ExecutionManager.ExecutionStateRequests.Restore);
 
         // save cartidge file name
         settings.CartridgeActive = true;
@@ -114,7 +114,7 @@ namespace YATE.Managers
         return;
 
       // stop execution
-      m_execution_manager.ChangeExecutionState(ExecutionManager.ExecutionStateRequest.Pause);
+      m_execution_manager.ChangeExecutionState(ExecutionManager.ExecutionStateRequests.Pause);
 
 			// clear remaining memory
 			((TVCCartridge)m_execution_manager.TVC.Cartridge).ClearCartridge();
@@ -123,7 +123,7 @@ namespace YATE.Managers
 			m_execution_manager.TVC.ColdReset();
 
 			// restore execution state
-			m_execution_manager.ChangeExecutionState(ExecutionManager.ExecutionStateRequest.Restore);
+			m_execution_manager.ChangeExecutionState(ExecutionManager.ExecutionStateRequests.Restore);
 
       // save cartidge file name
       TVCConfigurationSettings settings = SettingsFile.Default.GetSettings<TVCConfigurationSettings>();

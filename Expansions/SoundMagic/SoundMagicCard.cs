@@ -18,28 +18,36 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Sound Magic main amulation class
+// Sound Magic main emulation class
 ///////////////////////////////////////////////////////////////////////////////
+using System;
 using YATECommon;
 using YATECommon.Chips;
 using YATECommon.Helpers;
 
 namespace SoundMagic
 {
-  public class SoundMagicCard : ITVCCard
+  public class SoundMagicCard : ITVCCard, IDebuggableMemory
   {
-    public const int RomSize = 32 * 1024;   // 32k is the max ROM size
-
+    #region · Constants ·
     const uint SN_CLOCK = 3579545;
     const int YM_CLOCK = 3579545;
+
+    public const int RomPageCount = 4;
+    public const int RomPageSize = 8192;
+    public const int RomSize = RomPageCount * RomPageSize;
+
+    #endregion
+
+    #region · Data members ·
 
     private ITVComputer m_tvcomputer;
     private ExpansionMain m_expansion_main;
 
     private byte m_page_register = 0xff;
     private byte[] m_card_rom;
-
-    public SoundMagicSettings Settings { get; private set; }
+    private int m_page_index;
+    private int m_page_address;
 
     private int m_audio_channel_index;
 
@@ -47,10 +55,24 @@ namespace SoundMagic
     private SAA1099 m_SAA1099;
     private YM3812 m_YM3812;
 
+    private readonly string[] m_rom_page_names;
+
+    #endregion
+
+    #region · Properties ·
+    public SoundMagicSettings Settings { get; private set; }
+
+    #endregion
+
+    #region · Constructor ·
     public SoundMagicCard(ExpansionMain in_expansion_main)
     {
       uint sample_rate = TVCManagers.Default.AudioManager.SampleRate;
       m_expansion_main = in_expansion_main;
+
+      // create ROM
+      m_card_rom = new byte[RomSize];
+      ROMFile.FillMemory(m_card_rom);
 
       m_SN76489 = new SN76489();
       m_SN76489.Initialize(sample_rate, SN_CLOCK);
@@ -60,11 +82,21 @@ namespace SoundMagic
 
       m_YM3812 = new YM3812();
       m_YM3812.Initialize(YM_CLOCK);
+
+      string[] rom_page_names = new string[RomPageCount];
+      for (int i = 0; i < rom_page_names.Length; i++)
+      {
+        rom_page_names[i] = String.Format("ROM[{0}]", i);
+      }
+      m_rom_page_names = rom_page_names;
     }
+    #endregion
 
     public bool SetSettings(SoundMagicSettings in_settings)
     {
       Settings = in_settings;
+
+      MemoryType = in_settings.GetCardMemoryType();
 
       // load ROM content
       bool settings_changed = LoadROM();
@@ -84,29 +116,30 @@ namespace SoundMagic
     private bool LoadROM()
     {
       bool changed = false;
-      byte[] old_rom = m_card_rom;       // save old rom content
 
       // load ROM
-      m_card_rom = new byte[RomSize];
-      ROMFile.FillMemory(m_card_rom);
-
       if (string.IsNullOrEmpty(Settings.ROMFileName))
       {
-        ROMFile.LoadMemoryFromResource("SoundMagic.Resources.sndmx-fw-v1.0.1.bin", m_card_rom);
+        ROMFile.LoadMemoryFromResource("SoundMagic.Resources.sndmx-fw-v1.0.1.bin", m_card_rom, ref changed);
       }
       else
       {
-        ROMFile.LoadMemoryFromFile(Settings.ROMFileName, m_card_rom);
+        ROMFile.LoadMemoryFromFile(Settings.ROMFileName, m_card_rom, ref changed);
       }
-
-      changed = !ROMFile.IsMemoryEqual(old_rom, m_card_rom);
 
       return changed;
     }
 
+    private void SetPageSelection(byte in_register_value)
+    {
+      m_page_register = in_register_value;
+      m_page_index = m_page_register & 0x03;
+      m_page_address = m_page_index * RomPageSize;
+    }
+
     public byte MemoryRead(ushort in_address)
     {
-      int address = (in_address & 0x1fff) + ((m_page_register & 0x03) << 13);
+      int address = (in_address & 0x1fff) + m_page_address;
 
       if (address < m_card_rom.Length)
         return m_card_rom[address];
@@ -121,7 +154,7 @@ namespace SoundMagic
 
     public void Reset()
     {
-      m_page_register = 0xff;
+      SetPageSelection(0xff);
     }
 
     public void PortRead(ushort in_address, ref byte inout_data)
@@ -160,7 +193,7 @@ namespace SoundMagic
 
         case 6:
         case 7:
-          m_page_register = in_byte;
+          SetPageSelection(in_byte);
           break;
       }
     }
@@ -179,11 +212,15 @@ namespace SoundMagic
       m_tvcomputer = in_parent;
 
       m_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderAudio);
+
+      TVCManagers.Default.DebugManager.RegisterDebuggableMemory(this);
     }
 
     public void Remove(ITVComputer in_parent)
     {
       TVCManagers.Default.AudioManager.CloseChannel(m_audio_channel_index);
+
+      TVCManagers.Default.DebugManager.UnregisterDebuggableMemory(this);
     }
 
 
@@ -206,5 +243,29 @@ namespace SoundMagic
         inout_buffer[sample_pos++] += right_sample / 3;
       }
     }
+
+    #region · IDebuggableMemory implementation ·
+    public TVCMemoryType MemoryType { get; private set; }
+
+    public int AddressOffset { get { return 0xe000; } }
+
+    public int MemorySize { get { return RomPageSize; } }
+
+    public int PageCount { get { return RomPageCount; } }
+
+    public int PageIndex { get { return m_page_index; } }
+
+    public string[] PageNames { get { return m_rom_page_names; } }
+    public byte DebugReadMemory(int in_page_index, int in_address)
+    {
+      return m_card_rom[in_page_index * RomPageSize + in_address];
+    }
+
+    public void DebugWriteMemory(int in_page_index, int in_address, byte in_data)
+    {
+      m_card_rom[in_page_index * RomPageSize + in_address] = in_data;
+    }
+
+    #endregion
   }
 }

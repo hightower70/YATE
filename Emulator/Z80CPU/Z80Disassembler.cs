@@ -22,6 +22,9 @@ namespace YATE.Emulator.Z80CPU
     public bool ShowRelativeOffsets { get; set; } = false;
 
 
+    public int AddressOffset { get; set; } = 0;
+
+
     /// <summary>
     /// Delegate function for reading memory content
     /// </summary>
@@ -62,7 +65,7 @@ namespace YATE.Emulator.Z80CPU
             dissassembled_instruction.Asm = "NOP*";
             dissassembled_instruction.TStates = 4;
             dissassembled_instruction.TStates2 = 0;
-            opcode = null;
+            opcode = invalid_opcode;
           }
           else if (next == 0xCB)
           {
@@ -91,7 +94,7 @@ namespace YATE.Emulator.Z80CPU
           {
             dissassembled_instruction.Asm = "NOP*";
             dissassembled_instruction.TStates = 8;
-            opcode = null;
+            opcode = invalid_opcode;
           }
           break;
 
@@ -229,6 +232,60 @@ namespace YATE.Emulator.Z80CPU
 
     }
 
+    public OpCode GetCurrentOpcode(ushort in_address)
+    {
+      OpCode opcode = null;
+
+      byte opc = DisassemblerReadByte(in_address++, null);
+
+      switch (opc)
+      {
+        case 0xDD:
+        case 0xFD:
+          byte next = DisassemblerReadByte(in_address++, null);
+          if ((next | 0x20) == 0xFD || next == 0xED)
+          {
+            opcode = null;
+          }
+          else if (next == 0xCB)
+          {
+            DisassemblerReadByte(in_address++, null);
+            next = DisassemblerReadByte(in_address++, null);
+
+            opcode = (opc == 0xDD) ? dasm_ddcb[next] : dasm_fdcb[next];
+          }
+          else
+          {
+            opcode = (opc == 0xDD) ? dasm_dd[next] : dasm_fd[next];
+            if (opcode.Mnemonic == null) //mirrored instructions
+            {
+              opcode = dasm_base[next];
+            }
+          }
+          break;
+
+        case 0xED:
+          next = DisassemblerReadByte(in_address++, null);
+          opcode = dasm_ed[next];
+          if (opcode.Mnemonic == null)
+          {
+            opcode = null;
+          }
+          break;
+
+        case 0xCB:
+          next = DisassemblerReadByte(in_address++, null);
+          opcode = dasm_cb[next];
+          break;
+
+        default:
+          opcode = dasm_base[opc];
+          break;
+      }
+
+      return opcode;
+    }
+
     /// <summary>
     /// Gets current instruction length in bytes
     /// </summary>
@@ -344,7 +401,7 @@ namespace YATE.Emulator.Z80CPU
 
     private byte DisassemblerReadByte(ushort in_address, Z80DisassemblerInstruction inout_instruction = null)
     {
-      byte data = ReadByte(in_address);
+      byte data = ReadByte((ushort)(in_address - AddressOffset));
 
       if (inout_instruction != null)
       {

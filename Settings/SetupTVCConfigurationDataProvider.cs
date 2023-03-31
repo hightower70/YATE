@@ -32,6 +32,11 @@ namespace YATE.Settings
     public const int TVCHardwareVersion64kPaging = 2;
     public const int TVCHardwareVersion64kplus = 3;
 
+    public const int TVCROMCustom = 0;
+    public const int TVCROM1_2 = 1;
+    public const int TVCROM1_2_RU = 2;
+    public const int TVCROM2_1 = 3;
+    public const int TVCROM2_2 = 4;
 
     public TVCConfigurationSettings Settings { get; private set; }
 
@@ -44,7 +49,7 @@ namespace YATE.Settings
       //m_joystick = new Joystick(in_parent);
       //InstalledJoysticks = m_joystick.FindJoysticks();
 
-      ComputerVersionList = new string[] { "TV Computer", "TV Computer 64k", "TV Computer 64k+", "TV Computer 64k (Russian)", "Custom" };
+      ComputerVersionList = new string[] { "TV Computer", "TV Computer 64k", "TV Computer 64k+", "TV Computer 64k (U3->U0 paging mod.)", "TV Computer 64k (Russian)", "Custom" };
       HardwareVersionList = new string[] { "TVC 32k", "TVC 64k", "TVC 64 & Ram Paging", "TVC 64k+" };
       ROMVersionList = new string[] { "(custom)", "BASIC 1.2", "BASIC 1.2 (RU)", "BASIC 2.1", "BASIC 2.2" };
 

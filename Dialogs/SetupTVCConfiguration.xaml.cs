@@ -34,42 +34,48 @@ namespace YATE.Dialogs
     {
       ComboBox combobox = (ComboBox)sender;
 
-      bool custom = combobox.SelectedIndex == 4;
-
-      cbHardwareVersion.IsEnabled = custom;
-      cbROMVersion.IsEnabled = custom;
+      bool custom = false;
 
       switch(combobox.SelectedIndex)
       {
         // TVC 32k
         case 0:
-          cbHardwareVersion.SelectedIndex = 0;
-          cbROMVersion.SelectedIndex = 1;
+          cbHardwareVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCHardwareVersion32k;
+          cbROMVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCROM1_2;
           break;
 
         // TVC 64k
         case 1:
-          cbHardwareVersion.SelectedIndex = 1;
-          cbROMVersion.SelectedIndex = 1;
+          cbHardwareVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCHardwareVersion64k;
+          cbROMVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCROM1_2;
           break;
         
         // TVC 64k+
         case 2:
-          cbHardwareVersion.SelectedIndex = 3;
-          cbROMVersion.SelectedIndex = 4;
+          cbHardwareVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCHardwareVersion64kplus;
+          cbROMVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCROM2_2;
+          break;
+
+        // TVC 64k (paging mod)
+        case 3:
+          cbHardwareVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCHardwareVersion64kPaging;
+          cbROMVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCROM1_2;
           break;
 
         // TVC 64k (RU)
-        case 3:
-          cbHardwareVersion.SelectedIndex = 1;
-          cbROMVersion.SelectedIndex = 2;
+        case 4:
+          cbHardwareVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCHardwareVersion64k;
+          cbROMVersion.SelectedIndex = SetupTVCConfigurationDataProvider.TVCROM1_2_RU;
           break;
 
         // Custom
-        case 4:
+        case 5:
+          custom = true;
           break;
       }
 
+      cbHardwareVersion.IsEnabled = custom;
+      cbROMVersion.IsEnabled = custom;
     }
   }
 }

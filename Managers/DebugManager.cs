@@ -39,7 +39,7 @@ namespace YATE.Managers
     {
       m_memories = new IDebuggableMemory[Enum.GetNames(typeof(TVCMemoryType)).Length];
 
-      for(int i=0;i<m_memories.Length;i++)
+      for (int i = 0; i < m_memories.Length; i++)
       {
         m_memories[i] = null;
       }

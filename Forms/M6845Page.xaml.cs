@@ -28,7 +28,7 @@ namespace YATE.Forms
 
 		private void RegisterDebugEventHandler(ExecutionManager in_execution_control)
 		{
-			in_execution_control.DebuggerPeriodicEvent += DebuggerBreakEventDelegate;
+			in_execution_control.DebuggerAnimationEvent += DebuggerBreakEventDelegate;
 			m_execution_control = in_execution_control;
 			DataContext = this;
 		}

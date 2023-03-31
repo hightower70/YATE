@@ -21,6 +21,7 @@
 // Card settings base class
 ///////////////////////////////////////////////////////////////////////////////
 
+using System;
 using System.Xml.Serialization;
 using YATECommon.Helpers;
 
@@ -74,6 +75,27 @@ namespace YATECommon.Settings
     public override int GetHashCode()
     {
       return HashCodeHelper.Hash(base.GetHashCode(), SlotIndex.GetHashCode());
+    }
+
+    public TVCMemoryType GetCardMemoryType()
+    {
+      switch (SlotIndex)
+      {
+        case 0:
+          return TVCMemoryType.Slot0;
+
+        case 1:
+          return TVCMemoryType.Slot1;
+
+        case 2:
+          return TVCMemoryType.Slot2;
+
+        case 3:
+          return TVCMemoryType.Slot2;
+
+        default:
+          throw new ArgumentOutOfRangeException("Invalid card index");
+      }
     }
   }
 }

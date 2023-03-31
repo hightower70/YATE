@@ -728,9 +728,9 @@ namespace NanoSD
     private void CmdBankSelect(int in_bank)
     {
       if (in_bank == 0)
-        m_parent.ROMHighAddress = 0xc000;
+        m_parent.SetMemoryPage(0);
       else
-        m_parent.ROMHighAddress = 0xc200;
+        m_parent.SetMemoryPage(1);
 
       SetStatus(STATUS.BANK_SELECT_DONE);
 

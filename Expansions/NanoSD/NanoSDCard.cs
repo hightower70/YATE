@@ -20,41 +20,61 @@
 // ----------------
 // NanoSD card emulation class
 ///////////////////////////////////////////////////////////////////////////////
-using System;
-using System.Diagnostics;
 using System.IO;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using YATECommon;
 using YATECommon.Helpers;
 
 namespace NanoSD
 {
-  public class NanoSDCard : ITVCCard
+  public class NanoSDCard : ITVCCard, IDebuggableMemory
   {
+    #region · Constants ·
+
+    public const int RomPageCount = 2;
+    public const int RomPageSize = 8192;
     public const int MaxRomSize = 64 * 1024;
 
-    public byte[] Rom { get; private set; }
+    #endregion
+
+    #region · Data members ·
 
     private ExpansionMain m_expansion_main;
     private ITVComputer m_tvcomputer;
     private ArduinoCPU m_arduino_cpu;
+    private int m_memory_page_index = 0;
+    private ushort m_memory_high_address = 0;
+
+    private FileSystemWatcher m_file_system_watcher;
+
+    private readonly string[] m_rom_page_names;
+    #endregion
+
+    #region · Properties ·
+    public byte[] Rom { get; private set; }
 
     public NanoSDCardSettings Settings { get; private set; }
-    public int ROMHighAddress { get; set; }
 
-    public FileSystemWatcher m_file_system_watcher;
 
+    #endregion
+
+    #region · Constructor · 
     public NanoSDCard(ExpansionMain in_expansion_main)
     {
-      ROMHighAddress = 0xc000;
-
       m_expansion_main = in_expansion_main;
+      m_memory_page_index = 0;
+      m_memory_high_address = 0xc000;
+
+      Rom = new byte[MaxRomSize];
+      ROMFile.FillMemory(Rom);
 
       m_arduino_cpu = new ArduinoCPU(this);
-      m_file_system_watcher = new FileSystemWatcher();
-      m_file_system_watcher.Created += FileSystemWatcherCreated;
-      m_file_system_watcher.Deleted += FileSystemWatcherDeleted;
+      m_file_system_watcher = null;
+
+      m_rom_page_names = new string[] { "ROM[0]", "ROM[1]" };
     }
+
+    #endregion
 
     private void FileSystemWatcherDeleted(object sender, FileSystemEventArgs e)
     {
@@ -66,44 +86,34 @@ namespace NanoSD
       m_arduino_cpu.FileSystemChanged(e.FullPath);
     }
 
+    internal void SetMemoryPage(int in_index)
+    {
+      m_memory_page_index = in_index;
+      m_memory_high_address = (ushort)(0xc000 + in_index * RomPageSize);
+    }
+
     public bool SetSettings(NanoSDCardSettings in_settings)
     {
       bool changed = false;
-      byte[] old_rom = null;
 
-      // save old rom
-      old_rom = Rom;
-
+      // store settings
       Settings = in_settings;
 
-      // load ROM
-      Rom = new byte[MaxRomSize];
-      ROMFile.FillMemory(Rom);
+      MemoryType = in_settings.GetCardMemoryType();
 
+      // load ROM
       if (string.IsNullOrEmpty(Settings.ROMFileName))
       {
-        ROMFile.LoadMemoryFromResource("NanoSD.Resources.NanoSDROM.bin", Rom);
+        ROMFile.LoadMemoryFromResource("NanoSD.Resources.NanoSDROM-v0.33.bin", Rom, ref changed);
       }
       else
       {
-        ROMFile.LoadMemoryFromFile(Settings.ROMFileName, Rom);
+        ROMFile.LoadMemoryFromFile(Settings.ROMFileName, Rom, ref changed);
       }
 
-      changed = !ROMFile.IsMemoryEqual(old_rom, Rom);
-
-      //LoadROMFromFile(m_settings.ROMFileName, 0);
-      LoadCardRomFromResource("NanoSD.Resources.NanoSDROM.bin");
-
-      // file system watcher
-      if (Directory.Exists(Settings.FilesystemFolder))
-      {
-        m_file_system_watcher.EnableRaisingEvents = false;
-        m_file_system_watcher.Path = Settings.FilesystemFolder;
-        m_file_system_watcher.EnableRaisingEvents = true;
-        m_arduino_cpu.FileSystemChanged(Settings.FilesystemFolder);
-      }
-      else
-        m_file_system_watcher.EnableRaisingEvents = false;
+      // update file system folder
+      UpdateFileSystemWatcher();
+      m_arduino_cpu.FileSystemChanged(Settings.FilesystemFolder);
 
       return changed;
     }
@@ -113,69 +123,47 @@ namespace NanoSD
       m_expansion_main.ParentManager.Settings.SetSettings(Settings);
     }
 
-    private void LoadROMFromFile(string in_rom_file_name, int in_address)
+    private void UpdateFileSystemWatcher()
     {
-      if (!string.IsNullOrEmpty(in_rom_file_name))
+      if (m_file_system_watcher != null)
       {
-        byte[] data = File.ReadAllBytes(in_rom_file_name);
-
-        int length = data.Length;
-
-        if ((in_address + data.Length) > Rom.Length)
-          length = Rom.Length - in_address;
-
-        Array.Copy(data, 0, Rom, in_address, length);
-      }
-    }
-
-    /// <summary>
-    /// Loads card ROM content from the given resource file
-    /// </summary>
-    /// <param name="in_resource_name"></param>
-    public void LoadCardRomFromResource(string in_resource_name)
-    {
-      // load default key mapping
-      Assembly assembly = Assembly.GetExecutingAssembly();
-
-      using (Stream stream = assembly.GetManifestResourceStream(in_resource_name))
-      {
-        using (BinaryReader binary_reader = new BinaryReader(stream))
+        if (Directory.Exists(Settings.FilesystemFolder))
         {
-          byte[] data = binary_reader.ReadBytes((int)stream.Length);
-
-          int byte_to_copy = data.Length;
-
-          if (byte_to_copy > Rom.Length)
-            byte_to_copy = Rom.Length;
-
-          Array.Copy(data, 0, Rom, 0, byte_to_copy);
+          m_file_system_watcher.EnableRaisingEvents = false;
+          m_file_system_watcher.Path = Settings.FilesystemFolder;
+          m_file_system_watcher.EnableRaisingEvents = true;
         }
+        else
+          m_file_system_watcher.EnableRaisingEvents = false;
       }
     }
 
+
+    #region · ITVCCard implementation ·
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte MemoryRead(ushort in_address)
     {
-      return Rom[in_address | ROMHighAddress];
+      return Rom[in_address | m_memory_high_address];
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void MemoryWrite(ushort in_address, byte in_byte)
     {
+      // no write
     }
 
     public void Reset()
     {
     }
 
-    /*public void Initialize(ITVComputer in_parent)
-    {
-     
-    }
-      */
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void PortRead(ushort in_address, ref byte inout_data)
     {
       inout_data = m_arduino_cpu.ReadByte();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void PortWrite(ushort in_address, byte in_byte)
     {
       m_arduino_cpu.WriteByte(in_byte);
@@ -186,20 +174,76 @@ namespace NanoSD
       // not needed
     }
 
+    /// <summary>
+    /// Gets card HW ID
+    /// </summary>
+    /// <returns></returns>
     public byte GetID()
     {
       return 0x03;
     }
 
+    /// <summary>
+    /// Installs card to the computer
+    /// </summary>
+    /// <param name="in_parent"></param>
     public void Install(ITVComputer in_parent)
     {
       m_tvcomputer = in_parent;
+
+      m_file_system_watcher = new FileSystemWatcher();
+      m_file_system_watcher.Created += FileSystemWatcherCreated;
+      m_file_system_watcher.Deleted += FileSystemWatcherDeleted;
+
+      UpdateFileSystemWatcher();
+
+      TVCManagers.Default.DebugManager.RegisterDebuggableMemory(this);
     }
 
+    /// <summary>
+    /// Removes card from the computer
+    /// </summary>
+    /// <param name="in_parent"></param>
     public void Remove(ITVComputer in_parent)
     {
-      // no action needed
+      if (m_file_system_watcher != null)
+      {
+        m_file_system_watcher.EnableRaisingEvents = false;
+
+        m_file_system_watcher.Created -= FileSystemWatcherCreated;
+        m_file_system_watcher.Deleted -= FileSystemWatcherDeleted;
+
+        m_file_system_watcher.Dispose();
+
+        m_file_system_watcher = null;
+      }
+
+      TVCManagers.Default.DebugManager.UnregisterDebuggableMemory(this);
+    }
+    #endregion
+
+    #region · IDebuggableMemory implementation ·
+    public TVCMemoryType MemoryType { get; private set; }
+
+    public int AddressOffset { get { return 0xe000; } }
+
+    public int MemorySize { get { return RomPageSize; } }
+
+    public int PageCount { get { return RomPageCount; } }
+
+    public int PageIndex { get { return m_memory_page_index; } }
+
+    public string[] PageNames { get { return m_rom_page_names; } }
+    public byte DebugReadMemory(int in_page_index, int in_address)
+    {
+      return Rom[in_page_index * RomPageSize + in_address + 0xc000];
     }
 
+    public void DebugWriteMemory(int in_page_index, int in_address, byte in_data)
+    {
+      Rom[in_page_index * RomPageSize + in_address + 0xc000] = in_data;
+    }
+
+    #endregion
   }
 }

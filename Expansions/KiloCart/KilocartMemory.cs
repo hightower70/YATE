@@ -50,7 +50,10 @@ namespace KiloCart
     /// </summary>
     public KilocartMemory()
     {
-      m_rom_memory = null;
+      m_rom_memory = new byte[ROMSize];
+      ROMFile.FillMemory(m_rom_memory);
+
+      m_page_register = 0;
     }
     #endregion
 
@@ -66,17 +69,11 @@ namespace KiloCart
     {
       bool restart_tvc = false;
 
-      // load ROM content
-      byte[] rom_memory = new byte[ROMSize];
-      ROMFile.LoadMemoryFromFile(in_rom_file_name, rom_memory);
-
-      // restart if content is different
-      if (!ROMFile.IsMemoryEqual(m_rom_memory, rom_memory))
-        restart_tvc = true;
-
       // initialize members
       m_page_register = 0;
-      m_rom_memory = rom_memory;
+
+      // load ROM content
+      ROMFile.LoadMemoryFromFile(in_rom_file_name, m_rom_memory, ref restart_tvc);
 
       return restart_tvc;
     }
@@ -111,7 +108,7 @@ namespace KiloCart
 
     public int MemorySize { get => m_rom_memory.Length; }
 
-    public int PageCount { get => PageCount; }
+    public int PageCount { get => ROMPageCount; }
 
     public int PageIndex { get => m_page_register; }
 

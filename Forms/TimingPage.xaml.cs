@@ -17,7 +17,7 @@ namespace YATE.Forms
 		private ulong m_prev_t_state;
 
 		private float m_cpu_clock;
-		private float m_video_refresh_rate;
+		//private float m_video_refresh_rate;
 
 
 		public static DependencyProperty ExecutionControlProperty = DependencyProperty.Register("ExecutionControl", typeof(ExecutionManager), typeof(TimingPage), new FrameworkPropertyMetadata(null, new PropertyChangedCallback(OnExecutionControlPropertyChanged)));
@@ -35,7 +35,7 @@ namespace YATE.Forms
 
 		private void RegisterDebugEventHandler(ExecutionManager in_execution_control)
 		{
-			in_execution_control.DebuggerPeriodicEvent += DebuggerBreakEventDelegate;
+			in_execution_control.DebuggerAnimationEvent += DebuggerBreakEventDelegate;
 			m_execution_control = in_execution_control;
 			DataContext = this;
 		}

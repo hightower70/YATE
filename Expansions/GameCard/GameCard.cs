@@ -21,15 +21,14 @@
 // Game card emulation class
 ///////////////////////////////////////////////////////////////////////////////
 using System;
-using System.IO;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using YATECommon;
 using YATECommon.Chips;
 using YATECommon.Helpers;
 
 namespace GameCard
 {
-  public class GameCard : ITVCCard
+  public class GameCard : ITVCCard, IDebuggableMemory
   {
     #region · Constants ·
 
@@ -50,9 +49,13 @@ namespace GameCard
 
     const ulong JOY_REFRESH_RATE = 20; // Joystick refresh rate in ms
 
-    public const int MaxRomSize = 64 * 1024;
+    public const int RomPageCount = 8;
+    public const int RomPageSize = 8192;
+    public const int MaxRomSize = RomPageCount * RomPageSize;
 
     #endregion
+
+    #region · Data members ·
 
     public byte[] Rom { get; private set; }
 
@@ -62,6 +65,7 @@ namespace GameCard
     public GameCardSettings Settings { get; private set; }
 
     private UInt16 m_current_page_address = 0xe000;
+    private ushort m_current_page_index;
 
     private ulong m_joystick_refresh_timestamp;
 
@@ -72,22 +76,42 @@ namespace GameCard
     private bool m_sound_chip_enable;
     private int m_audio_channel_index;
 
+    private readonly string[] m_rom_page_names;
+
+    #endregion
+
+    #region · Constuctor ·
+
     public GameCard(ExpansionMain in_expansion_main)
     {
       m_sound_chip_enable = false;
       m_audio_channel_index = -1;
       m_expansion_main = in_expansion_main;
 
+      Rom = new byte[MaxRomSize];
+      ROMFile.FillMemory(Rom);
+      m_current_page_index = 0;
+
       m_sound_chip = new SN76489();
       m_sound_chip.Initialize(TVCManagers.Default.AudioManager.SampleRate, SN_CLOCK);
 
       m_joystick3 = new TVCJoystick();
       m_joystick4 = new TVCJoystick();
+
+      string[] rom_page_names = new string[RomPageCount];
+      for(int i =0;i<rom_page_names.Length;i++)
+      {
+        rom_page_names[i] = String.Format("ROM[{0}]", i);
+      }
+      m_rom_page_names = rom_page_names;
     }
+    #endregion
 
     public bool SetSettings(GameCardSettings in_settings)
     {
       Settings = in_settings;
+
+      MemoryType = in_settings.GetCardMemoryType();
 
       m_joystick_refresh_timestamp = 0;
 
@@ -101,11 +125,6 @@ namespace GameCard
       return settings_changed;
     }
 
-    public void StoreSettings()
-    {
-      m_expansion_main.ParentManager.Settings.SetSettings(Settings);
-    }
-
     /// <summary>
     /// Loads ROM content
     /// </summary>
@@ -113,141 +132,17 @@ namespace GameCard
     private bool LoadROM()
     {
       bool changed = false;
-      byte[] old_rom = null;
-
-      // save old rom
-      old_rom = Rom;
-
-      // load ROM
-      Rom = new byte[MaxRomSize];
-      ROMFile.FillMemory(Rom);
 
       if (string.IsNullOrEmpty(Settings.ROMFileName))
       {
-        ROMFile.LoadMemoryFromResource("GameCard.Resources.GameCard.bin", Rom);
+        ROMFile.LoadMemoryFromResource("GameCard.Resources.GameCard.bin", Rom, ref changed);
       }
       else
       {
-        ROMFile.LoadMemoryFromFile(Settings.ROMFileName, Rom);
+        ROMFile.LoadMemoryFromFile(Settings.ROMFileName, Rom, ref changed);
       }
-
-      changed = !ROMFile.IsMemoryEqual(old_rom, Rom);
 
       return changed;
-    }
-
-    /// <summary>
-    /// Z80 memory reader routine
-    /// </summary>
-    /// <param name="in_address"></param>
-    /// <returns></returns>
-    public byte MemoryRead(ushort in_address)
-    {
-      return Rom[in_address | m_current_page_address];
-    }
-
-    /// <summary>
-    /// Z80 memory writer routine
-    /// </summary>
-    /// <param name="in_address"></param>
-    /// <param name="in_byte"></param>
-    public void MemoryWrite(ushort in_address, byte in_byte)
-    {
-      // no ROM write
-    }
-
-    /// <summary>
-    /// Hardware reset
-    /// </summary>
-    public void Reset()
-    {
-    }
-
-    /*public void Initialize(ITVComputer in_parent)
-    {
-     
-    }
-      */
-
-    /// <summary>
-    /// Z80 port read routine
-    /// </summary>
-    /// <param name="in_address"></param>
-    /// <param name="inout_data"></param>
-    public void PortRead(ushort in_address, ref byte inout_data)
-    {
-      switch (in_address & 0x0f)
-      {
-        case JOY3_REGISTER:
-          inout_data = GetJoystickStateByte(m_joystick3);
-          break;
-
-        case JOY4_REGISTER:
-          inout_data = GetJoystickStateByte(m_joystick4);
-          break;
-
-      }
-    }
-
-    /// <summary>
-    /// Z80 port write routine
-    /// </summary>
-    /// <param name="in_address"></param>
-    /// <param name="in_byte"></param>
-    public void PortWrite(ushort in_address, byte in_byte)
-    {
-      switch (in_address & 0x0f)
-      {
-        case SOUND_REGISTER:
-          TVCManagers.Default.AudioManager.AdvanceChannel(m_audio_channel_index, m_tvcomputer.GetCPUTicks());
-          m_sound_chip.WriteRegister(in_byte);
-          break;
-
-        case PAGE_REGISTER:
-          m_current_page_address = (UInt16)((in_byte & PAGE_ADDRESS_MASK) << 13);
-          m_sound_chip_enable = (in_byte & SOUND_ENABLE_MASK) != 0;
-          break;
-      }
-    }
-
-    public void PeriodicCallback(ulong in_cpu_tick)
-    {
-      // refresh joystick state
-      if (m_tvcomputer.GetTicksSince(m_joystick_refresh_timestamp) > JOY_REFRESH_RATE)
-      {
-        m_joystick_refresh_timestamp = m_tvcomputer.GetCPUTicks();
-
-        m_joystick3.Update();
-        m_joystick4.Update();
-      }
-    }
-
-    /// <summary>
-    /// Gets expansion card ID
-    /// </summary>
-    /// <returns></returns>
-    public byte GetID()
-    {
-      return 0x03;
-    }
-
-    /// <summary>
-    /// Installs card into the TVC
-    /// </summary>
-    /// <param name="in_parent"></param>
-    public void Install(ITVComputer in_parent)
-    {
-      m_tvcomputer = in_parent;
-      m_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderAudio);
-    }
-
-    /// <summary>
-    /// Removes card from the TVC
-    /// </summary>
-    /// <param name="in_parent"></param>
-    public void Remove(ITVComputer in_parent)
-    {
-      TVCManagers.Default.AudioManager.CloseChannel(m_audio_channel_index);
     }
 
     /// <summary>
@@ -293,9 +188,151 @@ namespace GameCard
       int sample_pos = in_start_sample_index * 2;
       for (int sample_index = in_start_sample_index; sample_index < in_end_sample_index; sample_index++)
       {
-        m_sound_chip.RenderAudioStream(ref inout_buffer[sample_pos], ref inout_buffer[sample_pos+1]);
+        m_sound_chip.RenderAudioStream(ref inout_buffer[sample_pos], ref inout_buffer[sample_pos + 1]);
         sample_pos += 2;
       }
     }
+
+    #region · ITVCCard implementation ·
+
+    /// <summary>
+    /// Z80 memory reader routine
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public byte MemoryRead(ushort in_address)
+    {
+      return Rom[in_address | m_current_page_address];
+    }
+
+    /// <summary>
+    /// Z80 memory writer routine
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <param name="in_byte"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void MemoryWrite(ushort in_address, byte in_byte)
+    {
+      // no ROM write
+    }
+
+    /// <summary>
+    /// Hardware reset
+    /// </summary>
+    public void Reset()
+    {
+    }
+
+    /// <summary>
+    /// Z80 port read routine
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <param name="inout_data"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void PortRead(ushort in_address, ref byte inout_data)
+    {
+      switch (in_address & 0x0f)
+      {
+        case JOY3_REGISTER:
+          inout_data = GetJoystickStateByte(m_joystick3);
+          break;
+
+        case JOY4_REGISTER:
+          inout_data = GetJoystickStateByte(m_joystick4);
+          break;
+
+      }
+    }
+
+    /// <summary>
+    /// Z80 port write routine
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <param name="in_byte"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void PortWrite(ushort in_address, byte in_byte)
+    {
+      switch (in_address & 0x0f)
+      {
+        case SOUND_REGISTER:
+          TVCManagers.Default.AudioManager.AdvanceChannel(m_audio_channel_index, m_tvcomputer.GetCPUTicks());
+          m_sound_chip.WriteRegister(in_byte);
+          break;
+
+        case PAGE_REGISTER:
+          m_current_page_index = (ushort)(in_byte & PAGE_ADDRESS_MASK);
+          m_current_page_address = (UInt16)(m_current_page_index << 13);
+          m_sound_chip_enable = (in_byte & SOUND_ENABLE_MASK) != 0;
+          break;
+      }
+    }
+
+    public void PeriodicCallback(ulong in_cpu_tick)
+    {
+      // refresh joystick state
+      if (m_tvcomputer.GetTicksSince(m_joystick_refresh_timestamp) > JOY_REFRESH_RATE)
+      {
+        m_joystick_refresh_timestamp = m_tvcomputer.GetCPUTicks();
+
+        m_joystick3.Update();
+        m_joystick4.Update();
+      }
+    }
+
+    /// <summary>
+    /// Gets expansion card ID
+    /// </summary>
+    /// <returns></returns>
+    public byte GetID()
+    {
+      return 0x03;
+    }
+
+    /// <summary>
+    /// Installs card into the TVC
+    /// </summary>
+    /// <param name="in_parent"></param>
+    public void Install(ITVComputer in_parent)
+    {
+      m_tvcomputer = in_parent;
+      m_audio_channel_index = TVCManagers.Default.AudioManager.OpenChannel(RenderAudio);
+      TVCManagers.Default.DebugManager.RegisterDebuggableMemory(this);
+    }
+
+    /// <summary>
+    /// Removes card from the TVC
+    /// </summary>
+    /// <param name="in_parent"></param>
+    public void Remove(ITVComputer in_parent)
+    {
+      TVCManagers.Default.AudioManager.CloseChannel(m_audio_channel_index);
+      TVCManagers.Default.DebugManager.UnregisterDebuggableMemory(this);
+    }
+    #endregion
+
+    #region · IDebuggableMemory implementation ·
+    public TVCMemoryType MemoryType { get; private set; }
+
+    public int AddressOffset { get { return 0xe000; } }
+
+    public int MemorySize { get { return RomPageSize; } }
+
+    public int PageCount { get { return RomPageCount; } }
+
+    public int PageIndex { get { return m_current_page_index; } }
+
+    public string[] PageNames { get { return m_rom_page_names; } }
+    public byte DebugReadMemory(int in_page_index, int in_address)
+    {
+      return Rom[in_page_index * RomPageSize + in_address];
+    }
+
+    public void DebugWriteMemory(int in_page_index, int in_address, byte in_data)
+    {
+      Rom[in_page_index * RomPageSize + in_address] = in_data;
+    }
+
+    #endregion
   }
 }

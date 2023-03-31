@@ -69,6 +69,7 @@ namespace YATE.Controls
 
       try
       {
+        m_memory_selector_settings.StartAddress = in_text;
         StartAddress = m_expression_evaluator.ParseAndEvaluate(in_text);
         result = StartAddress.ToString("X4") + "h";
       }
@@ -89,6 +90,7 @@ namespace YATE.Controls
 
       try
       {
+        m_memory_selector_settings.EndAddress = in_text;
         EndAddress = m_expression_evaluator.ParseAndEvaluate(in_text);
         result = EndAddress.ToString("X4") + "h";
       }

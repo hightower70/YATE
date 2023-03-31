@@ -88,14 +88,20 @@ namespace YATE.Emulator.Z80CPU
     {
       get
       {
-        if (OpCode.Flags.HasFlag(Z80DisassemblerTable.OpCodeFlags.Jumps))
+        if (OpCode != null)
         {
-          return NumericOperand;
+
+          if (OpCode.Flags.HasFlag(Z80DisassemblerTable.OpCodeFlags.Jumps))
+          {
+            return NumericOperand;
+          }
+          else
+          {
+            return 0;
+          }
         }
         else
-        {
           return 0;
-        }
       }
     }
 

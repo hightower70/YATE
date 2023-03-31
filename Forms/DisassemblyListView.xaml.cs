@@ -1,13 +1,10 @@
-﻿using System;
+﻿using Microsoft.Win32;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data.SqlTypes;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
-using System.Windows.Threading;
-using System.Xml.Linq;
 using YATE.Controls;
 using YATE.Emulator.TVCHardware;
 using YATE.Emulator.Z80CPU;
@@ -53,13 +50,15 @@ namespace YATE.Forms
 
       InitializeComponent();
 
-      (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerStoppedEvent += DebuggerStoppedEventHandler;
+      (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerEvent += DebuggerEventHandler;
 
       tmsMemorySelector.SetSelector(m_settings.MemorySelection);
 
       tmsMemorySelector.SelectionChanged = MemorySelectionChanged;
+      dlbDisassembly.MemoryType = m_settings.MemorySelection.MemoryType;
 
       UpdateDisassemblyList();
+      UpdateBreakpoints();
     }
 
     public string TstateSumString
@@ -75,26 +74,44 @@ namespace YATE.Forms
       }
     }
 
-    private void DebuggerStoppedEventHandler(TVComputer in_sender)
+    private void DebuggerEventHandler(TVComputer in_sender, DebugEventType in_event_type)
     {
-      if (m_current_line != null)
-        m_current_line.IsExecuting = false;
+      int index;
 
-      SelectItemAtAddress(in_sender.CPU.Registers.PC);
+      switch (in_event_type)
+      {
+        case DebugEventType.Paused:
+          if (m_current_line != null)
+            m_current_line.IsExecuting = false;
 
-      m_current_line = (DisassemblyLine)dlbDisassembly.SelectedItem;
-      if (m_current_line != null)
-        m_current_line.IsExecuting = true;
+          SelectItemAtAddress(in_sender.CPU.Registers.PC);
+
+          m_current_line = (DisassemblyLine)dlbDisassembly.SelectedItem;
+          if (m_current_line != null)
+            m_current_line.IsExecuting = true;
+          break;
+
+        case DebugEventType.Running:
+          index = GetItemIndexAtAddress(in_sender.CPU.Registers.PC);
+          if (index >= 0)
+          {
+            m_disassembly_collection[index].IsExecuting = false;
+          }
+          break;
+      }
     }
 
     private void MemorySelectionChanged(object sender, MemorySelectionChangedEventType in_selection_changed_type)
     {
+      dlbDisassembly.Focus();
       UpdateDisassemblyList();
     }
 
     private void UpdateDisassemblyList()
     {
-      m_memory = TVCManagers.Default.DebugManager.GetDebuggableMemory(m_settings.MemorySelection.MemoryType);
+      TVCMemoryType memory_type = m_settings.MemorySelection.MemoryType;
+      m_memory = TVCManagers.Default.DebugManager.GetDebuggableMemory(memory_type);
+      dlbDisassembly.MemoryType = memory_type;
 
       if (m_memory == null)
       {
@@ -119,34 +136,38 @@ namespace YATE.Forms
       disassembler.ReadByte = ReadMemoryByte;
       disassembler.HexConstDisplayMode = Z80Disassembler.HexConstDisplay.Postfix;
 
-      ushort address = (ushort)tmsMemorySelector.StartAddress;
-      ushort end_address = (ushort)tmsMemorySelector.EndAddress;
+      int address = tmsMemorySelector.StartAddress;
+      int end_address = tmsMemorySelector.EndAddress;
 
       IDebuggableMemory memory = TVCManagers.Default.DebugManager.GetDebuggableMemory(m_settings.MemorySelection.MemoryType);
       if (memory != null)
       {
         if (address < memory.AddressOffset)
-          address = (ushort)memory.AddressOffset;
+          address = memory.AddressOffset;
 
         if (end_address < address)
           end_address = address;
         if (end_address > memory.AddressOffset + memory.MemorySize)
-          end_address = (ushort)(memory.AddressOffset + memory.MemorySize);
-      }
+          end_address = memory.AddressOffset + memory.MemorySize;
 
-      while (address < end_address)
-      {
-        Z80DisassemblerInstruction current_instruction = disassembler.Disassemble(address);
-        disassembly_line = new DisassemblyLine(current_instruction);
+        disassembler.AddressOffset = memory.AddressOffset;
 
-        m_disassembly_collection.Add(disassembly_line);
-        address += current_instruction.Length;
+        // disassembly memory
+        while (address < end_address)
+        {
+          Z80DisassemblerInstruction current_instruction = disassembler.Disassemble((ushort)address);
+          disassembly_line = new DisassemblyLine(current_instruction);
+          disassembly_line.Index = m_disassembly_collection.Count;
+
+          m_disassembly_collection.Add(disassembly_line);
+          address += current_instruction.Length;
+        }
       }
     }
 
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
-      (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerStoppedEvent -= DebuggerStoppedEventHandler;
+      (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerEvent -= DebuggerEventHandler;
 
       SettingsFile.Default.SetSettings(m_settings, m_window_index);
       SettingsFile.Default.Save();
@@ -161,16 +182,23 @@ namespace YATE.Forms
 
     private void SelectItemAtAddress(ushort in_address)
     {
-      DisassemblyLine search = new DisassemblyLine();
-      search.DisassemblyInstruction.Address = in_address;
-
-      int index = m_disassembly_collection.BinarySearch(search);
+      int index = GetItemIndexAtAddress(in_address);
 
       if (index >= 0)
       {
         dlbDisassembly.SelectedIndex = index;
         dlbDisassembly.ScrollToCenterOfView(dlbDisassembly.SelectedItem);
       }
+    }
+
+    private int GetItemIndexAtAddress(ushort in_address)
+    {
+      DisassemblyLine search = new DisassemblyLine();
+      search.DisassemblyInstruction.Address = in_address;
+
+      int index = m_disassembly_collection.BinarySearch(search);
+
+      return index;
     }
 
     private void dlbDisassembly_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -202,6 +230,52 @@ namespace YATE.Forms
       TstateSumString = string.Format("{0}/{1}", m_tstate_min, m_tstate_max);
     }
 
+    private void UpdateBreakpoints()
+    {
+      ExecutionManager execution_manager = (ExecutionManager)TVCManagers.Default.ExecutionManager;
+      BreakpointManager breakpoint_manager = (BreakpointManager)TVCManagers.Default.BreakpointManager;
+      DebugManager debug_manager = (DebugManager)TVCManagers.Default.DebugManager;
+
+      // copy breakpoints
+
+      foreach (BreakpointInfo breakpoint in breakpoint_manager.Breakpoints)
+      {
+        if (breakpoint.MemoryType == m_memory.MemoryType && breakpoint.Page == m_memory.PageIndex)
+        {
+          int index = GetItemIndexAtAddress(breakpoint.Address);
+
+          if (index >= 0)
+          {
+            dlbDisassembly.AddBreakpointToLine(index);
+          }
+        }
+      }
+
+      // add execaution position
+      if(execution_manager.ExecutionState == ExecutionManager.ExecutionStates.Paused)
+      {
+        TVCMemory tvc_memory = (TVCMemory)execution_manager.TVC.Memory;
+        ushort address = execution_manager.TVC.CPU.Registers.PC;
+        TVCMemoryType memory_type = tvc_memory.GetMemoryTypeAtAddress(address);
+
+        if (memory_type == m_memory.MemoryType)
+        {
+          IDebuggableMemory memory = debug_manager.GetDebuggableMemory(memory_type);
+          if(memory.PageIndex == m_memory.PageIndex)
+          {
+            int index = GetItemIndexAtAddress(address);
+
+            if(index>=0)
+            {
+              m_disassembly_collection[index].IsExecuting = true;
+            }
+          }
+        }
+      }
+    }
+
+    #region · PropertyChanged members ·
+
     public event PropertyChangedEventHandler PropertyChanged;
 
     private void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -209,5 +283,8 @@ namespace YATE.Forms
       if (PropertyChanged != null && propertyName != null)
         PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
     }
+    
+    #endregion
+
   }
 }

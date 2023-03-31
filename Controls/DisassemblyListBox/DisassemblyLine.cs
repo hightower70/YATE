@@ -45,6 +45,8 @@ namespace YATE.Controls
       }
     }
 
+    public int Index { get; set; }
+
     public Z80DisassemblerInstruction DisassemblyInstruction { get; set; }
 
     public DisassemblyLine()

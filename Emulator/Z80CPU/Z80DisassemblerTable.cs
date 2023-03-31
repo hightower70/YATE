@@ -10,15 +10,16 @@ namespace YATE.Emulator.Z80CPU
 		[Flags]
 		public enum OpCodeFlags
 		{
-			Continues = 0x0001, // Instruction may continue at the next address
-			Jumps = 0x0002, // Instruction jumps to an absolute or relative address
-			Returns = 0x0004, // Instruction returns
+			Continues = 0x0001,	// Instruction may continue at the next address
+			Jumps = 0x0002,			// Instruction jumps to an absolute or relative address
+			Returns = 0x0004,		// Instruction returns
 			Restarts = 0x0008,  // Instruction jumps to restart address
-			RefAddr = 0x0010, // References a literal address
-			PortRef = 0x0020, // IN or OUT instruction
-			Call = 0x0040, // Instruction calls a subroutine
+			RefAddr = 0x0010,		// References a literal address
+			PortRef = 0x0020,		// IN or OUT instruction
+			Call = 0x0040,			// Instruction calls a subroutine
 			ImplicitA = 0x0080, // Implicit accumulator register eg: ADD B
-			NoAsm = 0x0100, // Ignore this instruction in the assembler
+			NoAsm = 0x0100,			// Ignore this instruction in the assembler
+			Invalid = 0x8000		// Invalid instruction (executed as NOP)
 		}
 
 		public class OpCode
@@ -87,8 +88,10 @@ namespace YATE.Emulator.Z80CPU
 			}
 		}
 
-		/**/
-		public static OpCode[] dasm_base = new OpCode[]
+		public static OpCode invalid_opcode = new OpCode("NOP*", 4, 0, OpCodeFlags.Invalid);
+
+    /**/
+    public static OpCode[] dasm_base = new OpCode[]
 		{
 			new OpCode( "NOP"               ,  4 ,  0 ), /* 00 */
 			new OpCode( "LD BC,@"           , 10 ,  0 ), /* 01 */
@@ -615,70 +618,70 @@ namespace YATE.Emulator.Z80CPU
 		/**/
 		public static OpCode[] dasm_ed = new OpCode[]
 		{
-			new OpCode( null                ,  0 ,  0 ), /* 00 */
-			new OpCode( null                ,  0 ,  0 ), /* 01 */
-			new OpCode( null                ,  0 ,  0 ), /* 02 */
-			new OpCode( null                ,  0 ,  0 ), /* 03 */
-			new OpCode( null                ,  0 ,  0 ), /* 04 */
-			new OpCode( null                ,  0 ,  0 ), /* 05 */
-			new OpCode( null                ,  0 ,  0 ), /* 06 */
-			new OpCode( null                ,  0 ,  0 ), /* 07 */
-			new OpCode( null                ,  0 ,  0 ), /* 08 */
-			new OpCode( null                ,  0 ,  0 ), /* 09 */
-			new OpCode( null                ,  0 ,  0 ), /* 0A */
-			new OpCode( null                ,  0 ,  0 ), /* 0B */
-			new OpCode( null                ,  0 ,  0 ), /* 0C */
-			new OpCode( null                ,  0 ,  0 ), /* 0D */
-			new OpCode( null                ,  0 ,  0 ), /* 0E */
-			new OpCode( null                ,  0 ,  0 ), /* 0F */
-			new OpCode( null                ,  0 ,  0 ), /* 10 */
-			new OpCode( null                ,  0 ,  0 ), /* 11 */
-			new OpCode( null                ,  0 ,  0 ), /* 12 */
-			new OpCode( null                ,  0 ,  0 ), /* 13 */
-			new OpCode( null                ,  0 ,  0 ), /* 14 */
-			new OpCode( null                ,  0 ,  0 ), /* 15 */
-			new OpCode( null                ,  0 ,  0 ), /* 16 */
-			new OpCode( null                ,  0 ,  0 ), /* 17 */
-			new OpCode( null                ,  0 ,  0 ), /* 18 */
-			new OpCode( null                ,  0 ,  0 ), /* 19 */
-			new OpCode( null                ,  0 ,  0 ), /* 1A */
-			new OpCode( null                ,  0 ,  0 ), /* 1B */
-			new OpCode( null                ,  0 ,  0 ), /* 1C */
-			new OpCode( null                ,  0 ,  0 ), /* 1D */
-			new OpCode( null                ,  0 ,  0 ), /* 1E */
-			new OpCode( null                ,  0 ,  0 ), /* 1F */
-			new OpCode( null                ,  0 ,  0 ), /* 20 */
-			new OpCode( null                ,  0 ,  0 ), /* 21 */
-			new OpCode( null                ,  0 ,  0 ), /* 22 */
-			new OpCode( null                ,  0 ,  0 ), /* 23 */
-			new OpCode( null                ,  0 ,  0 ), /* 24 */
-			new OpCode( null                ,  0 ,  0 ), /* 25 */
-			new OpCode( null                ,  0 ,  0 ), /* 26 */
-			new OpCode( null                ,  0 ,  0 ), /* 27 */
-			new OpCode( null                ,  0 ,  0 ), /* 28 */
-			new OpCode( null                ,  0 ,  0 ), /* 29 */
-			new OpCode( null                ,  0 ,  0 ), /* 2A */
-			new OpCode( null                ,  0 ,  0 ), /* 2B */
-			new OpCode( null                ,  0 ,  0 ), /* 2C */
-			new OpCode( null                ,  0 ,  0 ), /* 2D */
-			new OpCode( null                ,  0 ,  0 ), /* 2E */
-			new OpCode( null                ,  0 ,  0 ), /* 2F */
-			new OpCode( null                ,  0 ,  0 ), /* 30 */
-			new OpCode( null                ,  0 ,  0 ), /* 31 */
-			new OpCode( null                ,  0 ,  0 ), /* 32 */
-			new OpCode( null                ,  0 ,  0 ), /* 33 */
-			new OpCode( null                ,  0 ,  0 ), /* 34 */
-			new OpCode( null                ,  0 ,  0 ), /* 35 */
-			new OpCode( null                ,  0 ,  0 ), /* 36 */
-			new OpCode( null                ,  0 ,  0 ), /* 37 */
-			new OpCode( null                ,  0 ,  0 ), /* 38 */
-			new OpCode( null                ,  0 ,  0 ), /* 39 */
-			new OpCode( null                ,  0 ,  0 ), /* 3A */
-			new OpCode( null                ,  0 ,  0 ), /* 3B */
-			new OpCode( null                ,  0 ,  0 ), /* 3C */
-			new OpCode( null                ,  0 ,  0 ), /* 3D */
-			new OpCode( null                ,  0 ,  0 ), /* 3E */
-			new OpCode( null                ,  0 ,  0 ), /* 3F */
+      new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 00 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 01 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 02 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 03 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 04 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 05 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 06 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 07 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 08 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 09 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 10 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 11 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 12 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 13 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 14 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 15 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 16 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 17 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 18 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 19 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 20 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 21 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 22 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 23 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 24 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 25 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 26 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 27 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 28 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 29 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 2A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 2B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 2C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 2D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 2E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 2F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 30 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 31 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 32 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 33 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 34 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 35 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 36 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 37 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 38 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 39 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3F */
 			new OpCode( "IN B,(C)"          , 12 ,  0 ), /* 40 */
 			new OpCode( "OUT (C),B"         , 12 ,  0 ), /* 41 */
 			new OpCode( "SBC HL,BC"         , 15 ,  0 ), /* 42 */
@@ -734,7 +737,7 @@ namespace YATE.Emulator.Z80CPU
 			new OpCode( "NEG"               ,  8 ,  0 ), /* 74 */
 			new OpCode( "RETN"              , 14 ,  0 , OpCodeFlags.Returns ), /* 75 */
 			new OpCode( "IM 1"              ,  8 ,  0 ), /* 76 */
-			new OpCode( null                ,  0 ,  0 ), /* 77 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 77 */
 			new OpCode( "IN A,(C)"          , 12 ,  0 ), /* 78 */
 			new OpCode( "OUT (C),A"         , 12 ,  0 ), /* 79 */
 			new OpCode( "ADC HL,SP"         , 15 ,  0 ), /* 7A */
@@ -742,237 +745,237 @@ namespace YATE.Emulator.Z80CPU
 			new OpCode( "NEG"               ,  8 ,  0 ), /* 7C */
 			new OpCode( "RETI"              , 14 ,  0 , OpCodeFlags.Returns ), /* 7D */
 			new OpCode( "IM 2"              ,  8 ,  0 ), /* 7E */
-			new OpCode( null                ,  0 ,  0 ), /* 7F */
-			new OpCode( null                ,  0 ,  0 ), /* 80 */
-			new OpCode( null                ,  0 ,  0 ), /* 81 */
-			new OpCode( null                ,  0 ,  0 ), /* 82 */
-			new OpCode( null                ,  0 ,  0 ), /* 83 */
-			new OpCode( null                ,  0 ,  0 ), /* 84 */
-			new OpCode( null                ,  0 ,  0 ), /* 85 */
-			new OpCode( null                ,  0 ,  0 ), /* 86 */
-			new OpCode( null                ,  0 ,  0 ), /* 87 */
-			new OpCode( null                ,  0 ,  0 ), /* 88 */
-			new OpCode( null                ,  0 ,  0 ), /* 89 */
-			new OpCode( null                ,  0 ,  0 ), /* 8A */
-			new OpCode( null                ,  0 ,  0 ), /* 8B */
-			new OpCode( null                ,  0 ,  0 ), /* 8C */
-			new OpCode( null                ,  0 ,  0 ), /* 8D */
-			new OpCode( null                ,  0 ,  0 ), /* 8E */
-			new OpCode( null                ,  0 ,  0 ), /* 8F */
-			new OpCode( null                ,  0 ,  0 ), /* 90 */
-			new OpCode( null                ,  0 ,  0 ), /* 91 */
-			new OpCode( null                ,  0 ,  0 ), /* 92 */
-			new OpCode( null                ,  0 ,  0 ), /* 93 */
-			new OpCode( null                ,  0 ,  0 ), /* 94 */
-			new OpCode( null                ,  0 ,  0 ), /* 95 */
-			new OpCode( null                ,  0 ,  0 ), /* 96 */
-			new OpCode( null                ,  0 ,  0 ), /* 97 */
-			new OpCode( null                ,  0 ,  0 ), /* 98 */
-			new OpCode( null                ,  0 ,  0 ), /* 99 */
-			new OpCode( null                ,  0 ,  0 ), /* 9A */
-			new OpCode( null                ,  0 ,  0 ), /* 9B */
-			new OpCode( null                ,  0 ,  0 ), /* 9C */
-			new OpCode( null                ,  0 ,  0 ), /* 9D */
-			new OpCode( null                ,  0 ,  0 ), /* 9E */
-			new OpCode( null                ,  0 ,  0 ), /* 9F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 7F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 80 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 81 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 82 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 83 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 84 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 85 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 86 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 87 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 88 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 89 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 90 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 91 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 92 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 93 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 94 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 95 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 96 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 97 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 98 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 99 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9F */
 			new OpCode( "LDI"               , 16 ,  0 ), /* A0 */
 			new OpCode( "CPI"               , 16 ,  0 ), /* A1 */
 			new OpCode( "INI"               , 16 ,  0 ), /* A2 */
 			new OpCode( "OUTI"              , 16 ,  0 ), /* A3 */
-			new OpCode( null                ,  0 ,  0 ), /* A4 */
-			new OpCode( null                ,  0 ,  0 ), /* A5 */
-			new OpCode( null                ,  0 ,  0 ), /* A6 */
-			new OpCode( null                ,  0 ,  0 ), /* A7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A7 */
 			new OpCode( "LDD"               , 16 ,  0 ), /* A8 */
 			new OpCode( "CPD"               , 16 ,  0 ), /* A9 */
 			new OpCode( "IND"               , 16 ,  0 ), /* AA */
 			new OpCode( "OUTD"              , 16 ,  0 ), /* AB */
-			new OpCode( null                ,  0 ,  0 ), /* AC */
-			new OpCode( null                ,  0 ,  0 ), /* AD */
-			new OpCode( null                ,  0 ,  0 ), /* AE */
-			new OpCode( null                ,  0 ,  0 ), /* AF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AD */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AF */
 			new OpCode( "LDIR"              , 16 , 21 ), /* B0 */
 			new OpCode( "CPIR"              , 16 , 21 ), /* B1 */
 			new OpCode( "INIR"              , 16 , 21 ), /* B2 */
 			new OpCode( "OTIR"              , 16 , 21 ), /* B3 */
-			new OpCode( null                ,  0 ,  0 ), /* B4 */
-			new OpCode( null                ,  0 ,  0 ), /* B5 */
-			new OpCode( null                ,  0 ,  0 ), /* B6 */
-			new OpCode( null                ,  0 ,  0 ), /* B7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B7 */
 			new OpCode( "LDDR"              , 16 , 21 ), /* B8 */
 			new OpCode( "CPDR"              , 16 , 21 ), /* B9 */
 			new OpCode( "INDR"              , 16 , 21 ), /* BA */
 			new OpCode( "OTDR"              , 16 , 21 ), /* BB */
-			new OpCode( null                ,  0 ,  0 ), /* BC */
-			new OpCode( null                ,  0 ,  0 ), /* BD */
-			new OpCode( null                ,  0 ,  0 ), /* BE */
-			new OpCode( null                ,  0 ,  0 ), /* BF */
-			new OpCode( null                ,  0 ,  0 ), /* C0 */
-			new OpCode( null                ,  0 ,  0 ), /* C1 */
-			new OpCode( null                ,  0 ,  0 ), /* C2 */
-			new OpCode( null                ,  0 ,  0 ), /* C3 */
-			new OpCode( null                ,  0 ,  0 ), /* C4 */
-			new OpCode( null                ,  0 ,  0 ), /* C5 */
-			new OpCode( null                ,  0 ,  0 ), /* C6 */
-			new OpCode( null                ,  0 ,  0 ), /* C7 */
-			new OpCode( null                ,  0 ,  0 ), /* C8 */
-			new OpCode( null                ,  0 ,  0 ), /* C9 */
-			new OpCode( null                ,  0 ,  0 ), /* CA */
-			new OpCode( null                ,  0 ,  0 ), /* CB */
-			new OpCode( null                ,  0 ,  0 ), /* CC */
-			new OpCode( null                ,  0 ,  0 ), /* CD */
-			new OpCode( null                ,  0 ,  0 ), /* CE */
-			new OpCode( null                ,  0 ,  0 ), /* CF */
-			new OpCode( null                ,  0 ,  0 ), /* D0 */
-			new OpCode( null                ,  0 ,  0 ), /* D1 */
-			new OpCode( null                ,  0 ,  0 ), /* D2 */
-			new OpCode( null                ,  0 ,  0 ), /* D3 */
-			new OpCode( null                ,  0 ,  0 ), /* D4 */
-			new OpCode( null                ,  0 ,  0 ), /* D5 */
-			new OpCode( null                ,  0 ,  0 ), /* D6 */
-			new OpCode( null                ,  0 ,  0 ), /* D7 */
-			new OpCode( null                ,  0 ,  0 ), /* D8 */
-			new OpCode( null                ,  0 ,  0 ), /* D9 */
-			new OpCode( null                ,  0 ,  0 ), /* DA */
-			new OpCode( null                ,  0 ,  0 ), /* DB */
-			new OpCode( null                ,  0 ,  0 ), /* DC */
-			new OpCode( null                ,  0 ,  0 ), /* DD */
-			new OpCode( null                ,  0 ,  0 ), /* DE */
-			new OpCode( null                ,  0 ,  0 ), /* DF */
-			new OpCode( null                ,  0 ,  0 ), /* E0 */
-			new OpCode( null                ,  0 ,  0 ), /* E1 */
-			new OpCode( null                ,  0 ,  0 ), /* E2 */
-			new OpCode( null                ,  0 ,  0 ), /* E3 */
-			new OpCode( null                ,  0 ,  0 ), /* E4 */
-			new OpCode( null                ,  0 ,  0 ), /* E5 */
-			new OpCode( null                ,  0 ,  0 ), /* E6 */
-			new OpCode( null                ,  0 ,  0 ), /* E7 */
-			new OpCode( null                ,  0 ,  0 ), /* E8 */
-			new OpCode( null                ,  0 ,  0 ), /* E9 */
-			new OpCode( null                ,  0 ,  0 ), /* EA */
-			new OpCode( null                ,  0 ,  0 ), /* EB */
-			new OpCode( null                ,  0 ,  0 ), /* EC */
-			new OpCode( null                ,  0 ,  0 ), /* ED */
-			new OpCode( null                ,  0 ,  0 ), /* EE */
-			new OpCode( null                ,  0 ,  0 ), /* EF */
-			new OpCode( null                ,  0 ,  0 ), /* F0 */
-			new OpCode( null                ,  0 ,  0 ), /* F1 */
-			new OpCode( null                ,  0 ,  0 ), /* F2 */
-			new OpCode( null                ,  0 ,  0 ), /* F3 */
-			new OpCode( null                ,  0 ,  0 ), /* F4 */
-			new OpCode( null                ,  0 ,  0 ), /* F5 */
-			new OpCode( null                ,  0 ,  0 ), /* F6 */
-			new OpCode( null                ,  0 ,  0 ), /* F7 */
-			new OpCode( null                ,  0 ,  0 ), /* F8 */
-			new OpCode( null                ,  0 ,  0 ), /* F9 */
-			new OpCode( null                ,  0 ,  0 ), /* FA */
-			new OpCode( null                ,  0 ,  0 ), /* FB */
-			new OpCode( null                ,  0 ,  0 ), /* FC */
-			new OpCode( null                ,  0 ,  0 ), /* FD */
-			new OpCode( null                ,  0 ,  0 ), /* FE */
-			new OpCode( null                ,  0 ,  0 ), /* FF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BD */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CD */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DD */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* ED */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FD */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FF */
 		};
 
 
 		/**/
 		public static OpCode[] dasm_dd = new OpCode[]
 		{
-			new OpCode( null                ,  0 ,  0 ), /* 00 */
-			new OpCode( null                ,  0 ,  0 ), /* 01 */
-			new OpCode( null                ,  0 ,  0 ), /* 02 */
-			new OpCode( null                ,  0 ,  0 ), /* 03 */
-			new OpCode( null                ,  0 ,  0 ), /* 04 */
-			new OpCode( null                ,  0 ,  0 ), /* 05 */
-			new OpCode( null                ,  0 ,  0 ), /* 06 */
-			new OpCode( null                ,  0 ,  0 ), /* 07 */
-			new OpCode( null                ,  0 ,  0 ), /* 08 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 00 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 01 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 02 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 03 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 04 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 05 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 06 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 07 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 08 */
 			new OpCode( "ADD IX,BC"         , 15 ,  0 ), /* 09 */
-			new OpCode( null                ,  0 ,  0 ), /* 0A */
-			new OpCode( null                ,  0 ,  0 ), /* 0B */
-			new OpCode( null                ,  0 ,  0 ), /* 0C */
-			new OpCode( null                ,  0 ,  0 ), /* 0D */
-			new OpCode( null                ,  0 ,  0 ), /* 0E */
-			new OpCode( null                ,  0 ,  0 ), /* 0F */
-			new OpCode( null                ,  0 ,  0 ), /* 10 */
-			new OpCode( null                ,  0 ,  0 ), /* 11 */
-			new OpCode( null                ,  0 ,  0 ), /* 12 */
-			new OpCode( null                ,  0 ,  0 ), /* 13 */
-			new OpCode( null                ,  0 ,  0 ), /* 14 */
-			new OpCode( null                ,  0 ,  0 ), /* 15 */
-			new OpCode( null                ,  0 ,  0 ), /* 16 */
-			new OpCode( null                ,  0 ,  0 ), /* 17 */
-			new OpCode( null                ,  0 ,  0 ), /* 18 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 10 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 11 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 12 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 13 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 14 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 15 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 16 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 17 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 18 */
 			new OpCode( "ADD IX,DE"         , 15 ,  0 ), /* 19 */
-			new OpCode( null                ,  0 ,  0 ), /* 1A */
-			new OpCode( null                ,  0 ,  0 ), /* 1B */
-			new OpCode( null                ,  0 ,  0 ), /* 1C */
-			new OpCode( null                ,  0 ,  0 ), /* 1D */
-			new OpCode( null                ,  0 ,  0 ), /* 1E */
-			new OpCode( null                ,  0 ,  0 ), /* 1F */
-			new OpCode( null                ,  0 ,  0 ), /* 20 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 20 */
 			new OpCode( "LD IX,@"           , 14 ,  0 ), /* 21 */
 			new OpCode( "LD (@),IX"         , 20 ,  0 ), /* 22 */
 			new OpCode( "INC IX"            , 10 ,  0 ), /* 23 */
 			new OpCode( "INC IXH"           ,  8 ,  0 ), /* 24 */
 			new OpCode( "DEC IXH"           ,  8 ,  0 ), /* 25 */
 			new OpCode( "LD IXH,#"          , 11 ,  0 ), /* 26 */
-			new OpCode( null                ,  0 ,  0 ), /* 27 */
-			new OpCode( null                ,  0 ,  0 ), /* 28 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 27 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 28 */
 			new OpCode( "ADD IX,IX"         , 15 ,  0 ), /* 29 */
 			new OpCode( "LD IX,(@)"         , 20 ,  0 ), /* 2A */
 			new OpCode( "DEC IX"            , 10 ,  0 ), /* 2B */
 			new OpCode( "INC IXL"           ,  8 ,  0 ), /* 2C */
 			new OpCode( "DEC IXL"           ,  8 ,  0 ), /* 2D */
 			new OpCode( "LD IXL,#"          , 11 ,  0 ), /* 2E */
-			new OpCode( null                ,  0 ,  0 ), /* 2F */
-			new OpCode( null                ,  0 ,  0 ), /* 30 */
-			new OpCode( null                ,  0 ,  0 ), /* 31 */
-			new OpCode( null                ,  0 ,  0 ), /* 32 */
-			new OpCode( null                ,  0 ,  0 ), /* 33 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 2F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 30 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 31 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 32 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 33 */
 			new OpCode( "INC (IX+$)"        , 23 ,  0 ), /* 34 */
 			new OpCode( "DEC (IX+$)"        , 23 ,  0 ), /* 35 */
 			new OpCode( "LD (IX+$),#"       , 19 ,  0 ), /* 36 */
-			new OpCode( null                ,  0 ,  0 ), /* 37 */
-			new OpCode( null                ,  0 ,  0 ), /* 38 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 37 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 38 */
 			new OpCode( "ADD IX,SP"         , 15 ,  0 ), /* 39 */
-			new OpCode( null                ,  0 ,  0 ), /* 3A */
-			new OpCode( null                ,  0 ,  0 ), /* 3B */
-			new OpCode( null                ,  0 ,  0 ), /* 3C */
-			new OpCode( null                ,  0 ,  0 ), /* 3D */
-			new OpCode( null                ,  0 ,  0 ), /* 3E */
-			new OpCode( null                ,  0 ,  0 ), /* 3F */
-			new OpCode( null                ,  0 ,  0 ), /* 40 */
-			new OpCode( null                ,  0 ,  0 ), /* 41 */
-			new OpCode( null                ,  0 ,  0 ), /* 42 */
-			new OpCode( null                ,  0 ,  0 ), /* 43 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 40 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 41 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 42 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 43 */
 			new OpCode( "LD B,IXH"          ,  8 ,  0 ), /* 44 */
 			new OpCode( "LD B,IXL"          ,  8 ,  0 ), /* 45 */
 			new OpCode( "LD B,(IX+$)"       , 19 ,  0 ), /* 46 */
-			new OpCode( null                ,  0 ,  0 ), /* 47 */
-			new OpCode( null                ,  0 ,  0 ), /* 48 */
-			new OpCode( null                ,  0 ,  0 ), /* 49 */
-			new OpCode( null                ,  0 ,  0 ), /* 4A */
-			new OpCode( null                ,  0 ,  0 ), /* 4B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 47 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 48 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 49 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 4A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 4B */
 			new OpCode( "LD C,IXH"          ,  8 ,  0 ), /* 4C */
 			new OpCode( "LD C,IXL"          ,  8 ,  0 ), /* 4D */
 			new OpCode( "LD C,(IX+$)"       , 19 ,  0 ), /* 4E */
-			new OpCode( null                ,  0 ,  0 ), /* 4F */
-			new OpCode( null                ,  0 ,  0 ), /* 50 */
-			new OpCode( null                ,  0 ,  0 ), /* 51 */
-			new OpCode( null                ,  0 ,  0 ), /* 52 */
-			new OpCode( null                ,  0 ,  0 ), /* 53 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 4F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 50 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 51 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 52 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 53 */
 			new OpCode( "LD D,IXH"          ,  8 ,  0 ), /* 54 */
 			new OpCode( "LD D,IXL"          ,  8 ,  0 ), /* 55 */
 			new OpCode( "LD D,(IX+$)"       , 19 ,  0 ), /* 56 */
-			new OpCode( null                ,  0 ,  0 ), /* 57 */
-			new OpCode( null                ,  0 ,  0 ), /* 58 */
-			new OpCode( null                ,  0 ,  0 ), /* 59 */
-			new OpCode( null                ,  0 ,  0 ), /* 5A */
-			new OpCode( null                ,  0 ,  0 ), /* 5B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 57 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 58 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 59 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 5A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 5B */
 			new OpCode( "LD E,IXH"          ,  8 ,  0 ), /* 5C */
 			new OpCode( "LD E,IXL"          ,  8 ,  0 ), /* 5D */
 			new OpCode( "LD E,(IX+$)"       , 19 ,  0 ), /* 5E */
-			new OpCode( null                ,  0 ,  0 ), /* 5F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 5F */
 			new OpCode( "LD IXH,B"          ,  8 ,  0 ), /* 60 */
 			new OpCode( "LD IXH,C"          ,  8 ,  0 ), /* 61 */
 			new OpCode( "LD IXH,D"          ,  8 ,  0 ), /* 62 */
@@ -995,246 +998,246 @@ namespace YATE.Emulator.Z80CPU
 			new OpCode( "LD (IX+$),E"       , 19 ,  0 ), /* 73 */
 			new OpCode( "LD (IX+$),H"       , 19 ,  0 ), /* 74 */
 			new OpCode( "LD (IX+$),L"       , 19 ,  0 ), /* 75 */
-			new OpCode( null                ,  0 ,  0 ), /* 76 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 76 */
 			new OpCode( "LD (IX+$),A"       , 19 ,  0 ), /* 77 */
-			new OpCode( null                ,  0 ,  0 ), /* 78 */
-			new OpCode( null                ,  0 ,  0 ), /* 79 */
-			new OpCode( null                ,  0 ,  0 ), /* 7A */
-			new OpCode( null                ,  0 ,  0 ), /* 7B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 78 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 79 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 7A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 7B */
 			new OpCode( "LD A,IXH"          ,  8 ,  0 ), /* 7C */
 			new OpCode( "LD A,IXL"          ,  8 ,  0 ), /* 7D */
 			new OpCode( "LD A,(IX+$)"       , 19 ,  0 ), /* 7E */
-			new OpCode( null                ,  0 ,  0 ), /* 7F */
-			new OpCode( null                ,  0 ,  0 ), /* 80 */
-			new OpCode( null                ,  0 ,  0 ), /* 81 */
-			new OpCode( null                ,  0 ,  0 ), /* 82 */
-			new OpCode( null                ,  0 ,  0 ), /* 83 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 7F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 80 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 81 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 82 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 83 */
 			new OpCode( "ADD A,IXH"         ,  8 ,  0 ), /* 84 */
 			new OpCode( "ADD A,IXL"         ,  8 ,  0 ), /* 85 */
 			new OpCode( "ADD A,(IX+$)"      , 19 ,  0 ), /* 86 */
-			new OpCode( null                ,  0 ,  0 ), /* 87 */
-			new OpCode( null                ,  0 ,  0 ), /* 88 */
-			new OpCode( null                ,  0 ,  0 ), /* 89 */
-			new OpCode( null                ,  0 ,  0 ), /* 8A */
-			new OpCode( null                ,  0 ,  0 ), /* 8B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 87 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 88 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 89 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8B */
 			new OpCode( "ADC A,IXH"         ,  8 ,  0 ), /* 8C */
 			new OpCode( "ADC A,IXL"         ,  8 ,  0 ), /* 8D */
 			new OpCode( "ADC A,(IX+$)"      , 19 ,  0 ), /* 8E */
-			new OpCode( null                ,  0 ,  0 ), /* 8F */
-			new OpCode( null                ,  0 ,  0 ), /* 90 */
-			new OpCode( null                ,  0 ,  0 ), /* 91 */
-			new OpCode( null                ,  0 ,  0 ), /* 92 */
-			new OpCode( null                ,  0 ,  0 ), /* 93 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 90 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 91 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 92 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 93 */
 			new OpCode( "SUB IXH"           ,  8 ,  0 ), /* 94 */
 			new OpCode( "SUB IXL"           ,  8 ,  0 ), /* 95 */
 			new OpCode( "SUB (IX+$)"        , 19 ,  0 ), /* 96 */
-			new OpCode( null                ,  0 ,  0 ), /* 97 */
-			new OpCode( null                ,  0 ,  0 ), /* 98 */
-			new OpCode( null                ,  0 ,  0 ), /* 99 */
-			new OpCode( null                ,  0 ,  0 ), /* 9A */
-			new OpCode( null                ,  0 ,  0 ), /* 9B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 97 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 98 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 99 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9B */
 			new OpCode( "SBC A,IXH"         ,  8 ,  0 ), /* 9C */
 			new OpCode( "SBC A,IXL"         ,  8 ,  0 ), /* 9D */
 			new OpCode( "SBC A,(IX+$)"      , 19 ,  0 ), /* 9E */
-			new OpCode( null                ,  0 ,  0 ), /* 9F */
-			new OpCode( null                ,  0 ,  0 ), /* A0 */
-			new OpCode( null                ,  0 ,  0 ), /* A1 */
-			new OpCode( null                ,  0 ,  0 ), /* A2 */
-			new OpCode( null                ,  0 ,  0 ), /* A3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A3 */
 			new OpCode( "AND IXH"           ,  8 ,  0 ), /* A4 */
 			new OpCode( "AND IXL"           ,  8 ,  0 ), /* A5 */
 			new OpCode( "AND (IX+$)"        , 19 ,  0 ), /* A6 */
-			new OpCode( null                ,  0 ,  0 ), /* A7 */
-			new OpCode( null                ,  0 ,  0 ), /* A8 */
-			new OpCode( null                ,  0 ,  0 ), /* A9 */
-			new OpCode( null                ,  0 ,  0 ), /* AA */
-			new OpCode( null                ,  0 ,  0 ), /* AB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AB */
 			new OpCode( "XOR IXH"           ,  8 ,  0 ), /* AC */
 			new OpCode( "XOR IXL"           ,  8 ,  0 ), /* AD */
 			new OpCode( "XOR (IX+$)"        , 19 ,  0 ), /* AE */
-			new OpCode( null                ,  0 ,  0 ), /* AF */
-			new OpCode( null                ,  0 ,  0 ), /* B0 */
-			new OpCode( null                ,  0 ,  0 ), /* B1 */
-			new OpCode( null                ,  0 ,  0 ), /* B2 */
-			new OpCode( null                ,  0 ,  0 ), /* B3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B3 */
 			new OpCode( "OR IXH"            ,  8 ,  0 ), /* B4 */
 			new OpCode( "OR IXL"            ,  8 ,  0 ), /* B5 */
 			new OpCode( "OR (IX+$)"         , 19 ,  0 ), /* B6 */
-			new OpCode( null                ,  0 ,  0 ), /* B7 */
-			new OpCode( null                ,  0 ,  0 ), /* B8 */
-			new OpCode( null                ,  0 ,  0 ), /* B9 */
-			new OpCode( null                ,  0 ,  0 ), /* BA */
-			new OpCode( null                ,  0 ,  0 ), /* BB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BB */
 			new OpCode( "CP IXH"            ,  8 ,  0 ), /* BC */
 			new OpCode( "CP IXL"            ,  8 ,  0 ), /* BD */
 			new OpCode( "CP (IX+$)"         , 19 ,  0 ), /* BE */
-			new OpCode( null                ,  0 ,  0 ), /* BF */
-			new OpCode( null                ,  0 ,  0 ), /* C0 */
-			new OpCode( null                ,  0 ,  0 ), /* C1 */
-			new OpCode( null                ,  0 ,  0 ), /* C2 */
-			new OpCode( null                ,  0 ,  0 ), /* C3 */
-			new OpCode( null                ,  0 ,  0 ), /* C4 */
-			new OpCode( null                ,  0 ,  0 ), /* C5 */
-			new OpCode( null                ,  0 ,  0 ), /* C6 */
-			new OpCode( null                ,  0 ,  0 ), /* C7 */
-			new OpCode( null                ,  0 ,  0 ), /* C8 */
-			new OpCode( null                ,  0 ,  0 ), /* C9 */
-			new OpCode( null                ,  0 ,  0 ), /* CA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CA */
 			new OpCode( "shift CB"          ,  0 ,  0 ), /* CB */
-			new OpCode( null                ,  0 ,  0 ), /* CC */
-			new OpCode( null                ,  0 ,  0 ), /* CD */
-			new OpCode( null                ,  0 ,  0 ), /* CE */
-			new OpCode( null                ,  0 ,  0 ), /* CF */
-			new OpCode( null                ,  0 ,  0 ), /* D0 */
-			new OpCode( null                ,  0 ,  0 ), /* D1 */
-			new OpCode( null                ,  0 ,  0 ), /* D2 */
-			new OpCode( null                ,  0 ,  0 ), /* D3 */
-			new OpCode( null                ,  0 ,  0 ), /* D4 */
-			new OpCode( null                ,  0 ,  0 ), /* D5 */
-			new OpCode( null                ,  0 ,  0 ), /* D6 */
-			new OpCode( null                ,  0 ,  0 ), /* D7 */
-			new OpCode( null                ,  0 ,  0 ), /* D8 */
-			new OpCode( null                ,  0 ,  0 ), /* D9 */
-			new OpCode( null                ,  0 ,  0 ), /* DA */
-			new OpCode( null                ,  0 ,  0 ), /* DB */
-			new OpCode( null                ,  0 ,  0 ), /* DC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CD */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DC */
 			new OpCode( "ignore"            ,  4 ,  0 ), /* DD */
-			new OpCode( null                ,  0 ,  0 ), /* DE */
-			new OpCode( null                ,  0 ,  0 ), /* DF */
-			new OpCode( null                ,  0 ,  0 ), /* E0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E0 */
 			new OpCode( "POP IX"            , 14 ,  0 ), /* E1 */
-			new OpCode( null                ,  0 ,  0 ), /* E2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E2 */
 			new OpCode( "EX (SP),IX"        , 23 ,  0 ), /* E3 */
-			new OpCode( null                ,  0 ,  0 ), /* E4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E4 */
 			new OpCode( "PUSH IX"           , 15 ,  0 ), /* E5 */
-			new OpCode( null                ,  0 ,  0 ), /* E6 */
-			new OpCode( null                ,  0 ,  0 ), /* E7 */
-			new OpCode( null                ,  0 ,  0 ), /* E8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E8 */
 			new OpCode( "JP (IX)"             ,  8 ,  0 , OpCodeFlags.Jumps), /* E9 */
-			new OpCode( null                ,  0 ,  0 ), /* EA */
-			new OpCode( null                ,  0 ,  0 ), /* EB */
-			new OpCode( null                ,  0 ,  0 ), /* EC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EC */
 			new OpCode( null                ,  4 ,  0 ), /* ED */
-			new OpCode( null                ,  0 ,  0 ), /* EE */
-			new OpCode( null                ,  0 ,  0 ), /* EF */
-			new OpCode( null                ,  0 ,  0 ), /* F0 */
-			new OpCode( null                ,  0 ,  0 ), /* F1 */
-			new OpCode( null                ,  0 ,  0 ), /* F2 */
-			new OpCode( null                ,  0 ,  0 ), /* F3 */
-			new OpCode( null                ,  0 ,  0 ), /* F4 */
-			new OpCode( null                ,  0 ,  0 ), /* F5 */
-			new OpCode( null                ,  0 ,  0 ), /* F6 */
-			new OpCode( null                ,  0 ,  0 ), /* F7 */
-			new OpCode( null                ,  0 ,  0 ), /* F8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F8 */
 			new OpCode( "LD SP,IX"          , 10 ,  0 ), /* F9 */
-			new OpCode( null                ,  0 ,  0 ), /* FA */
-			new OpCode( null                ,  0 ,  0 ), /* FB */
-			new OpCode( null                ,  0 ,  0 ), /* FC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FC */
 			new OpCode( "ignore"            ,  4 ,  0 ), /* FD */
-			new OpCode( null                ,  0 ,  0 ), /* FE */
-			new OpCode( null                ,  0 ,  0 ), /* FF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FF */
 		};
 
 
 		/**/
 		public static OpCode[] dasm_fd = new OpCode[]
 		{
-			new OpCode( null                ,  0 ,  0 ), /* 00 */
-			new OpCode( null                ,  0 ,  0 ), /* 01 */
-			new OpCode( null                ,  0 ,  0 ), /* 02 */
-			new OpCode( null                ,  0 ,  0 ), /* 03 */
-			new OpCode( null                ,  0 ,  0 ), /* 04 */
-			new OpCode( null                ,  0 ,  0 ), /* 05 */
-			new OpCode( null                ,  0 ,  0 ), /* 06 */
-			new OpCode( null                ,  0 ,  0 ), /* 07 */
-			new OpCode( null                ,  0 ,  0 ), /* 08 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 00 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 01 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 02 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 03 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 04 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 05 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 06 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 07 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 08 */
 			new OpCode( "ADD IY,BC"         , 15 ,  0 ), /* 09 */
-			new OpCode( null                ,  0 ,  0 ), /* 0A */
-			new OpCode( null                ,  0 ,  0 ), /* 0B */
-			new OpCode( null                ,  0 ,  0 ), /* 0C */
-			new OpCode( null                ,  0 ,  0 ), /* 0D */
-			new OpCode( null                ,  0 ,  0 ), /* 0E */
-			new OpCode( null                ,  0 ,  0 ), /* 0F */
-			new OpCode( null                ,  0 ,  0 ), /* 10 */
-			new OpCode( null                ,  0 ,  0 ), /* 11 */
-			new OpCode( null                ,  0 ,  0 ), /* 12 */
-			new OpCode( null                ,  0 ,  0 ), /* 13 */
-			new OpCode( null                ,  0 ,  0 ), /* 14 */
-			new OpCode( null                ,  0 ,  0 ), /* 15 */
-			new OpCode( null                ,  0 ,  0 ), /* 16 */
-			new OpCode( null                ,  0 ,  0 ), /* 17 */
-			new OpCode( null                ,  0 ,  0 ), /* 18 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 0F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 10 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 11 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 12 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 13 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 14 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 15 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 16 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 17 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 18 */
 			new OpCode( "ADD IY,DE"         , 15 ,  0 ), /* 19 */
-			new OpCode( null                ,  0 ,  0 ), /* 1A */
-			new OpCode( null                ,  0 ,  0 ), /* 1B */
-			new OpCode( null                ,  0 ,  0 ), /* 1C */
-			new OpCode( null                ,  0 ,  0 ), /* 1D */
-			new OpCode( null                ,  0 ,  0 ), /* 1E */
-			new OpCode( null                ,  0 ,  0 ), /* 1F */
-			new OpCode( null                ,  0 ,  0 ), /* 20 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 1F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 20 */
 			new OpCode( "LD IY,@"           , 14 ,  0 ), /* 21 */
 			new OpCode( "LD (@),IY"         , 20 ,  0 ), /* 22 */
 			new OpCode( "INC IY"            , 10 ,  0 ), /* 23 */
 			new OpCode( "INC IYH"           ,  8 ,  0 ), /* 24 */
 			new OpCode( "DEC IYH"           ,  8 ,  0 ), /* 25 */
 			new OpCode( "LD IYH,#"          , 11 ,  0 ), /* 26 */
-			new OpCode( null                ,  0 ,  0 ), /* 27 */
-			new OpCode( null                ,  0 ,  0 ), /* 28 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 27 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 28 */
 			new OpCode( "ADD IY,IY"         , 15 ,  0 ), /* 29 */
 			new OpCode( "LD IY,(@)"         , 20 ,  0 ), /* 2A */
 			new OpCode( "DEC IY"            , 10 ,  0 ), /* 2B */
 			new OpCode( "INC IYL"           ,  8 ,  0 ), /* 2C */
 			new OpCode( "DEC IYL"           ,  8 ,  0 ), /* 2D */
 			new OpCode( "LD IYL,#"          , 11 ,  0 ), /* 2E */
-			new OpCode( null                ,  0 ,  0 ), /* 2F */
-			new OpCode( null                ,  0 ,  0 ), /* 30 */
-			new OpCode( null                ,  0 ,  0 ), /* 31 */
-			new OpCode( null                ,  0 ,  0 ), /* 32 */
-			new OpCode( null                ,  0 ,  0 ), /* 33 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 2F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 30 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 31 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 32 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 33 */
 			new OpCode( "INC (IY+$)"        , 23 ,  0 ), /* 34 */
 			new OpCode( "DEC (IY+$)"        , 23 ,  0 ), /* 35 */
 			new OpCode( "LD (IY+$),#"       , 19 ,  0 ), /* 36 */
-			new OpCode( null                ,  0 ,  0 ), /* 37 */
-			new OpCode( null                ,  0 ,  0 ), /* 38 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 37 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 38 */
 			new OpCode( "ADD IY,SP"         , 15 ,  0 ), /* 39 */
-			new OpCode( null                ,  0 ,  0 ), /* 3A */
-			new OpCode( null                ,  0 ,  0 ), /* 3B */
-			new OpCode( null                ,  0 ,  0 ), /* 3C */
-			new OpCode( null                ,  0 ,  0 ), /* 3D */
-			new OpCode( null                ,  0 ,  0 ), /* 3E */
-			new OpCode( null                ,  0 ,  0 ), /* 3F */
-			new OpCode( null                ,  0 ,  0 ), /* 40 */
-			new OpCode( null                ,  0 ,  0 ), /* 41 */
-			new OpCode( null                ,  0 ,  0 ), /* 42 */
-			new OpCode( null                ,  0 ,  0 ), /* 43 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3C */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3D */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3E */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 3F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 40 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 41 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 42 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 43 */
 			new OpCode( "LD B,IYH"          ,  8 ,  0 ), /* 44 */
 			new OpCode( "LD B,IYL"          ,  8 ,  0 ), /* 45 */
 			new OpCode( "LD B,(IY+$)"       , 19 ,  0 ), /* 46 */
-			new OpCode( null                ,  0 ,  0 ), /* 47 */
-			new OpCode( null                ,  0 ,  0 ), /* 48 */
-			new OpCode( null                ,  0 ,  0 ), /* 49 */
-			new OpCode( null                ,  0 ,  0 ), /* 4A */
-			new OpCode( null                ,  0 ,  0 ), /* 4B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 47 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 48 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 49 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 4A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 4B */
 			new OpCode( "LD C,IYH"          ,  8 ,  0 ), /* 4C */
 			new OpCode( "LD C,IYL"          ,  8 ,  0 ), /* 4D */
 			new OpCode( "LD C,(IY+$)"       , 19 ,  0 ), /* 4E */
-			new OpCode( null                ,  0 ,  0 ), /* 4F */
-			new OpCode( null                ,  0 ,  0 ), /* 50 */
-			new OpCode( null                ,  0 ,  0 ), /* 51 */
-			new OpCode( null                ,  0 ,  0 ), /* 52 */
-			new OpCode( null                ,  0 ,  0 ), /* 53 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 4F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 50 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 51 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 52 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 53 */
 			new OpCode( "LD D,IYH"          ,  8 ,  0 ), /* 54 */
 			new OpCode( "LD D,IYL"          ,  8 ,  0 ), /* 55 */
 			new OpCode( "LD D,(IY+$)"       , 19 ,  0 ), /* 56 */
-			new OpCode( null                ,  0 ,  0 ), /* 57 */
-			new OpCode( null                ,  0 ,  0 ), /* 58 */
-			new OpCode( null                ,  0 ,  0 ), /* 59 */
-			new OpCode( null                ,  0 ,  0 ), /* 5A */
-			new OpCode( null                ,  0 ,  0 ), /* 5B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 57 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 58 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 59 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 5A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 5B */
 			new OpCode( "LD E,IYH"          ,  8 ,  0 ), /* 5C */
 			new OpCode( "LD E,IYL"          ,  8 ,  0 ), /* 5D */
 			new OpCode( "LD E,(IY+$)"       , 19 ,  0 ), /* 5E */
-			new OpCode( null                ,  0 ,  0 ), /* 5F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 5F */
 			new OpCode( "LD IYH,B"          ,  8 ,  0 ), /* 60 */
 			new OpCode( "LD IYH,C"          ,  8 ,  0 ), /* 61 */
 			new OpCode( "LD IYH,D"          ,  8 ,  0 ), /* 62 */
@@ -1257,144 +1260,144 @@ namespace YATE.Emulator.Z80CPU
 			new OpCode( "LD (IY+$),E"       , 19 ,  0 ), /* 73 */
 			new OpCode( "LD (IY+$),H"       , 19 ,  0 ), /* 74 */
 			new OpCode( "LD (IY+$),L"       , 19 ,  0 ), /* 75 */
-			new OpCode( null                ,  0 ,  0 ), /* 76 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 76 */
 			new OpCode( "LD (IY+$),A"       , 19 ,  0 ), /* 77 */
-			new OpCode( null                ,  0 ,  0 ), /* 78 */
-			new OpCode( null                ,  0 ,  0 ), /* 79 */
-			new OpCode( null                ,  0 ,  0 ), /* 7A */
-			new OpCode( null                ,  0 ,  0 ), /* 7B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 78 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 79 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 7A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 7B */
 			new OpCode( "LD A,IYH"          ,  8 ,  0 ), /* 7C */
 			new OpCode( "LD A,IYL"          ,  8 ,  0 ), /* 7D */
 			new OpCode( "LD A,(IY+$)"       , 19 ,  0 ), /* 7E */
-			new OpCode( null                ,  0 ,  0 ), /* 7F */
-			new OpCode( null                ,  0 ,  0 ), /* 80 */
-			new OpCode( null                ,  0 ,  0 ), /* 81 */
-			new OpCode( null                ,  0 ,  0 ), /* 82 */
-			new OpCode( null                ,  0 ,  0 ), /* 83 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 7F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 80 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 81 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 82 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 83 */
 			new OpCode( "ADD A,IYH"         ,  8 ,  0 ), /* 84 */
 			new OpCode( "ADD A,IYL"         ,  8 ,  0 ), /* 85 */
 			new OpCode( "ADD A,(IY+$)"      , 19 ,  0 ), /* 86 */
-			new OpCode( null                ,  0 ,  0 ), /* 87 */
-			new OpCode( null                ,  0 ,  0 ), /* 88 */
-			new OpCode( null                ,  0 ,  0 ), /* 89 */
-			new OpCode( null                ,  0 ,  0 ), /* 8A */
-			new OpCode( null                ,  0 ,  0 ), /* 8B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 87 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 88 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 89 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8B */
 			new OpCode( "ADC A,IYH"         ,  8 ,  0 ), /* 8C */
 			new OpCode( "ADC A,IYL"         ,  8 ,  0 ), /* 8D */
 			new OpCode( "ADC A,(IY+$)"      , 19 ,  0 ), /* 8E */
-			new OpCode( null                ,  0 ,  0 ), /* 8F */
-			new OpCode( null                ,  0 ,  0 ), /* 90 */
-			new OpCode( null                ,  0 ,  0 ), /* 91 */
-			new OpCode( null                ,  0 ,  0 ), /* 92 */
-			new OpCode( null                ,  0 ,  0 ), /* 93 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 8F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 90 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 91 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 92 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 93 */
 			new OpCode( "SUB IYH"           ,  8 ,  0 ), /* 94 */
 			new OpCode( "SUB IYL"           ,  8 ,  0 ), /* 95 */
 			new OpCode( "SUB (IY+$)"        , 19 ,  0 ), /* 96 */
-			new OpCode( null                ,  0 ,  0 ), /* 97 */
-			new OpCode( null                ,  0 ,  0 ), /* 98 */
-			new OpCode( null                ,  0 ,  0 ), /* 99 */
-			new OpCode( null                ,  0 ,  0 ), /* 9A */
-			new OpCode( null                ,  0 ,  0 ), /* 9B */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 97 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 98 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 99 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9A */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9B */
 			new OpCode( "SBC A,IYH"         ,  8 ,  0 ), /* 9C */
 			new OpCode( "SBC A,IYL"         ,  8 ,  0 ), /* 9D */
 			new OpCode( "SBC A,(IY+$)"      , 19 ,  0 ), /* 9E */
-			new OpCode( null                ,  0 ,  0 ), /* 9F */
-			new OpCode( null                ,  0 ,  0 ), /* A0 */
-			new OpCode( null                ,  0 ,  0 ), /* A1 */
-			new OpCode( null                ,  0 ,  0 ), /* A2 */
-			new OpCode( null                ,  0 ,  0 ), /* A3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* 9F */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A3 */
 			new OpCode( "AND IYH"           ,  8 ,  0 ), /* A4 */
 			new OpCode( "AND IYL"           ,  8 ,  0 ), /* A5 */
 			new OpCode( "AND (IY+$)"        , 19 ,  0 ), /* A6 */
-			new OpCode( null                ,  0 ,  0 ), /* A7 */
-			new OpCode( null                ,  0 ,  0 ), /* A8 */
-			new OpCode( null                ,  0 ,  0 ), /* A9 */
-			new OpCode( null                ,  0 ,  0 ), /* AA */
-			new OpCode( null                ,  0 ,  0 ), /* AB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* A9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AB */
 			new OpCode( "XOR IYH"           ,  8 ,  0 ), /* AC */
 			new OpCode( "XOR IYL"           ,  8 ,  0 ), /* AD */
 			new OpCode( "XOR (IY+$)"        , 19 ,  0 ), /* AE */
-			new OpCode( null                ,  0 ,  0 ), /* AF */
-			new OpCode( null                ,  0 ,  0 ), /* B0 */
-			new OpCode( null                ,  0 ,  0 ), /* B1 */
-			new OpCode( null                ,  0 ,  0 ), /* B2 */
-			new OpCode( null                ,  0 ,  0 ), /* B3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* AF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B3 */
 			new OpCode( "OR IYH"            ,  8 ,  0 ), /* B4 */
 			new OpCode( "OR IYL"            ,  8 ,  0 ), /* B5 */
 			new OpCode( "OR (IY+$)"         , 19 ,  0 ), /* B6 */
-			new OpCode( null                ,  0 ,  0 ), /* B7 */
-			new OpCode( null                ,  0 ,  0 ), /* B8 */
-			new OpCode( null                ,  0 ,  0 ), /* B9 */
-			new OpCode( null                ,  0 ,  0 ), /* BA */
-			new OpCode( null                ,  0 ,  0 ), /* BB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* B9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BB */
 			new OpCode( "CP IYH"            ,  8 ,  0 ), /* BC */
 			new OpCode( "CP IYL"            ,  8 ,  0 ), /* BD */
 			new OpCode( "CP (IY+$)"         , 19 ,  0 ), /* BE */
-			new OpCode( null                ,  0 ,  0 ), /* BF */
-			new OpCode( null                ,  0 ,  0 ), /* C0 */
-			new OpCode( null                ,  0 ,  0 ), /* C1 */
-			new OpCode( null                ,  0 ,  0 ), /* C2 */
-			new OpCode( null                ,  0 ,  0 ), /* C3 */
-			new OpCode( null                ,  0 ,  0 ), /* C4 */
-			new OpCode( null                ,  0 ,  0 ), /* C5 */
-			new OpCode( null                ,  0 ,  0 ), /* C6 */
-			new OpCode( null                ,  0 ,  0 ), /* C7 */
-			new OpCode( null                ,  0 ,  0 ), /* C8 */
-			new OpCode( null                ,  0 ,  0 ), /* C9 */
-			new OpCode( null                ,  0 ,  0 ), /* CA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* BF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* C9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CA */
 			new OpCode( "shift CB"          ,  0 ,  0 ), /* CB */
-			new OpCode( null                ,  0 ,  0 ), /* CC */
-			new OpCode( null                ,  0 ,  0 ), /* CD */
-			new OpCode( null                ,  0 ,  0 ), /* CE */
-			new OpCode( null                ,  0 ,  0 ), /* CF */
-			new OpCode( null                ,  0 ,  0 ), /* D0 */
-			new OpCode( null                ,  0 ,  0 ), /* D1 */
-			new OpCode( null                ,  0 ,  0 ), /* D2 */
-			new OpCode( null                ,  0 ,  0 ), /* D3 */
-			new OpCode( null                ,  0 ,  0 ), /* D4 */
-			new OpCode( null                ,  0 ,  0 ), /* D5 */
-			new OpCode( null                ,  0 ,  0 ), /* D6 */
-			new OpCode( null                ,  0 ,  0 ), /* D7 */
-			new OpCode( null                ,  0 ,  0 ), /* D8 */
-			new OpCode( null                ,  0 ,  0 ), /* D9 */
-			new OpCode( null                ,  0 ,  0 ), /* DA */
-			new OpCode( null                ,  0 ,  0 ), /* DB */
-			new OpCode( null                ,  0 ,  0 ), /* DC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CD */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* CF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* D9 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DC */
 			new OpCode( "ignore"            ,  4 ,  0 ), /* DD */
-			new OpCode( null                ,  0 ,  0 ), /* DE */
-			new OpCode( null                ,  0 ,  0 ), /* DF */
-			new OpCode( null                ,  0 ,  0 ), /* E0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* DF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E0 */
 			new OpCode( "POP IY"            , 14 ,  0 ), /* E1 */
-			new OpCode( null                ,  0 ,  0 ), /* E2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E2 */
 			new OpCode( "EX (SP),IY"        , 23 ,  0 ), /* E3 */
-			new OpCode( null                ,  0 ,  0 ), /* E4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E4 */
 			new OpCode( "PUSH IY"           , 15 ,  0 ), /* E5 */
-			new OpCode( null                ,  0 ,  0 ), /* E6 */
-			new OpCode( null                ,  0 ,  0 ), /* E7 */
-			new OpCode( null                ,  0 ,  0 ), /* E8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* E8 */
 			new OpCode( "JP (IY)"             ,  8 ,  0 , OpCodeFlags.Jumps ), /* E9 */
-			new OpCode( null                ,  0 ,  0 ), /* EA */
-			new OpCode( null                ,  0 ,  0 ), /* EB */
-			new OpCode( null                ,  0 ,  0 ), /* EC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EC */
 			new OpCode( null                ,  4 ,  0 ), /* ED */
-			new OpCode( null                ,  0 ,  0 ), /* EE */
-			new OpCode( null                ,  0 ,  0 ), /* EF */
-			new OpCode( null                ,  0 ,  0 ), /* F0 */
-			new OpCode( null                ,  0 ,  0 ), /* F1 */
-			new OpCode( null                ,  0 ,  0 ), /* F2 */
-			new OpCode( null                ,  0 ,  0 ), /* F3 */
-			new OpCode( null                ,  0 ,  0 ), /* F4 */
-			new OpCode( null                ,  0 ,  0 ), /* F5 */
-			new OpCode( null                ,  0 ,  0 ), /* F6 */
-			new OpCode( null                ,  0 ,  0 ), /* F7 */
-			new OpCode( null                ,  0 ,  0 ), /* F8 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* EF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F0 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F1 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F2 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F3 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F4 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F5 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F6 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F7 */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* F8 */
 			new OpCode( "LD SP,IY"          , 10 ,  0 ), /* F9 */
-			new OpCode( null                ,  0 ,  0 ), /* FA */
-			new OpCode( null                ,  0 ,  0 ), /* FB */
-			new OpCode( null                ,  0 ,  0 ), /* FC */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FA */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FB */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FC */
 			new OpCode( "ignore"            ,  4 ,  0 ), /* FD */
-			new OpCode( null                ,  0 ,  0 ), /* FE */
-			new OpCode( null                ,  0 ,  0 ), /* FF */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FE */
+			new OpCode( "NOP*"              ,  4 ,  0, OpCodeFlags.Invalid ), /* FF */
 		};
 
 

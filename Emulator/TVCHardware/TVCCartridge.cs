@@ -73,7 +73,7 @@ namespace YATE.Emulator.TVCHardware
     /// Initializes cartridge
     /// </summary>
     /// <param name="in_parent">TVC hardware class</param>
-    public void Initialize(ITVComputer in_parent)
+    public void Insert(ITVComputer in_parent)
     {
       // allocate cartridge memory
       Memory = new byte[CartMemLength];

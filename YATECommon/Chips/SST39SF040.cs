@@ -92,16 +92,9 @@ namespace YATECommon.Chips
       bool rom_content_changed = false;
 
       // reload rom content
-      byte[] new_rom_content = new byte[FlashSize];
-      ROMFile.LoadMemoryFromFile(ROMFileName, new_rom_content);
+      ROMFile.LoadMemoryFromFile(ROMFileName, m_rom, ref rom_content_changed);
 
-      // compare new memory content
-      if (!ROMFile.IsMemoryEqual(m_rom, new_rom_content))
-      {
-        m_rom = new_rom_content;
-        rom_content_changed = true;
-      }
-
+      // not changed status
       ROMContentChanged = false;
 
       return rom_content_changed;

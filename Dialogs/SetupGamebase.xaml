@@ -16,7 +16,7 @@
 			<RowDefinition Height="49*"/>
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="90"/>
+			<ColumnDefinition Width="110"/>
 			<ColumnDefinition Width="1*"/>
 			<ColumnDefinition Width="50"/>
 		</Grid.ColumnDefinitions>
@@ -25,7 +25,7 @@
 			<cc:Title Text="Gamebase Settings"/>
 		</Grid>
 		
-		<TextBlock Grid.Row="1" Grid.Column="0" Text="Gamebase path:" VerticalAlignment="Center"/>
+		<TextBlock Grid.Row="1" Grid.Column="0" Text="Gamebase MDB file:" VerticalAlignment="Center"/>
 		<TextBox Grid.Row="1" Grid.Column="1" Text="{Binding GamebaseDatabaseFile}" Margin="5,3,5,3" VerticalContentAlignment="Center"/>
 		<Button x:Name="bBrowse" Grid.Row="1" Grid.Column="2" Margin="3" Content="..." Click="bBrowse_Click" />
 		<CheckBox Grid.Row="2" Grid.Column="1" Margin="5,0,0,0" Content="Autostart" IsChecked="{Binding Autostart}"/>

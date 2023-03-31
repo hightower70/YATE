@@ -197,7 +197,7 @@ namespace YATE.Emulator.TVCHardware
     private ulong m_keyboard_injection_rate;
 
     // Settings
-    private SetupInputSettings m_settings;
+    //private SetupInputSettings m_settings;
 
     // Joysticks
     public TVCJoystick JoyStick1 { get; private set; }

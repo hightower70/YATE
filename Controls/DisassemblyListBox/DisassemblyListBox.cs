@@ -1,5 +1,6 @@
 ﻿using CustomControls;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -21,7 +22,7 @@ namespace YATE.Controls
     private int m_tstate_max;
     private string m_tstate_sum_string;
     private AnnotatedScrollBar m_vertical_scroll_bar;
-    private TVCMemoryType m_memory_type = TVCMemoryType.Cart;
+    private TVCMemoryType m_memory_type = TVCMemoryType.RAM;
 
     #endregion
 
@@ -39,6 +40,21 @@ namespace YATE.Controls
         OnPropertyChanged();
       }
     }
+
+    public TVCMemoryType MemoryType
+    {
+      get
+      {
+        return m_memory_type;
+      }
+
+      set
+      {
+        m_memory_type = value;
+      }
+    }
+
+
     #endregion
 
     #region · Constructor ·
@@ -54,7 +70,8 @@ namespace YATE.Controls
 
       SelectionMode = SelectionMode.Extended;
 
-      BreakpointManager.Default.BreakpointChanged += BreakpointChangedEventHandler;
+      if ((BreakpointManager)TVCManagers.Default.BreakpointManager != null)  // check for null because of the GUI editor
+        ((BreakpointManager)TVCManagers.Default.BreakpointManager).Breakpoints.CollectionChanged += Breakpoints_CollectionChanged;
     }
 
     #endregion
@@ -85,11 +102,11 @@ namespace YATE.Controls
 
                 if (current_line.IsBreakpoint)
                 {
-                  BreakpointManager.Default.RemoveBreakpoint(breakpoint);
+                  ((BreakpointManager)TVCManagers.Default.BreakpointManager).RemoveBreakpoint(breakpoint);
                 }
                 else
                 {
-                  BreakpointManager.Default.AddBreakpoint(breakpoint);
+                  ((BreakpointManager)TVCManagers.Default.BreakpointManager).AddBreakpoint(breakpoint);
                 }
                 break;
               }
@@ -162,6 +179,29 @@ namespace YATE.Controls
 
     #endregion
 
+    #region · Public members ·
+
+    /// <summary>
+    /// Finds line at the given memory address
+    /// </summary>
+    /// <param name="in_address"></param>
+    /// <returns></returns>
+    public int FindLineAtAddress(ushort in_address)
+    {
+      DisassemblyLine search = new DisassemblyLine();
+      search.DisassemblyInstruction.Address = in_address;
+
+      return (ItemsSource as List<DisassemblyLine>).BinarySearch(search);
+    }
+
+    public void AddBreakpointToLine(int in_line_index)
+    {
+      (ItemsSource as List<DisassemblyLine>)[in_line_index].IsBreakpoint = true;
+      m_vertical_scroll_bar.AddAnnotation(in_line_index, false, Brushes.Red);
+    }
+
+    #endregion
+
     #region · Non-public members ·
 
     internal void SetVerticalScrollBar(AnnotatedScrollBar in_scroll_bar)
@@ -171,7 +211,7 @@ namespace YATE.Controls
 
     private void SelectItemAtAddress(ushort in_address)
     {
-      int index = FindLine(in_address);
+      int index = FindLineAtAddress(in_address);
 
       if (index >= 0)
       {
@@ -180,47 +220,52 @@ namespace YATE.Controls
       }
     }
 
-    private int FindLine(ushort in_address)
-    {
-      DisassemblyLine search = new DisassemblyLine();
-      search.DisassemblyInstruction.Address = in_address;
-
-      return (ItemsSource as List<DisassemblyLine>).BinarySearch(search);
-    }
-
     #endregion
 
-    private void BreakpointChangedEventHandler(BreakpointManager in_sender, BreakpointChangedMode in_mode, BreakpointInfo in_breakpoint)
+    private void Breakpoints_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
-      switch(in_mode)
+      switch(e.Action)
       {
-        case BreakpointChangedMode.Added:
-          if(in_breakpoint.MemoryType == m_memory_type)
+        case  System.Collections.Specialized.NotifyCollectionChangedAction.Add:
+          foreach (BreakpointInfo breakpoint in e.NewItems)
           {
-            int line_index = FindLine(in_breakpoint.Address);
-
-            if(line_index >=0)
+            if (breakpoint.MemoryType == m_memory_type)
             {
-              (ItemsSource as List<DisassemblyLine>)[line_index].IsBreakpoint = true;
-              m_vertical_scroll_bar.AddAnnotation(line_index, false, Brushes.Red);
+              int line_index = FindLineAtAddress(breakpoint.Address);
+
+              if (line_index >= 0)
+              {
+                (ItemsSource as List<DisassemblyLine>)[line_index].IsBreakpoint = true;
+                m_vertical_scroll_bar.AddAnnotation(line_index, false, Brushes.Red);
+              }
+            }
+          }
+          break;
+         
+        case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
+          foreach (BreakpointInfo breakpoint in e.OldItems)
+          {
+            if (breakpoint.MemoryType == m_memory_type)
+            {
+              int line_index = FindLineAtAddress(breakpoint.Address);
+
+              if (line_index >= 0)
+              {
+                (ItemsSource as List<DisassemblyLine>)[line_index].IsBreakpoint = false;
+                m_vertical_scroll_bar.RemoveAnnotation(line_index, false, Brushes.Red);
+              }
             }
           }
           break;
 
-        case BreakpointChangedMode.Deleted:
-          if (in_breakpoint.MemoryType == m_memory_type)
+        case System.Collections.Specialized.NotifyCollectionChangedAction.Reset:
+          foreach(DisassemblyLine line in ItemsSource as List<DisassemblyLine>)
           {
-            int line_index = FindLine(in_breakpoint.Address);
-
-            if (line_index >= 0)
-            {
-              (ItemsSource as List<DisassemblyLine>)[line_index].IsBreakpoint = false;
-              m_vertical_scroll_bar.RemoveAnnotation(line_index, false, Brushes.Red);
-            }
+            line.IsBreakpoint = false;
+            m_vertical_scroll_bar.RemoveAnnotation(line.Index, false, Brushes.Red);
           }
           break;
       }
-
     }
 
 

@@ -29,6 +29,7 @@ namespace YATE.Forms
     private Int32Rect m_refresh_rect;
 
     public ExecutionManager ExecutionControl { get { return (ExecutionManager)TVCManagers.Default.ExecutionManager; } }
+    public BreakpointManager BreakpointControl { get { return (BreakpointManager)TVCManagers.Default.BreakpointManager; } }
     public TVCCartridgeManager CartridgeControl { get { return (TVCCartridgeManager)TVCManagers.Default.CartridgeManager; } }
 
     private KeyboardHook m_keyboard_hook;
@@ -60,6 +61,9 @@ namespace YATE.Forms
 
       // Debug manager
       TVCManagers.Default.SetDebugManager(new DebugManager());
+
+      // Breakpoint manager
+      TVCManagers.Default.SetBreakpointManager(new BreakpointManager());
 
       // Create Cartridge contol
       TVCManagers.Default.SetCartridgeManager(new TVCCartridgeManager());
@@ -309,7 +313,7 @@ namespace YATE.Forms
         using (new WaitCursor())
         {
           // stop simulation
-          ExecutionControl.ChangeExecutionState(ExecutionManager.ExecutionStateRequest.Pause);
+          ExecutionControl.ChangeExecutionState(ExecutionManager.ExecutionStateRequests.Pause);
 
           // save previous settings
           SettingsFile.Previous.CopySettingsFrom(SettingsFile.Default);
@@ -329,7 +333,7 @@ namespace YATE.Forms
             ExecutionControl.TVC.ColdReset();
 
           // restore execution state
-          ExecutionControl.ChangeExecutionState(ExecutionManager.ExecutionStateRequest.Restore);
+          ExecutionControl.ChangeExecutionState(ExecutionManager.ExecutionStateRequests.Restore);
         }
       }
     }

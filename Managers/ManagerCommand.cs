@@ -18,23 +18,50 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Interface for Cartridge Emulation
+// Command class for various manager classes for UI binding
 ///////////////////////////////////////////////////////////////////////////////
-namespace YATECommon
-{
-	/// <summary>
-	/// Cartridge Emulation Interface
-	/// </summary>
-	public interface ITVCCartridge
-	{
-		// Cartridge memory read/write
-		byte MemoryRead(ushort in_address);									// cartridge memory read
-		void MemoryWrite(ushort in_address, byte in_byte);	// cartridge memory write
+using System;
+using System.Windows.Input;
 
-		// Cartridge maintenance functions
-		void Insert(ITVComputer in_parent);									// Inserts (initializes) cartridge (cartridge installation)
-		void Remove(ITVComputer in_parent);									// Removes cartridge (cartridge removal)
-		void Reset();                                       // Computer reset
-    void PeriodicCallback(ulong in_cpu_tick);           // Called periodically by the emulator core
-  }
+namespace YATE.Managers
+{
+	public class ManagerCommand : ICommand
+	{
+		public delegate void ICommandOnExecute(object parameter);
+
+
+		private ICommandOnExecute m_execute;
+		private bool m_can_execute;
+
+		public ManagerCommand(ICommandOnExecute onExecuteMethod)
+		{
+			m_execute = onExecuteMethod;
+			m_can_execute = true;
+		}
+
+		#region ICommand Members
+
+		public event EventHandler CanExecuteChanged;
+
+		public bool CanExecute(object parameter)
+		{
+			return m_can_execute;
+		}
+
+		public void SetCanExecute(bool in_can_execute)
+		{
+			if (m_can_execute != in_can_execute)
+			{
+				m_can_execute = in_can_execute;
+				CanExecuteChanged.Invoke(this, EventArgs.Empty);
+			}
+		}
+
+		public void Execute(object parameter)
+		{
+			m_execute.Invoke(parameter);
+		}
+
+		#endregion
+	}
 }

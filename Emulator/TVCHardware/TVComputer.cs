@@ -46,7 +46,7 @@ namespace YATE.Emulator.TVCHardware
 
 			// cartridge init
 			Cartridge = new TVCCartridge();
-			Cartridge.Initialize(this);
+			Cartridge.Insert(this);
 
       Reset();
 		}
@@ -250,7 +250,7 @@ namespace YATE.Emulator.TVCHardware
 		{
       // insert cartridge
       Cartridge = in_cartridge;
-			Cartridge.Initialize(this);
+			Cartridge.Insert(this);
 		}
 
 		/// <summary>
@@ -264,7 +264,7 @@ namespace YATE.Emulator.TVCHardware
 
       // restore original cartridge
       Cartridge = new TVCCartridge();
-      Cartridge.Initialize(this);
+      Cartridge.Insert(this);
     }
 
     #endregion

@@ -41,7 +41,6 @@ namespace YATE.Emulator.TVCHardware
 
 		public const int PageCount = 4;
 		public const int VideoPageCount = 4;
-		public const int IOCardCount = 4;
 
 		public const int Page0StartAddress = 0x0000;
 		public const int Page1StartAddress = 0x4000;
@@ -73,6 +72,10 @@ namespace YATE.Emulator.TVCHardware
 		private byte[] m_page2_video_mem;
 
 		private TVCMemoryType[] m_memory_types;
+    
+    private IDebuggableMemory[] m_slot_memory;
+		private TVCMemoryType m_slot_selected_memory_type;
+		private IDebuggableMemory m_slot_selected_memory;
 
 		private TVCMemoryReadDelegate m_u2_reader;
 		private TVCMemoryWriteDelegate m_u2_writer;
@@ -80,8 +83,10 @@ namespace YATE.Emulator.TVCHardware
 		private TVCMemoryWriteDelegate m_u3_writer;
 
 		private TVCDebuggableMemory m_debuggable_ram;
+		private TVCDebuggableMemory m_debuggable_sys;
+    private TVCDebuggableMemory m_debuggable_ext;
 
-		public byte Port02H { get; set; }
+    public byte Port02H { get; set; }
 
 		private TVCConfigurationSettings m_settings;
 
@@ -94,26 +99,41 @@ namespace YATE.Emulator.TVCHardware
 
 			m_tvc = in_tvc;
 
-      m_page_reader = new TVCMemoryReadDelegate[PageCount];
+			m_page_reader = new TVCMemoryReadDelegate[PageCount];
 			m_page_writer = new TVCMemoryWriteDelegate[PageCount];
 
 			m_memory_types = new TVCMemoryType[PageCount];
-			m_memory_types[0] = TVCMemoryType.SystemROM;
+			m_memory_types[0] = TVCMemoryType.System;
 			m_memory_types[1] = TVCMemoryType.RAM;
-      m_memory_types[2] = TVCMemoryType.Video;
-      m_memory_types[3] = TVCMemoryType.Cart;
+			m_memory_types[2] = TVCMemoryType.Video;
+			m_memory_types[3] = TVCMemoryType.Cart;
 
-      m_memory_types[1] = TVCMemoryType.RAM;
-      // reserve space for memories
+			// init RAM
+      m_mem_user = new byte[PageCount * PageLength];
+      m_debuggable_ram = new TVCDebuggableMemory(m_mem_user, TVCMemoryType.RAM, 0);
+
+      // init system ROM
       m_mem_sys = new byte[SysMemLength];
-			m_mem_ext = new byte[ExtMemLength];
+      m_debuggable_sys = new TVCDebuggableMemory(m_mem_sys, TVCMemoryType.System, 0xc000);
 
-			m_mem_iomem = new byte[IOCardCount][];
-			for (int i = 0; i < IOCardCount; i++)
-				m_mem_iomem[i] = new byte[IOMemSize];
+			// init Extension ROM
+      m_mem_ext = new byte[ExtMemLength];
+			m_debuggable_ext = new TVCDebuggableMemory(m_mem_ext, TVCMemoryType.SystemExtension, 0xe000);
 
-			m_mem_user = new byte[PageCount * PageLength];
+      // init slot memory
+      m_slot_memory = new IDebuggableMemory[TVComputerConstants.ExpansionCardCount];
+			for (int i = 0; i < m_slot_memory.Length; i++)
+			{
+				m_slot_memory[i] = null;
+			}
+			m_slot_selected_memory = null;
 
+			// Init slot memory
+			m_mem_iomem = new byte[TVComputerConstants.ExpansionCardCount][];
+			for (int i = 0; i < m_mem_iomem.Length; i++)
+				m_mem_iomem[i] = null;
+
+			// video memory
 			m_mem_video = new byte[VideoPageCount][];
 			for (int i = 0; i < VideoPageCount; i++)
 				m_mem_video[i] = new byte[VideoPageLength];
@@ -131,12 +151,12 @@ namespace YATE.Emulator.TVCHardware
 			m_tvc.Ports.AddPortReset(0x03, PortReset03H);
 			m_tvc.Ports.AddPortReset(0x0F, PortReset0FH);
 
-			m_debuggable_ram = new TVCDebuggableMemory(m_mem_user, TVCMemoryType.RAM);
+			// U2-U3 memory handler
+			SetU2UserMemoryHandler(null, null);
+			SetU3UserMemoryHandler(null, null);
 
-      SetU2UserMemoryHandler(null, null);
-      SetU3UserMemoryHandler(null, null);
-
-      LoadROM();
+			// loads ROM content
+			LoadROM();
 		}
 
 		private void PortReset02H()
@@ -169,10 +189,10 @@ namespace YATE.Emulator.TVCHardware
 			// update configuration
 			m_settings = new_settings;
 
-      SetU2UserMemoryHandler(null, null);
-      SetU3UserMemoryHandler(null, null);
+			SetU2UserMemoryHandler(null, null);
+			SetU3UserMemoryHandler(null, null);
 
-      if (LoadROM())
+			if (LoadROM())
 				in_restart_tvc = true;
 		}
 
@@ -184,13 +204,6 @@ namespace YATE.Emulator.TVCHardware
 		{
 			bool memory_changed = false;
 
-			byte[] old_mem_sys = m_mem_sys;
-			byte[] old_mem_ext = m_mem_ext;
-
-			// reserve space for memories
-			m_mem_sys = new byte[SysMemLength];
-			m_mem_ext = new byte[ExtMemLength];
-
 			// load ROM content
 			switch (m_settings.ROMVersion)
 			{
@@ -200,34 +213,28 @@ namespace YATE.Emulator.TVCHardware
 
 				// BASIC 1.2
 				case 1:
-					ROMFile.LoadMemoryFromResource("YATE.Resources.rom_1_2.bin", m_mem_sys);
-					ROMFile.LoadMemoryFromResource("YATE.Resources.ext_1_2.bin", m_mem_ext);
+					ROMFile.LoadMemoryFromResource("YATE.Resources.rom_1_2.bin", m_mem_sys, ref memory_changed);
+					ROMFile.LoadMemoryFromResource("YATE.Resources.ext_1_2.bin", m_mem_ext, ref memory_changed);
 					break;
 
 				// BASIC 1.2 (RU)
 				case 2:
-					ROMFile.LoadMemoryFromResource("YATE.Resources.rom_1_2_ru.bin", m_mem_sys);
-					ROMFile.LoadMemoryFromResource("YATE.Resources.ext_1_2_ru.bin", m_mem_ext);
+					ROMFile.LoadMemoryFromResource("YATE.Resources.rom_1_2_ru.bin", m_mem_sys, ref memory_changed);
+					ROMFile.LoadMemoryFromResource("YATE.Resources.ext_1_2_ru.bin", m_mem_ext, ref memory_changed);
 					break;
 
 				// BASIC 2.1
 				case 3:
-					ROMFile.LoadMemoryFromResource("YATE.Resources.rom_2_1.bin", m_mem_sys);
-					ROMFile.LoadMemoryFromResource("YATE.Resources.ext_2_1.bin", m_mem_ext);
+					ROMFile.LoadMemoryFromResource("YATE.Resources.rom_2_1.bin", m_mem_sys, ref memory_changed);
+					ROMFile.LoadMemoryFromResource("YATE.Resources.ext_2_1.bin", m_mem_ext, ref memory_changed);
 					break;
 
 				// BASIC 2.2
 				case 4:
-					ROMFile.LoadMemoryFromResource("YATE.Resources.rom_2_2.bin", m_mem_sys);
-					ROMFile.LoadMemoryFromResource("YATE.Resources.ext_2_2.bin", m_mem_ext);
+					ROMFile.LoadMemoryFromResource("YATE.Resources.rom_2_2.bin", m_mem_sys, ref memory_changed);
+					ROMFile.LoadMemoryFromResource("YATE.Resources.ext_2_2.bin", m_mem_ext, ref memory_changed);
 					break;
 			}
-
-			if (!ROMFile.IsMemoryEqual(old_mem_sys, m_mem_sys))
-				memory_changed = true;
-
-			if (!ROMFile.IsMemoryEqual(old_mem_ext, m_mem_ext))
-				memory_changed = true;
 
 			return memory_changed;
 		}
@@ -258,16 +265,16 @@ namespace YATE.Emulator.TVCHardware
 			return m_page_reader[page_index](page_addres);
 		}
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public byte Read(ushort in_address, bool in_m1_state)
-    {
-      byte page_index = (byte)(in_address >> 14);
-      ushort page_addres = (ushort)(in_address & 0x3fff);
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public byte Read(ushort in_address, bool in_m1_state)
+		{
+			byte page_index = (byte)(in_address >> 14);
+			ushort page_addres = (ushort)(in_address & 0x3fff);
 
-      return m_page_reader[page_index](page_addres);
-    }
+			return m_page_reader[page_index](page_addres);
+		}
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Write(ushort in_address, byte in_data)
 		{
 			byte page_index = (byte)(in_address >> 14);
@@ -286,6 +293,13 @@ namespace YATE.Emulator.TVCHardware
 
 		public void SetCPU(Z80CPU.Z80 in_cpu)
 		{
+		}
+
+		public TVCMemoryType GetMemoryTypeAtAddress(ushort in_address)
+		{
+			int index = in_address >> 14;
+
+			return m_memory_types[index];
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -373,7 +387,7 @@ namespace YATE.Emulator.TVCHardware
 				case 0:
 					m_page_reader[0] = MemSysRead;
 					m_page_writer[0] = MemNoWrite;
-					m_memory_types[0] = TVCMemoryType.SystemROM;
+					m_memory_types[0] = TVCMemoryType.System;
 					break;
 
 				case 1:
@@ -392,23 +406,23 @@ namespace YATE.Emulator.TVCHardware
 					switch (m_settings.HardwareVersion)
 					{
 						case SetupTVCConfigurationDataProvider.TVCHardwareVersion32k:
-              m_page_reader[0] = m_u3_reader;
-              m_page_writer[0] = m_u3_writer;
-              m_memory_types[0] = TVCMemoryType.RAM;
-              break;
+							m_page_reader[0] = m_u3_reader;
+							m_page_writer[0] = m_u3_writer;
+							m_memory_types[0] = TVCMemoryType.RAM;
+							break;
 
 						case SetupTVCConfigurationDataProvider.TVCHardwareVersion64kPaging:
-	          case SetupTVCConfigurationDataProvider.TVCHardwareVersion64kplus:
-              m_page_reader[0] = MemU3Read;
-              m_page_writer[0] = MemU3Write;
-              m_memory_types[0] = TVCMemoryType.RAM;
-              break;
+						case SetupTVCConfigurationDataProvider.TVCHardwareVersion64kplus:
+							m_page_reader[0] = MemU3Read;
+							m_page_writer[0] = MemU3Write;
+							m_memory_types[0] = TVCMemoryType.RAM;
+							break;
 
-            default:
+						default:
 							m_page_reader[0] = MemU0Read;
 							m_page_writer[0] = MemU0Write;
-              m_memory_types[0] = TVCMemoryType.RAM;
-              break;
+							m_memory_types[0] = TVCMemoryType.RAM;
+							break;
 					}
 					break;
 			}
@@ -419,8 +433,8 @@ namespace YATE.Emulator.TVCHardware
 				case 0:
 					m_page_reader[1] = MemU1Read;
 					m_page_writer[1] = MemU1Write;
-          m_memory_types[1] = TVCMemoryType.RAM;
-          break;
+					m_memory_types[1] = TVCMemoryType.RAM;
+					break;
 
 				case 1:
 					if (m_settings.HardwareVersion == SetupTVCConfigurationDataProvider.TVCHardwareVersion64kplus) // Only 64k+
@@ -428,13 +442,13 @@ namespace YATE.Emulator.TVCHardware
 						m_page_reader[1] = MemVideo1Read;
 						m_page_writer[1] = MemVideo1Write;
 						m_memory_types[1] = TVCMemoryType.Video;
-          }
+					}
 					else
 					{
 						m_page_reader[1] = MemU1Read;
 						m_page_writer[1] = MemU1Write;
 						m_memory_types[1] = TVCMemoryType.RAM;
-          }
+					}
 					break;
 			}
 
@@ -445,13 +459,13 @@ namespace YATE.Emulator.TVCHardware
 					m_page_reader[2] = MemVideo2Read;
 					m_page_writer[2] = MemVideo2Write;
 					m_memory_types[2] = TVCMemoryType.Video;
-          break;
+					break;
 
 				case 1:
 					m_page_reader[2] = m_u2_reader;
 					m_page_writer[2] = m_u2_writer;
-          m_memory_types[2] = TVCMemoryType.RAM;
-          break;
+					m_memory_types[2] = TVCMemoryType.RAM;
+					break;
 			}
 
 			// Page 3
@@ -466,7 +480,7 @@ namespace YATE.Emulator.TVCHardware
 				case 1:
 					m_page_reader[3] = MemSysRead;
 					m_page_writer[3] = MemNoWrite;
-					m_memory_types[3] = TVCMemoryType.SystemROM;
+					m_memory_types[3] = TVCMemoryType.System;
 					break;
 
 				case 2:
@@ -481,22 +495,22 @@ namespace YATE.Emulator.TVCHardware
 					switch (m_ext_mem_select)
 					{
 						case 0:
-							m_memory_types[3] = TVCMemoryType.ExtSlot0;
+							m_memory_types[3] = TVCMemoryType.Slot0;
 							break;
 
-            case 1:
-              m_memory_types[3] = TVCMemoryType.ExtSlot1;
-              break;
+						case 1:
+							m_memory_types[3] = TVCMemoryType.Slot1;
+							break;
 
-            case 2:
-              m_memory_types[3] = TVCMemoryType.ExtSlot2;
-              break;
+						case 2:
+							m_memory_types[3] = TVCMemoryType.Slot2;
+							break;
 
-            case 3:
-              m_memory_types[3] = TVCMemoryType.ExtSlot3;
-              break;
-          }
-          break;
+						case 3:
+							m_memory_types[3] = TVCMemoryType.Slot3;
+							break;
+					}
+					break;
 			}
 		}
 
@@ -543,28 +557,29 @@ namespace YATE.Emulator.TVCHardware
 			m_port03 = in_data;
 			m_ext_mem_select = (byte)(in_data >> 6);
 
-			if (m_memory_types[3] >= TVCMemoryType.ExtSlot0 && m_memory_types[3] < TVCMemoryType.ExtSlot3)
+			switch (m_ext_mem_select)
 			{
-				switch (m_ext_mem_select)
-				{
-					case 0:
-						m_memory_types[3] = TVCMemoryType.ExtSlot0;
-						break;
+				case 0:
+					m_slot_selected_memory_type = TVCMemoryType.Slot0;
+					m_slot_selected_memory = m_slot_memory[0];
+					break;
 
-					case 1:
-						m_memory_types[3] = TVCMemoryType.ExtSlot1;
-						break;
+				case 1:
+          m_slot_selected_memory_type = TVCMemoryType.Slot1;
+          m_slot_selected_memory = m_slot_memory[1];
+          break;
 
-					case 2:
-						m_memory_types[3] = TVCMemoryType.ExtSlot2;
-						break;
+				case 2:
+          m_slot_selected_memory_type = TVCMemoryType.Slot2;
+          m_slot_selected_memory = m_slot_memory[2];
+          break;
 
-					case 3:
-						m_memory_types[3] = TVCMemoryType.ExtSlot3;
-						break;
-				}
+				case 3:
+          m_slot_selected_memory_type = TVCMemoryType.Slot3;
+          m_slot_selected_memory = m_slot_memory[3];
+          break;
 			}
-    }
+		}
 
 		// PORT 0FH
 		// ========
@@ -794,8 +809,8 @@ namespace YATE.Emulator.TVCHardware
 		public int VideoMemAccessCount { get; set; } = 0;
 
 		private static readonly string[] m_page0_mapping_names = { "SYS", "CART", "U0", "U3" };
-    private static readonly string[] m_page0_mapping_names_no_u3_paging = { "SYS", "CART", "U0", "U0" };
-    private static readonly string[] m_page1_mapping_names = { "U1", "VID" };
+		private static readonly string[] m_page0_mapping_names_no_u3_paging = { "SYS", "CART", "U0", "U0" };
+		private static readonly string[] m_page1_mapping_names = { "U1", "VID" };
 		private static readonly string[] m_page2_mapping_names = { "VID", "U2" };
 		private static readonly string[] m_page3_mapping_names = { "CART", "SYS", "U3", "EXT" };
 
@@ -903,40 +918,4 @@ namespace YATE.Emulator.TVCHardware
 			}
 		}
 	}
-
-	internal class TVCDebuggableMemory : IDebuggableMemory
-	{
-		private byte[] m_memory_content;
-
-		public TVCDebuggableMemory(byte[] in_memory_content, TVCMemoryType in_type)
-		{
-			m_memory_content = in_memory_content;
-			TVCManagers.Default.DebugManager.RegisterDebuggableMemory(this);
-		}
-
-		public TVCMemoryType MemoryType { get => TVCMemoryType.RAM; }
-
-		public int AddressOffset { get { return 0; } }
-
-		public int MemorySize { get { return m_memory_content.Length; } }
-
-		public int PageCount { get { return 1; } }
-
-		public int PageIndex { get { return 0; } }
-
-		public string[] PageNames
-		{
-			get { return null; }
-		}
-
-		public byte DebugReadMemory(int in_page_index, int in_address)
-		{
-			return m_memory_content[in_address & 0xffff];
-		}
-
-		public void DebugWriteMemory(int in_page_index, int in_address, byte in_data)
-		{
-			m_memory_content[in_address & 0xffff] = in_data;
-    }
-  }
 }

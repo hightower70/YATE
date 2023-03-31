@@ -8,7 +8,7 @@
 				xmlns:yc="clr-namespace:YATE.Controls"
         mc:Ignorable="d"
 				x:Name="wDisassemblyList"
-        Title="DisassemblyListView" Height="450" Width="800"
+        Title="DisassemblyListView" Height="450" Width="620"
 				Style="{DynamicResource WindowStyle}" Closing="Window_Closing" >
 	<Window.InputBindings>
 		<KeyBinding Key="F5" Command="{Binding ExecutionControl.DebugRunCommand}" />
@@ -21,26 +21,34 @@
 		<Grid.RowDefinitions>
 			<RowDefinition Height="32"/>
 			<RowDefinition/>
+			<RowDefinition Height="24"/>
 		</Grid.RowDefinitions>
 
 		<Grid Grid.Row="0" Background="{DynamicResource BackgroundHighlighted}">
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="48"/>
-				<ColumnDefinition MinWidth="550" />
-				<ColumnDefinition Width="95" />
-				<ColumnDefinition Width="150" />
+				<ColumnDefinition  />
 			</Grid.ColumnDefinitions>
 
-			<Border Grid.Column="1" Grid.ColumnSpan="3" BorderBrush="DarkGray" BorderThickness="0,0,0,1"/>
+			<Border Grid.Column="1" Grid.ColumnSpan="2" BorderBrush="DarkGray" BorderThickness="0,0,0,1"/>
 			
 			<yc:TVCMemorySelector Grid.Column="0" Grid.ColumnSpan="2" x:Name="tmsMemorySelector" />
-
-			<TextBlock Grid.Column="2" Text="Selected Tcycles:" Margin="0,0,5,0" VerticalAlignment="Center" HorizontalAlignment="Right" />
-			<TextBlock Grid.Column="3" Text="{Binding TstateSumString}" DataContext="{Binding ElementName=wDisassemblyList}" Foreground="{DynamicResource ASMTstateColor}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-
 		</Grid>
 
 		<yc:DisassemblyListBox Grid.Row="1" x:Name="dlbDisassembly" SelectionChanged="dlbDisassembly_SelectionChanged" />
 
+		<Grid Grid.Row="2" Background="{DynamicResource BackgroundHighlighted}">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="48"/>
+				<ColumnDefinition  />
+			</Grid.ColumnDefinitions>
+
+			<Border Grid.Column="1" BorderBrush="DarkGray" BorderThickness="0,1,0,0">
+				<StackPanel Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5,0,5,0" >
+					<TextBlock Text="Selected Tcycles:" Margin="0,0,5,0" VerticalAlignment="Center" HorizontalAlignment="Right" />
+					<TextBlock Text="{Binding TstateSumString}" DataContext="{Binding ElementName=wDisassemblyList}" Foreground="{DynamicResource ASMTstateColor}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+				</StackPanel>
+			</Border>
+		</Grid>
 	</Grid>
 </Window>

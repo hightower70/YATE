@@ -26,8 +26,11 @@
 
 				<StackPanel Grid.Column="1" Margin="5,5,0,0">
 					<TextBlock Text="Yet Another TVC Emulator" FontFamily="Arial" FontSize="16" FontWeight="Bold" Margin="0,0,0,3"/>
-					<TextBlock Text="Copyright (c)2019-2022 Laszlo Arvai" />
-					<TextBlock Text="Version: 0.1" />
+					<TextBlock Text="Copyright (c)2019-2023 Laszlo Arvai" />
+					<StackPanel Orientation="Horizontal">
+						<TextBlock Text="Version: " />
+						<TextBlock Text="{Binding Version}" />
+					</StackPanel>
 				</StackPanel>
 			</Grid>
 

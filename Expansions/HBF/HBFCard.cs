@@ -387,7 +387,7 @@ namespace HBF
     }
 
     /// <summary>
-    /// Memory read function for card mamory
+    /// Memory read function for card memory
     /// </summary>
     /// <param name="in_address">Address of the memory</param>
     /// <returns>Byte from the card memory</returns>
