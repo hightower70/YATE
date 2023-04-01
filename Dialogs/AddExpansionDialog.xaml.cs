@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Input;
 using YATECommon.Expansions;
+using static YATE.Managers.ExecutionManager;
 
 namespace YATE.Dialogs
 {
@@ -57,10 +58,12 @@ namespace YATE.Dialogs
 
     private void ExpansionSelected()
     {
-      if (lbExpansions.SelectedItems == null)
+      object selected_item = lbExpansions.SelectedItem;
+
+      if (selected_item == null)
         return;
 
-      SelectedExpansion = lbExpansions.SelectedItem as ExpansionInfo;
+      SelectedExpansion = selected_item as ExpansionInfo;
 
       // if the selected expansion is a card then select slot as well
       if (SelectedExpansion.Type == ExpansionManager.ExpansionType.Card)

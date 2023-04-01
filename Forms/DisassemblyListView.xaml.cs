@@ -1,11 +1,12 @@
-﻿using Microsoft.Win32;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data.SqlTypes;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using YATE.Controls;
+using YATE.Emulator.Files;
 using YATE.Emulator.TVCHardware;
 using YATE.Emulator.Z80CPU;
 using YATE.Managers;
@@ -22,6 +23,45 @@ namespace YATE.Forms
   /// </summary>
   public partial class DisassemblyListView : Window, INotifyPropertyChanged
   {
+    public class DisassemblyListViewCommand : ICommand
+    {
+      public delegate void ICommandOnExecute(object parameter);
+
+      private ICommandOnExecute m_execute;
+      private bool m_can_execute;
+
+      public DisassemblyListViewCommand(ICommandOnExecute onExecuteMethod)
+      {
+        m_execute = onExecuteMethod;
+        m_can_execute = true;
+      }
+
+      #region ICommand Members
+
+      public event EventHandler CanExecuteChanged;
+
+      public bool CanExecute(object parameter)
+      {
+        return m_can_execute;
+      }
+
+      public void SetCanExecute(bool in_can_execute)
+      {
+        if (m_can_execute != in_can_execute)
+        {
+          m_can_execute = in_can_execute;
+          CanExecuteChanged.Invoke(this, EventArgs.Empty);
+        }
+      }
+
+      public void Execute(object parameter)
+      {
+        m_execute.Invoke(parameter);
+      }
+
+      #endregion
+    }
+
     private IDebuggableMemory m_memory;
     private List<DisassemblyLine> m_disassembly_collection;
     private DisassemblyListViewSettings m_settings;
@@ -35,6 +75,8 @@ namespace YATE.Forms
 
     public ExecutionManager ExecutionControl { get { return (ExecutionManager)TVCManagers.Default.ExecutionManager; } }
 
+    public ICommand ToggleBreakpointCommand { get; private set; }
+
     public DisassemblyListView(IndexedWindowManager in_window_manager)
     {
       m_tstate_min = 0;
@@ -45,6 +87,8 @@ namespace YATE.Forms
       m_window_index = m_window_manager.AcquireWindowIndex();
 
       m_settings = SettingsFile.Default.GetSettings<DisassemblyListViewSettings>(m_window_index);
+
+      ToggleBreakpointCommand = new DisassemblyListViewCommand(ToggleBreakpoint);
 
       DataContext = this;
 
@@ -72,6 +116,23 @@ namespace YATE.Forms
         m_tstate_sum_string = value;
         OnPropertyChanged();
       }
+    }
+
+    private void ToggleBreakpoint(object parameter)
+    {
+      object selected_item = dlbDisassembly.SelectedItem;
+
+      if (selected_item == null)
+        return;
+
+      DisassemblyLine line = selected_item as DisassemblyLine;
+      BreakpointInfo breakpoint = new BreakpointInfo(m_settings.MemorySelection.MemoryType, line.DisassemblyInstruction.Address, (ushort)m_settings.MemorySelection.PageIndex);
+
+
+      if (line.IsBreakpoint)
+        ((BreakpointManager)TVCManagers.Default.BreakpointManager).RemoveBreakpoint(breakpoint);
+      else
+        ((BreakpointManager)TVCManagers.Default.BreakpointManager).AddBreakpoint(breakpoint);
     }
 
     private void DebuggerEventHandler(TVComputer in_sender, DebugEventType in_event_type)
@@ -165,7 +226,7 @@ namespace YATE.Forms
       }
     }
 
-    private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+    private void Window_Closing(object sender, CancelEventArgs e)
     {
       (TVCManagers.Default.ExecutionManager as ExecutionManager).DebuggerEvent -= DebuggerEventHandler;
 
@@ -237,7 +298,6 @@ namespace YATE.Forms
       DebugManager debug_manager = (DebugManager)TVCManagers.Default.DebugManager;
 
       // copy breakpoints
-
       foreach (BreakpointInfo breakpoint in breakpoint_manager.Breakpoints)
       {
         if (breakpoint.MemoryType == m_memory.MemoryType && breakpoint.Page == m_memory.PageIndex)
@@ -283,8 +343,30 @@ namespace YATE.Forms
       if (PropertyChanged != null && propertyName != null)
         PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
     }
-    
+
     #endregion
 
+    private void btnLoadList_Click(object sender, RoutedEventArgs e)
+    {
+      // Configure open file dialog box
+      Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog
+      {
+        DefaultExt = ".lst",
+        Filter = "Assembler List Files (*.lst)|*.LST|All files (*.*)|*.*"
+      };
+
+      // Show open file dialog box
+      bool? result = dlg.ShowDialog();
+
+      // Process open file dialog box results
+      if (result == true)
+      {
+        // Open document
+        string filename = dlg.FileName;
+
+        
+      }
+
+    }
   }
 }

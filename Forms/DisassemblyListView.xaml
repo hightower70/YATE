@@ -9,10 +9,11 @@
         mc:Ignorable="d"
 				x:Name="wDisassemblyList"
         Title="DisassemblyListView" Height="450" Width="620"
-				Style="{DynamicResource WindowStyle}" Closing="Window_Closing" >
+				Style="{DynamicResource WindowStyle}" Closing="Window_Closing">
 	<Window.InputBindings>
 		<KeyBinding Key="F5" Command="{Binding ExecutionControl.DebugRunCommand}" />
 		<KeyBinding Key="F5" Command="{Binding ExecutionControl.DebugPauseCommand}" Modifiers="Shift" />
+		<KeyBinding Key="F9" Command="{Binding ToggleBreakpointCommand}"/>
 		<KeyBinding Key="F10" Command="{Binding ExecutionControl.DebugStepOverCommand}" />
 		<KeyBinding Key="F11" Command="{Binding ExecutionControl.DebugStepIntoCommand}" />
 		<KeyBinding Key="F12" Command="{Binding ExecutionControl.DebugStepOutCommand}" />
@@ -43,11 +44,21 @@
 				<ColumnDefinition  />
 			</Grid.ColumnDefinitions>
 
+			<Button Grid.Column="0" Height="20" Width="20" Margin="13,2,15,2" Click="btnLoadList_Click">
+				<Path Stroke="White" Data="M0,0 L12,0 12,12 0,12 z M2,2 L10,2 M2,4 L8,4 M2,6 L9,6 M2,8 L8,8 M2,10 L10,10"/>
+			</Button>
+
 			<Border Grid.Column="1" BorderBrush="DarkGray" BorderThickness="0,1,0,0">
-				<StackPanel Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5,0,5,0" >
-					<TextBlock Text="Selected Tcycles:" Margin="0,0,5,0" VerticalAlignment="Center" HorizontalAlignment="Right" />
-					<TextBlock Text="{Binding TstateSumString}" DataContext="{Binding ElementName=wDisassemblyList}" Foreground="{DynamicResource ASMTstateColor}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-				</StackPanel>
+				<Grid Margin="5,0,5,0" >
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="100"/>
+						<ColumnDefinition Width="100"/>
+						<ColumnDefinition />
+						<ColumnDefinition Width="50"/>
+					</Grid.ColumnDefinitions>
+					<TextBlock Grid.Column="0" Text="Selected Tcycles:" Margin="0,0,5,0" VerticalAlignment="Center" HorizontalAlignment="Right" />
+					<TextBlock Grid.Column="1" Text="{Binding TstateSumString}" DataContext="{Binding ElementName=wDisassemblyList}" Foreground="{DynamicResource ASMTstateColor}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+				</Grid>
 			</Border>
 		</Grid>
 	</Grid>

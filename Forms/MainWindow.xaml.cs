@@ -5,7 +5,7 @@ using System.Windows.Media.Imaging;
 using YATE.Managers;
 using YATE.Dialogs;
 using YATE.Drivers;
-using YATE.Emulator.TVCFiles;
+using YATE.Emulator.Files;
 using YATE.Emulator.TVCHardware;
 using YATE.Settings;
 using YATECommon.Expansions;

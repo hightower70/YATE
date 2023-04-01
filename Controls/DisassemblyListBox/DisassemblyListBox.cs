@@ -1,4 +1,5 @@
 ﻿using CustomControls;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -72,11 +73,18 @@ namespace YATE.Controls
 
       if ((BreakpointManager)TVCManagers.Default.BreakpointManager != null)  // check for null because of the GUI editor
         ((BreakpointManager)TVCManagers.Default.BreakpointManager).Breakpoints.CollectionChanged += Breakpoints_CollectionChanged;
+
+
     }
 
     #endregion
 
     #region · Event handlers ·      
+
+    protected override void OnInitialized(EventArgs e)
+    {
+      base.OnInitialized(e);
+    }
 
     protected override void OnMouseUp(MouseButtonEventArgs e)
     {
@@ -267,6 +275,8 @@ namespace YATE.Controls
           break;
       }
     }
+
+    
 
 
     #region · INotifyPropertyChanged interface ·

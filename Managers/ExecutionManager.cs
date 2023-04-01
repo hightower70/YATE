@@ -504,7 +504,7 @@ namespace YATE.Managers
         do
         {
 					// handle step out
-					if(m_execution_state == ExecutionStates.StepOut)
+					if(m_execution_state == ExecutionStates.StepOut || m_execution_state == ExecutionStates.StepOver)
 					{
             opcode = m_disassembler.GetCurrentOpcode(TVC.CPU.Registers.PC);
 					}

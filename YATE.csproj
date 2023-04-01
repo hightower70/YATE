@@ -26,7 +26,10 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>11</ApplicationRevision>
+    <ProductName>Yet Another TV Computer Emulator</ProductName>
+    <PublisherName>Laszlo Arvai</PublisherName>
+    <SuiteName>YATE</SuiteName>
+    <ApplicationRevision>13</ApplicationRevision>
     <ApplicationVersion>0.1.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -182,18 +185,18 @@
       <DependentUpon>M6845Page.xaml</DependentUpon>
     </Compile>
     <Compile Include="Drivers\KeyboardHook.cs" />
-    <Compile Include="Emulator\TVCFiles\BASFile.cs" />
-    <Compile Include="Emulator\TVCFiles\CASFile.cs" />
-    <Compile Include="Emulator\TVCFiles\FAT12\BiosParameterBlock.cs" />
-    <Compile Include="Emulator\TVCFiles\FAT12\ClusterEntry.cs" />
-    <Compile Include="Emulator\TVCFiles\FAT12\ClusterStatus.cs" />
-    <Compile Include="Emulator\TVCFiles\FAT12\ExtendedBiosParameterBlock.cs" />
-    <Compile Include="Emulator\TVCFiles\FAT12\FatConstants.cs" />
-    <Compile Include="Emulator\TVCFiles\FAT12\FatDirectoryEntry.cs" />
-    <Compile Include="Emulator\TVCFiles\FAT12\FatPartition.cs" />
-    <Compile Include="Emulator\TVCFiles\ProgramStorage.cs" />
-    <Compile Include="Emulator\TVCFiles\TVCFileCRC.cs" />
-    <Compile Include="Emulator\TVCFiles\TVCFiles.cs" />
+    <Compile Include="Emulator\Files\BASFile.cs" />
+    <Compile Include="Emulator\Files\CASFile.cs" />
+    <Compile Include="Emulator\Files\FAT12\BiosParameterBlock.cs" />
+    <Compile Include="Emulator\Files\FAT12\ClusterEntry.cs" />
+    <Compile Include="Emulator\Files\FAT12\ClusterStatus.cs" />
+    <Compile Include="Emulator\Files\FAT12\ExtendedBiosParameterBlock.cs" />
+    <Compile Include="Emulator\Files\FAT12\FatConstants.cs" />
+    <Compile Include="Emulator\Files\FAT12\FatDirectoryEntry.cs" />
+    <Compile Include="Emulator\Files\FAT12\FatPartition.cs" />
+    <Compile Include="Emulator\Files\ProgramStorage.cs" />
+    <Compile Include="Emulator\Files\TVCFileCRC.cs" />
+    <Compile Include="Emulator\Files\TVCFiles.cs" />
     <Compile Include="Emulator\TVCHardware\TVCCartridge.cs" />
     <Compile Include="Emulator\TVCHardware\TVComputer.cs" />
     <Compile Include="Emulator\TVCHardware\TVCInterrupt.cs" />
@@ -368,6 +371,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Emulator\Files\LST\" />
     <Folder Include="Views\" />
   </ItemGroup>
   <ItemGroup>
@@ -443,6 +447,11 @@
     <EmbeddedResource Include="Resources\DefaultKeyMapping.txt" />
   </ItemGroup>
   <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
       <Visible>False</Visible>
       <ProductName>.NET Framework 3.5 SP1</ProductName>

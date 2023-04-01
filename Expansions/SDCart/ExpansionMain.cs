@@ -32,7 +32,7 @@ namespace SDCart
 
     #region · Data members ·
     private ExpansionSetupPageInfo[] m_setup_page_info;
-    private SDCart m_multicart;
+    private SDCart m_sdcart;
     #endregion
 
     public ExpansionMain()
@@ -63,15 +63,28 @@ namespace SDCart
     }
 
     /// <summary>
+    /// Called when settings has been changed
+    /// </summary>
+    public override void SettingsChanged(ref bool in_restart_tvc)
+    {
+      // update settings
+      Settings = ParentManager.Settings.GetSettings<SDCartSettings>(ExpansionIndex);
+
+      // activate settings
+      if (m_sdcart.SetSettings((SDCartSettings)Settings))
+        in_restart_tvc = true;
+    }
+
+    /// <summary>
     /// Installs expansion module into the computer
     /// </summary>
     /// <param name="in_computer"></param>
     public override void Install(ITVComputer in_computer)
     {
-      m_multicart = new SDCart();
-      m_multicart.SetSettings((SDCartSettings)Settings);
+      m_sdcart = new SDCart();
+      m_sdcart.SetSettings((SDCartSettings)Settings);
 
-      in_computer.InsertCartridge(m_multicart);
+      in_computer.InsertCartridge(m_sdcart);
     }
 
     /// <summary>
