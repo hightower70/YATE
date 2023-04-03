@@ -9,21 +9,21 @@ namespace YATECommon.Helpers
 {
   public static class ItemsControlExtensions
   {
-    public static void ScrollToCenterOfView(this ItemsControl itemsControl, object item)
+    public static void ScrollToCenterOfView(this ItemsControl itemsControl, object item, bool in_enable_horizontal_scroll)
     {
       // Scroll immediately if possible
-      if (!itemsControl.TryScrollToCenterOfView(item))
+      if (!itemsControl.TryScrollToCenterOfView(item, in_enable_horizontal_scroll))
       {
         // Otherwise wait until everything is loaded, then scroll
         if (itemsControl is ListBox) ((ListBox)itemsControl).ScrollIntoView(item);
         itemsControl.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
         {
-          itemsControl.TryScrollToCenterOfView(item);
+          itemsControl.TryScrollToCenterOfView(item, in_enable_horizontal_scroll);
         }));
       }
     }
 
-    private static bool TryScrollToCenterOfView(this ItemsControl itemsControl, object item)
+    private static bool TryScrollToCenterOfView(this ItemsControl itemsControl, object item, bool in_enable_horizontal_scroll)
     {
       // Find the container
       var container = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as UIElement;
@@ -73,7 +73,8 @@ namespace YATECommon.Helpers
         if (scrollInfo.CanVerticallyScroll) scrollInfo.SetVerticalOffset(CenteringOffset(center.Y, scrollInfo.ViewportHeight, scrollInfo.ExtentHeight));
       }
 
-      if (scrollInfo.CanHorizontallyScroll) scrollInfo.SetHorizontalOffset(CenteringOffset(center.X, scrollInfo.ViewportWidth, scrollInfo.ExtentWidth));
+      if (scrollInfo.CanHorizontallyScroll) scrollInfo.SetHorizontalOffset((in_enable_horizontal_scroll) ? CenteringOffset(center.X, scrollInfo.ViewportWidth, scrollInfo.ExtentWidth) : 0);
+
       return true;
     }
 

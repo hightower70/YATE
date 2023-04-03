@@ -36,5 +36,6 @@
 	<SolidColorBrush x:Key="ASMOperandSeparatorColor" Color="LightGray"/>
 	<SolidColorBrush x:Key="ASMCommentColor" Color="#505050"/>
 	<SolidColorBrush x:Key="ASMTstateColor" Color="DarkGray"/>
+	<SolidColorBrush x:Key="ASMLabelColor" Color="LightBlue"/>
 
 </ResourceDictionary>

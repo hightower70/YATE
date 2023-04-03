@@ -3,9 +3,9 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using YATE.Emulator.Z80CPU;
 
-namespace YATE.Controls
+namespace YATE.Disassembler
 {
-  public class DisassemblyLine : IComparable<DisassemblyLine>, INotifyPropertyChanged
+  public class DisassemblyLine : IEquatable<DisassemblyLine>, INotifyPropertyChanged
   {
     private bool m_is_breakpoint;
     private bool m_is_executing;
@@ -47,6 +47,8 @@ namespace YATE.Controls
 
     public int Index { get; set; }
 
+    public int Line { get; set; }
+
     public Z80DisassemblerInstruction DisassemblyInstruction { get; set; }
 
     public DisassemblyLine()
@@ -60,12 +62,12 @@ namespace YATE.Controls
       Type = DisassemblyLineType.Disassembly;
       DisassemblyInstruction = in_instruction;
     }
-
+                 /*
     public int CompareTo(DisassemblyLine other)
     {
       return DisassemblyInstruction.Address.CompareTo(other.DisassemblyInstruction.Address);
     }
-
+            */
     #region · INotifyPropertyHandler ·
 
     public event PropertyChangedEventHandler PropertyChanged;
@@ -74,6 +76,11 @@ namespace YATE.Controls
     {
       if (PropertyChanged != null && propertyName != null)
         PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public bool Equals(DisassemblyLine other)
+    {
+      return DisassemblyInstruction.Address.Equals(other.DisassemblyInstruction.Address);
     }
 
     #endregion

@@ -9,7 +9,7 @@
         mc:Ignorable="d"
 				x:Name="wDisassemblyList"
         Title="DisassemblyListView" Height="450" Width="620"
-				Style="{DynamicResource WindowStyle}" Closing="Window_Closing">
+				Style="{DynamicResource WindowStyle}" Closing="Window_Closing" ContentRendered="wDisassemblyList_ContentRendered">
 	<Window.InputBindings>
 		<KeyBinding Key="F5" Command="{Binding ExecutionControl.DebugRunCommand}" />
 		<KeyBinding Key="F5" Command="{Binding ExecutionControl.DebugPauseCommand}" Modifiers="Shift" />

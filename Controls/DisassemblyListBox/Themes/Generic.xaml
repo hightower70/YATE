@@ -8,6 +8,11 @@
 
 	<Style x:Key="AddressStyle" TargetType="{x:Type TextBlock}">
 		<Setter Property="Foreground" Value="Cyan"/>
+		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.Address}" Value="-1">
+				<Setter Property="Visibility" Value="Collapsed"/>
+			</DataTrigger>
+		</Style.Triggers>
 	</Style>
 
 	<Style x:Key="AddressBorderStyle" TargetType="{x:Type Border}">
@@ -17,14 +22,45 @@
 		<Setter Property="Padding" Value="1,1,0,1"/>
 	</Style>
 
+	<Style x:Key="BytesStyle" TargetType="{x:Type TextBlock}">
+		<Setter Property="Foreground" Value="{DynamicResource ASMBytesColor}"/>
+		<Setter Property="Padding" Value="2,0,2,0"/>
+		<Setter Property="SnapsToDevicePixels" Value="True"/>
+		<Setter Property="Visibility" Value="Collapsed"/>
+		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.Label}" Value="{x:Static sys:String.Empty}">
+				<Setter Property="Visibility" Value="Visible"/>
+			</DataTrigger>
+		</Style.Triggers>
+	</Style>
+
+	<Style x:Key="LabelStyle" TargetType="{x:Type TextBlock}">
+		<Setter Property="Foreground" Value="{DynamicResource ASMLabelColor}"/>
+		<Setter Property="Padding" Value="2,0,2,0"/>
+		<Setter Property="SnapsToDevicePixels" Value="True"/>
+		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.Label}" Value="{x:Static sys:String.Empty}">
+				<Setter Property="Visibility" Value="Collapsed"/>
+			</DataTrigger>
+		</Style.Triggers>
+	</Style>
+
 	<Style x:Key="MnemonicStyle" TargetType="{x:Type TextBlock}">
-		<Setter Property="Margin" Value="0,0,8,0"/>
+		<Setter Property="Padding" Value="0,0,8,0"/>
 		<Setter Property="Foreground" Value="{DynamicResource ASMMnemonicColor}"/>
+		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.Mnemonic}" Value="{x:Static sys:String.Empty}">
+				<Setter Property="Visibility" Value="Collapsed"/>
+			</DataTrigger>
+		</Style.Triggers>
 	</Style>
 
 	<Style x:Key="Operand1Style" TargetType="{x:Type TextBlock}">
 		<Setter Property="Foreground" Value="{DynamicResource ASMRegisterColor}"/>
 		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.Operand1}" Value="{x:Static sys:String.Empty}">
+				<Setter Property="Visibility" Value="Collapsed"/>
+			</DataTrigger>
 			<DataTrigger Binding="{Binding DisassemblyInstruction.NumericOperand}" Value="1">
 				<Setter Property="Foreground" Value="{DynamicResource ASMNumericColor}"/>
 			</DataTrigger>
@@ -36,7 +72,6 @@
 	</Style>
 
 	<Style x:Key="OperandSeparatorStyle" TargetType="{x:Type TextBlock}">
-		<Setter Property="Margin" Value="0,0,4,0"/>
 		<Setter Property="Visibility" Value="Visible"/>
 		<Setter Property="Foreground" Value="{DynamicResource Foreground}"/>
 		<Style.Triggers>
@@ -56,6 +91,9 @@
 				<Setter Property="TextDecorations" Value="Underline"/>
 				<Setter Property="Cursor" Value="Hand"/>
 			</DataTrigger>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.Operand2}" Value="{x:Static sys:String.Empty}">
+				<Setter Property="Visibility" Value="Collapsed"/>
+			</DataTrigger>			
 		</Style.Triggers>
 	</Style>
 	
@@ -63,13 +101,20 @@
 		<Setter Property="Foreground" Value="{DynamicResource ASMTstateColor}"/>
 		<Setter Property="FontSize" Value="9"/>
 		<Setter Property="VerticalAlignment" Value="Top"/>
-		<Setter Property="Margin" Value="3,0,0,0"/>
+		<Setter Property="Padding" Value="3,0,0,0"/>
+		<Style.Triggers>
+			<DataTrigger Binding="{Binding DisassemblyInstruction.TstatesString}" Value="{x:Static sys:String.Empty}">
+				<Setter Property="Visibility" Value="Collapsed"/>
+			</DataTrigger>
+		</Style.Triggers>
 	</Style>
 
 
 	<Style x:Key="CommentStyle" TargetType="{x:Type TextBlock}">
 		<Setter Property="Foreground" Value="{DynamicResource ASMCommentColor}"/>
 	</Style>
+
+
 
 	<Style TargetType="ListBoxItem" >
 		<Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -91,27 +136,38 @@
 									<ColumnDefinition Width="*"/>
 								</Grid.ColumnDefinitions>
 								<Ellipse Grid.Column="0" Fill="Red" Stroke="White" StrokeThickness="1" Width="12" Height="12" HorizontalAlignment="Center" Visibility="{Binding IsBreakpoint, Converter={x:Static c:BooleanToVisibilityConverter.Instance}}"/>
-								<Path Width="12" Height="12" Stroke="DarkOrange" StrokeThickness="1" Fill="Yellow" Data="M 2,4 L5,4 5,2 6,2 10,6 6,10 5,10 6,8 2,8 Z" Visibility="{Binding IsExecuting, Converter={x:Static c:BooleanToVisibilityConverter.Instance}}"/>
+								<Path Width="12" Height="12" Stroke="DarkKhaki" StrokeThickness="1" Fill="Yellow" Data="M 1,3 L6,3 6,0 10,6 6,11 6,8 1,8 Z" Visibility="{Binding IsExecuting, Converter={x:Static c:BooleanToVisibilityConverter.Instance}}"/>
 								<TextBlock Grid.Column="1" Style="{DynamicResource AddressStyle}" Text="{Binding DisassemblyInstruction.Address, StringFormat={}{0:X4}}" SnapsToDevicePixels="True" />
 								<!-- Text="{Binding DisassemblyInstruction.Address, StringFormat={}{0:X4}}" -->
 							</Grid>
 						</Border>
 						<Border Grid.Column="1" Name="LineDisplay" BorderThickness="1" Margin="1,0,0,0" Background="{DynamicResource Background}" BorderBrush="{DynamicResource Background}" SnapsToDevicePixels="True">
-							<Grid>
+							<StackPanel Orientation="Horizontal" SnapsToDevicePixels="True" Margin="2,0,0,0">
+								<TextBlock Text="{Binding DisassemblyInstruction.Bytes}" Style="{DynamicResource BytesStyle}"/>
+								<TextBlock Text="{Binding DisassemblyInstruction.Label}" Style="{DynamicResource LabelStyle}"/>
+								<TextBlock Text="{Binding DisassemblyInstruction.Mnemonic}" Style="{DynamicResource MnemonicStyle}"/>
+								<TextBlock x:Name="PART_Operand1" Text="{Binding DisassemblyInstruction.Operand1}" Style="{DynamicResource Operand1Style}"/>
+								<TextBlock Text=", " Style="{DynamicResource OperandSeparatorStyle}"/>
+								<TextBlock x:Name="PART_Operand2" Text="{Binding DisassemblyInstruction.Operand2}" Style="{DynamicResource Operand2Style}"/>
+								<TextBlock Text="{Binding DisassemblyInstruction.TstatesString}" Style="{DynamicResource TstateStyle}"/>
+								<TextBlock Text="{Binding DisassemblyInstruction.Comment}" Style="{DynamicResource CommentStyle}"/>
+							</StackPanel>
+
+							<!--							<Grid>
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="90"/>
 									<ColumnDefinition Width="*"/>
 								</Grid.ColumnDefinitions>
-								<TextBlock Grid.Column="0" Text="{Binding DisassemblyInstruction.Bytes}" Foreground="DarkGray" Margin="2,0,2,0" SnapsToDevicePixels="True"/>
+								<TextBlock Grid.Column="0" Text="{Binding DisassemblyInstruction.Bytes}" Foreground="DarkGray" ToolTip="{Binding DisassemblyInstruction.BytesTooltip}" Margin="2,0,2,0" SnapsToDevicePixels="True"/>
 								<StackPanel Grid.Column="1" Orientation="Horizontal" SnapsToDevicePixels="True" Margin="2,0,0,0">
 									<TextBlock Text="{Binding DisassemblyInstruction.Mnemonic}" Style="{DynamicResource MnemonicStyle}"/>
 									<TextBlock x:Name="PART_Operand1" Text="{Binding DisassemblyInstruction.Operand1}" Style="{DynamicResource Operand1Style}"/>
-									<TextBlock Text="," Style="{DynamicResource OperandSeparatorStyle}"/>
+									<TextBlock Text=", " Style="{DynamicResource OperandSeparatorStyle}"/>
 									<TextBlock x:Name="PART_Operand2" Text="{Binding DisassemblyInstruction.Operand2}" Style="{DynamicResource Operand2Style}"/>
 									<TextBlock Text="{Binding DisassemblyInstruction.TstatesString}" Style="{DynamicResource TstateStyle}"/>
-									<TextBlock Text="{Binding DisassemblyInstruction.CommentString}" Style="{DynamicResource CommentStyle}"/>
+									<TextBlock Text="{Binding DisassemblyInstruction.Comment}" Style="{DynamicResource CommentStyle}"/>
 								</StackPanel>
-							</Grid>
+							</Grid>-->
 						</Border>
 					</Grid>
 					<ControlTemplate.Triggers>

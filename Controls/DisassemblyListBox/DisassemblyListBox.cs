@@ -1,17 +1,17 @@
 ﻿using CustomControls;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using YATE.Disassembler;
 using YATE.Emulator.Z80CPU;
 using YATE.Managers;
 using YATECommon;
-using static YATE.Managers.BreakpointManager;
+using YATECommon.Helpers;
 
 namespace YATE.Controls
 {
@@ -73,8 +73,6 @@ namespace YATE.Controls
 
       if ((BreakpointManager)TVCManagers.Default.BreakpointManager != null)  // check for null because of the GUI editor
         ((BreakpointManager)TVCManagers.Default.BreakpointManager).Breakpoints.CollectionChanged += Breakpoints_CollectionChanged;
-
-
     }
 
     #endregion
@@ -106,7 +104,7 @@ namespace YATE.Controls
 
               if (current_line != null && current_line.Type == DisassemblyLine.DisassemblyLineType.Disassembly)
               {
-                BreakpointInfo breakpoint = new BreakpointInfo(m_memory_type, current_line.DisassemblyInstruction.Address);
+                BreakpointInfo breakpoint = new BreakpointInfo(m_memory_type, (ushort)current_line.DisassemblyInstruction.Address);
 
                 if (current_line.IsBreakpoint)
                 {
@@ -125,7 +123,7 @@ namespace YATE.Controls
             {
               DisassemblyLine current_line = SelectedItem as DisassemblyLine;
 
-              if (current_line.Type == DisassemblyLine.DisassemblyLineType.Disassembly)
+              if (current_line != null && current_line.Type == DisassemblyLine.DisassemblyLineType.Disassembly && current_line.DisassemblyInstruction.OpCode != null)
               {
                 // The event is only interesting when opcode is jump  or call
                 if (current_line.DisassemblyInstruction.OpCode.Flags.HasFlag(Z80DisassemblerTable.OpCodeFlags.Jumps) || current_line.DisassemblyInstruction.OpCode.Flags.HasFlag(Z80DisassemblerTable.OpCodeFlags.Call))
@@ -199,7 +197,7 @@ namespace YATE.Controls
       DisassemblyLine search = new DisassemblyLine();
       search.DisassemblyInstruction.Address = in_address;
 
-      return (ItemsSource as List<DisassemblyLine>).BinarySearch(search);
+      return (ItemsSource as List<DisassemblyLine>).IndexOf(search);
     }
 
     public void AddBreakpointToLine(int in_line_index)
@@ -224,11 +222,9 @@ namespace YATE.Controls
       if (index >= 0)
       {
         SelectedIndex = index;
-        ScrollIntoView(SelectedItem);
+        this.ScrollToCenterOfView(SelectedItem, false);
       }
     }
-
-    #endregion
 
     private void Breakpoints_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
@@ -276,8 +272,7 @@ namespace YATE.Controls
       }
     }
 
-    
-
+    #endregion
 
     #region · INotifyPropertyChanged interface ·
 

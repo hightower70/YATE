@@ -97,8 +97,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Controls\DisassemblyListBox\DisassemblyLine.cs" />
-    <Compile Include="Controls\DisassemblyListBox\DisassemblyLineCollection.cs" />
+    <Compile Include="Disassembler\AssemblerListParserBase.cs" />
+    <Compile Include="Disassembler\AssemblerListReader.cs" />
+    <Compile Include="Disassembler\MemoryDisassembler.cs" />
+    <Compile Include="Disassembler\DisassemblyLine.cs" />
     <Compile Include="Controls\DisassemblyListBox\DisassemblyListBox.cs" />
     <Compile Include="Controls\DisassemblyListBox\DisassemblyListBoxScrollViewer.cs" />
     <Compile Include="Controls\TVCMemorySelector\TVCMemorySelector.xaml.cs">
@@ -107,6 +109,7 @@
     <Compile Include="Dialogs\AboutDialog.xaml.cs">
       <DependentUpon>AboutDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Disassembler\SJASMListParser.cs" />
     <Compile Include="Emulator\TVCHardware\TVCDebuggableMemory.cs" />
     <Compile Include="Forms\BreakpointSetForm.xaml.cs">
       <DependentUpon>BreakpointSetForm.xaml</DependentUpon>
@@ -371,7 +374,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Emulator\Files\LST\" />
     <Folder Include="Views\" />
   </ItemGroup>
   <ItemGroup>
