@@ -26,5 +26,6 @@
 			<TextBlock Text="End:" VerticalAlignment="Center" Margin="10,3,0,3"/>
 			<c:EditableLabel x:Name="elEndAddress" Width="100" Margin="5,3,5,3"/>
 		</StackPanel>
+
 	</Grid>
 </UserControl>

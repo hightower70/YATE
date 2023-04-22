@@ -248,7 +248,7 @@
 			</Button>
 
 			<!-- Step over -->
-			<Button Width="36" Height="36" Margin="2" ToolTip="Step Over (F10)">
+			<Button Width="36" Height="36" Margin="2" ToolTip="Step Over (F10)" Command="{Binding ExecutionControl.DebugStepOverCommand}">
 				<Image Margin="2">
 					<Image.Source>
 						<DrawingImage>
@@ -274,7 +274,7 @@
 			</Button>
 
 			<!-- Step out button -->
-			<Button Width="36" Height="36" Margin="2" ToolTip="Step Out (F12)">
+			<Button Width="36" Height="36" Margin="2" ToolTip="Step Out (F12)" Command="{Binding ExecutionControl.DebugStepOutCommand}">
 				<Image Margin="2">
 					<Image.Source>
 						<DrawingImage>

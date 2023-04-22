@@ -74,7 +74,12 @@ namespace YATE.Forms
 
     public ExecutionManager ExecutionControl { get { return (ExecutionManager)TVCManagers.Default.ExecutionManager; } }
 
+
+    public bool GoToAddresPopupOpened { get; set; } = false;
+
     public ICommand ToggleBreakpointCommand { get; private set; }
+    public ICommand LoadAssemblerListCommand { get; private set; }
+    public ICommand GotoAddressCommand { get; private set; }
 
     public DisassemblyListView(IndexedWindowManager in_window_manager)
     {
@@ -88,6 +93,8 @@ namespace YATE.Forms
       m_settings = SettingsFile.Default.GetSettings<DisassemblyListViewSettings>(m_window_index);
 
       ToggleBreakpointCommand = new DisassemblyListViewCommand(ToggleBreakpoint);
+      LoadAssemblerListCommand = new DisassemblyListViewCommand(LoadAssemblerList);
+      GotoAddressCommand = new DisassemblyListViewCommand(GoToAddress);
 
       DataContext = this;
 
@@ -326,7 +333,7 @@ namespace YATE.Forms
 
     #endregion
 
-    private void btnLoadList_Click(object sender, RoutedEventArgs e)
+    private void LoadAssemblerList(object parameter)
     {
       // Configure open file dialog box
       Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog
@@ -354,6 +361,59 @@ namespace YATE.Forms
         UpdateBreakpoints();
       }
 
+    }
+
+    private void GoToAddress(object parameter)
+    {
+      GoToAddresPopupOpened = true;
+      OnPropertyChanged("GoToAddresPopupOpened");
+      tbGotoAddress.Focus();
+    }
+
+    private void tbGotoAddress_LostFocus(object sender, RoutedEventArgs e)
+    {
+      GoToAddresPopupOpened = false;
+      OnPropertyChanged("GoToAddresPopupOpened");
+    }
+
+    private void tbGotoAddress_KeyDown(object sender, KeyEventArgs e)
+    {
+      switch(e.Key)
+      {
+        case Key.Escape:
+          CloseGoToAddressPopup();
+          break;
+
+        case Key.Enter:
+          {
+            IntegerExpressionEvaluator integer_expression_evaluator = new IntegerExpressionEvaluator();
+
+            try
+            {
+              int address = integer_expression_evaluator.ParseAndEvaluate(tbGotoAddress.Text);
+
+              SelectItemAtAddress((ushort)address);
+            }
+            catch
+            {
+
+            }
+
+            CloseGoToAddressPopup();
+          }
+          break;
+      }
+    }
+
+    private void CloseGoToAddressPopup()
+    {
+      GoToAddresPopupOpened = false;
+      OnPropertyChanged("GoToAddresPopupOpened");
+    }
+
+    private void GotoAddressCloseButton_Click(object sender, RoutedEventArgs e)
+    {
+      CloseGoToAddressPopup();
     }
   }
 }

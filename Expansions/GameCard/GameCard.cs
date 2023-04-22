@@ -222,7 +222,10 @@ namespace GameCard
     /// </summary>
     public void Reset()
     {
-    }
+      m_sound_chip_enable = false;
+      m_current_page_address = 0xe000;
+      m_current_page_index = 7;
+  }
 
     /// <summary>
     /// Z80 port read routine

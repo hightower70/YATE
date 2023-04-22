@@ -1114,7 +1114,7 @@ namespace NanoSD
         for (int i = 0; i < 12; i++)
         {
           if (i < filename.Length)
-            StoreByte((byte)filename[i]);
+            StoreByte((byte)char.ToUpper(filename[i]));
           else
             StoreByte((byte)' ');
         }

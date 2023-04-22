@@ -465,7 +465,7 @@ namespace YATECommon.Helpers
       bool negative = false;
       int radix = 10;
       int value = 0;
-      bool radix_prefix_found = false;
+      bool radix_postfix_found = false;
       int pos;
 
       // get sign
@@ -475,38 +475,32 @@ namespace YATECommon.Helpers
         inout_pos++;
       }
 
-      // check radix prefix ('0x' or '0b')
-      if (in_string[inout_pos] == '0' && in_string.Length > inout_pos + 1)
-      {
-        switch (char.ToLower(in_string[inout_pos + 1]))
-        {
-          case 'b':
-            radix = 2;
-            inout_pos += 2;
-            radix_prefix_found = true;
-            break;
+      // check for radix postfix ('h')
+      pos = 0;
+      while ((inout_pos + pos) < in_string.Length && IsHexDigit(in_string[inout_pos + pos]))
+        pos++;
 
-          case 'x':
-            radix = 16;
-            inout_pos += 2;
-            radix_prefix_found = true;
-            break;
-        }
+      if (inout_pos + pos < in_string.Length && char.ToLower(in_string[inout_pos + pos]) == 'h')
+      {
+        radix = 16;
+        radix_postfix_found = true;
       }
 
-      // check for radix postfix ('h') if prefix is not found
-      if(!radix_prefix_found)
+      if (!radix_postfix_found)
       {
-        pos = 0;
-        while ((inout_pos + pos) < in_string.Length && IsHexDigit(in_string[inout_pos + pos]))
-          pos++;
-
-        if (inout_pos + pos < in_string.Length)
+        // check radix prefix ('0x' or '0b')
+        if (in_string[inout_pos] == '0' && in_string.Length > inout_pos + 1)
         {
-          switch (char.ToLower(in_string[inout_pos + pos]))
+          switch (char.ToLower(in_string[inout_pos + 1]))
           {
-            case 'h':
+            case 'b':
+              radix = 2;
+              inout_pos += 2;
+              break;
+
+            case 'x':
               radix = 16;
+              inout_pos += 2;
               break;
           }
         }

@@ -523,10 +523,7 @@ namespace YATE.Emulator.TVCHardware
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private int GetPage1Mapping()
 		{
-			if (m_settings.HardwareVersion == 3)
-				return (Port02H >> 2) & 0x01;
-			else
-				return 0;
+			return (Port02H >> 2) & 0x01;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -830,13 +827,13 @@ namespace YATE.Emulator.TVCHardware
 						return m_page0_mapping_names[GetPage0Mapping()];
 
 				case 1:
-					return m_page1_mapping_names[GetPage1Mapping()];
-
-				case 2:
-					if (m_settings.HardwareVersion == SetupTVCConfigurationDataProvider.TVCHardwareVersion64kplus)
-						return m_page2_mapping_names[GetPage2Mapping()];
+          if (m_settings.HardwareVersion == SetupTVCConfigurationDataProvider.TVCHardwareVersion64kplus)
+            return m_page1_mapping_names[GetPage1Mapping()];
 					else
-						return m_page2_mapping_names[0];
+            return m_page1_mapping_names[0];
+
+        case 2:
+						return m_page2_mapping_names[GetPage2Mapping()];
 
 				case 3:
 					return m_page3_mapping_names[GetPage3Mapping()];
