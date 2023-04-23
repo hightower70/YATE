@@ -29,7 +29,7 @@
     <ProductName>Yet Another TV Computer Emulator</ProductName>
     <PublisherName>Laszlo Arvai</PublisherName>
     <SuiteName>YATE</SuiteName>
-    <ApplicationRevision>17</ApplicationRevision>
+    <ApplicationRevision>18</ApplicationRevision>
     <ApplicationVersion>0.1.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>

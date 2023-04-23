@@ -127,7 +127,9 @@ namespace YATE.Emulator.TVCHardware
 
 				port_address++;
 			}
-		}
+
+      Cards[in_slot_index].Reset();
+    }
 
 		/// <summary>
 		/// Removes expansion card from the TV Computer expansion slot

@@ -65,6 +65,7 @@
     <Compile Include="Helpers\IntegerExpressionEvaluator.cs" />
     <Compile Include="Helpers\IntergerExpresionEvaluatorException.cs" />
     <Compile Include="Helpers\ROMFile.cs" />
+    <Compile Include="Helpers\ShortFilename.cs" />
     <Compile Include="IBreakpointManager.cs" />
     <Compile Include="IDebuggableMemory.cs" />
     <Compile Include="ITVCDebugger.cs" />

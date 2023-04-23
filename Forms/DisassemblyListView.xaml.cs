@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Shapes;
 using YATE.Disassembler;
 using YATE.Emulator.TVCHardware;
 using YATE.Emulator.Z80CPU;
@@ -77,9 +78,12 @@ namespace YATE.Forms
 
     public bool GoToAddresPopupOpened { get; set; } = false;
 
+    public bool AddBreakpointPopupOpened { get; set; } = false;
+
     public ICommand ToggleBreakpointCommand { get; private set; }
     public ICommand LoadAssemblerListCommand { get; private set; }
     public ICommand GotoAddressCommand { get; private set; }
+    public ICommand AddBreakpointCommand { get; private set; }
 
     public DisassemblyListView(IndexedWindowManager in_window_manager)
     {
@@ -92,9 +96,10 @@ namespace YATE.Forms
 
       m_settings = SettingsFile.Default.GetSettings<DisassemblyListViewSettings>(m_window_index);
 
-      ToggleBreakpointCommand = new DisassemblyListViewCommand(ToggleBreakpoint);
-      LoadAssemblerListCommand = new DisassemblyListViewCommand(LoadAssemblerList);
-      GotoAddressCommand = new DisassemblyListViewCommand(GoToAddress);
+      ToggleBreakpointCommand = new DisassemblyListViewCommand(OnToggleBreakpoint);
+      LoadAssemblerListCommand = new DisassemblyListViewCommand(OnLoadAssemblerList);
+      GotoAddressCommand = new DisassemblyListViewCommand(OnGoToAddress);
+      AddBreakpointCommand = new DisassemblyListViewCommand(OnAddBreakpoint);
 
       DataContext = this;
 
@@ -126,7 +131,7 @@ namespace YATE.Forms
       }
     }
 
-    private void ToggleBreakpoint(object parameter)
+    private void OnToggleBreakpoint(object parameter)
     {
       object selected_item = dlbDisassembly.SelectedItem;
 
@@ -134,12 +139,26 @@ namespace YATE.Forms
         return;
 
       DisassemblyLine line = selected_item as DisassemblyLine;
-      BreakpointInfo breakpoint = new BreakpointInfo(m_settings.MemorySelection.MemoryType, (ushort)line.DisassemblyInstruction.Address, (ushort)m_settings.MemorySelection.PageIndex);
 
       if (line.IsBreakpoint)
-        ((BreakpointManager)TVCManagers.Default.BreakpointManager).RemoveBreakpoint(breakpoint);
+        RemoveBreakpoint(line);
       else
-        ((BreakpointManager)TVCManagers.Default.BreakpointManager).AddBreakpoint(breakpoint);
+        AddBreakpoint(line);
+    }
+
+    private void AddBreakpoint(DisassemblyLine in_line)
+    {
+      BreakpointInfo breakpoint = new BreakpointInfo(m_settings.MemorySelection.MemoryType, (ushort)in_line.DisassemblyInstruction.Address, (ushort)m_settings.MemorySelection.PageIndex);
+
+      ((BreakpointManager)TVCManagers.Default.BreakpointManager).AddBreakpoint(breakpoint);
+
+    }
+
+    private void RemoveBreakpoint(DisassemblyLine in_line)
+    {
+      BreakpointInfo breakpoint = new BreakpointInfo(m_settings.MemorySelection.MemoryType, (ushort)in_line.DisassemblyInstruction.Address, (ushort)m_settings.MemorySelection.PageIndex);
+
+      ((BreakpointManager)TVCManagers.Default.BreakpointManager).RemoveBreakpoint(breakpoint);
     }
 
     private void DebuggerEventHandler(TVComputer in_sender, DebugEventType in_event_type)
@@ -237,12 +256,36 @@ namespace YATE.Forms
       }
     }
 
+    private void SelectItemAtAddressOrBefore(ushort in_address)
+    {
+      int index = GetItemIndexAtAddressOrBefore(in_address);
+
+      if (index >= 0)
+      {
+        dlbDisassembly.SelectedIndex = index;
+        dlbDisassembly.ScrollToCenterOfView(dlbDisassembly.SelectedItem, false);
+      }
+    }
+
     private int GetItemIndexAtAddress(ushort in_address)
     {
       DisassemblyLine search = new DisassemblyLine();
       search.DisassemblyInstruction.Address = in_address;
 
       int index = m_disassembly_collection.IndexOf(search);
+
+      return index;
+    }
+
+    private int GetItemIndexAtAddressOrBefore(ushort in_address)
+    {
+      int index;
+
+      index = -1;
+      while (index + 1 < m_disassembly_collection.Count && m_disassembly_collection[index + 1].DisassemblyInstruction.Address <= in_address)
+      {
+        index++;
+      }
 
       return index;
     }
@@ -333,7 +376,7 @@ namespace YATE.Forms
 
     #endregion
 
-    private void LoadAssemblerList(object parameter)
+    private void OnLoadAssemblerList(object parameter)
     {
       // Configure open file dialog box
       Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog
@@ -363,11 +406,18 @@ namespace YATE.Forms
 
     }
 
-    private void GoToAddress(object parameter)
+    private void OnGoToAddress(object parameter)
     {
       GoToAddresPopupOpened = true;
       OnPropertyChanged("GoToAddresPopupOpened");
       tbGotoAddress.Focus();
+    }
+
+    private void OnAddBreakpoint(object parameter)
+    {
+      AddBreakpointPopupOpened = true;
+      OnPropertyChanged("AddBreakpointPopupOpened");
+      tbBreakpointAddress.Focus();
     }
 
     private void tbGotoAddress_LostFocus(object sender, RoutedEventArgs e)
@@ -392,7 +442,7 @@ namespace YATE.Forms
             {
               int address = integer_expression_evaluator.ParseAndEvaluate(tbGotoAddress.Text);
 
-              SelectItemAtAddress((ushort)address);
+              SelectItemAtAddressOrBefore((ushort)address);
             }
             catch
             {
@@ -414,6 +464,57 @@ namespace YATE.Forms
     private void GotoAddressCloseButton_Click(object sender, RoutedEventArgs e)
     {
       CloseGoToAddressPopup();
+    }
+
+    private void tbBreakpointAddress_LostFocus(object sender, RoutedEventArgs e)
+    {
+      AddBreakpointPopupOpened = false;
+      OnPropertyChanged("AddBreakpointPopupOpened");
+    }
+
+    private void tbBreakpointAddress_KeyDown(object sender, KeyEventArgs e)
+    {
+      switch (e.Key)
+      {
+        case Key.Escape:
+          CloseAddBreakpointPopup();
+          break;
+
+        case Key.Enter:
+          {
+            IntegerExpressionEvaluator integer_expression_evaluator = new IntegerExpressionEvaluator();
+
+            try
+            {
+              int address = integer_expression_evaluator.ParseAndEvaluate(tbBreakpointAddress.Text);
+
+              SelectItemAtAddressOrBefore((ushort)address);
+
+              if(dlbDisassembly.SelectedItem != null) 
+              {
+                AddBreakpoint((DisassemblyLine)dlbDisassembly.SelectedItem);
+              }
+            }
+            catch
+            {
+
+            }
+
+            CloseAddBreakpointPopup();
+          }
+          break;
+      }
+    }
+
+    private void BreakpointAddressCloseButton_Click(object sender, RoutedEventArgs e)
+    {
+      CloseAddBreakpointPopup();
+    }
+
+    private void CloseAddBreakpointPopup()
+    {
+      AddBreakpointPopupOpened = false;
+      OnPropertyChanged("AddBreakpointPopupOpened");
     }
   }
 }

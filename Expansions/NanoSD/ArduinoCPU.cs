@@ -23,6 +23,7 @@
 using System;
 using System.IO;
 using System.Text;
+using YATECommon.Helpers;
 
 namespace NanoSD
 {
@@ -713,7 +714,7 @@ namespace NanoSD
       StoreByte((byte)m_current_dir.Length);
       for (int i = 0; i < m_current_dir.Length; i++)
       {
-        StoreByte((byte)m_current_dir[i]);
+        StoreByte((byte)char.ToUpper(m_current_dir[i]));
       }
 
       SendOuputBuffer(STATUS.OK);
@@ -992,11 +993,6 @@ namespace NanoSD
     {
       bool file_system_is_ready = Directory.Exists(m_parent.Settings.FilesystemFolder);
 
-      if (m_file_system_changed && m_directory == null && m_file_read == null)
-      {
-        file_system_is_ready = false;
-      }
-
       return file_system_is_ready;
     }
 
@@ -1048,13 +1044,13 @@ namespace NanoSD
             current_path = "";
           else
           {
-            current_path = current_path.Remove(index + 1, current_path.Length - (index + 1));
+            current_path = current_path.Remove(index, current_path.Length - index);
           }
 
           continue;
         }
 
-        if (!string.IsNullOrEmpty(current_path))
+        if (!string.IsNullOrEmpty(current_path) && !current_path.EndsWith("/"))
           current_path += '/';
 
         current_path += path_elements[i];
@@ -1088,27 +1084,15 @@ namespace NanoSD
         StoreByte((byte)STATUS.OK);
 
         FileSystemInfo file_info = m_directory[m_directory_index];
-
-        string name = Path.GetFileNameWithoutExtension(file_info.Name);
-        string ext = file_info.Extension;
-        if (ext.StartsWith("."))
-          ext = ext.Remove(0, 1);
-
         bool is_directory = (file_info.Attributes & FileAttributes.Directory) == FileAttributes.Directory;
 
         int length = 0;
         if (file_info is FileInfo)
           length = (UInt16)((file_info as FileInfo).Length);
 
-        if (name.Length > 8)
-          name = name.Remove(8);
-
-        if (ext.Length > 3)
-          ext = ext.Remove(3);
-
-        string filename = name;
-        if (!string.IsNullOrEmpty(ext))
-          filename += "." + ext;
+        string short_full_name = ShortFilename.ShortFileName(file_info.FullName);
+        string filename = Path.GetFileName(short_full_name);
+        string ext = Path.GetExtension(short_full_name);
 
         // store name
         for (int i = 0; i < 12; i++)

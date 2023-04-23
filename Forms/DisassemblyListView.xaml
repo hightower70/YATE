@@ -18,6 +18,7 @@
 		<KeyBinding Key="F11" Command="{Binding ExecutionControl.DebugStepIntoCommand}" />
 		<KeyBinding Key="F12" Command="{Binding ExecutionControl.DebugStepOutCommand}" />
 		<KeyBinding Key="G" Modifiers="Ctrl" Command="{Binding GotoAddressCommand}"/>
+		<KeyBinding Key="B" Modifiers="Ctrl" Command="{Binding AddBreakpointCommand}"/>
 	</Window.InputBindings>
 	<Grid Background="{DynamicResource Background}" >
 		<Grid.RowDefinitions>
@@ -59,6 +60,18 @@
 			</Border>
 		</Popup>
 
+		<Popup IsOpen="{Binding AddBreakpointPopupOpened}" PlacementTarget="{Binding ElementName=gFooter}" Placement="Top">
+			<Border BorderBrush="{DynamicResource BorderBrushSelected}"  BorderThickness="1">
+				<StackPanel Orientation="Horizontal" >
+					<TextBlock Text="Breakpoint Address:" VerticalAlignment="Center" Margin="3"/>
+					<TextBox x:Name="tbBreakpointAddress" Width="100" Margin="3" LostFocus="tbBreakpointAddress_LostFocus" KeyDown="tbBreakpointAddress_KeyDown"/>
+					<Button Grid.Column="1" Height="20" Width="20" Margin="3,2,3,2" Click="BreakpointAddressCloseButton_Click">
+						<Path Data="M0,0 L8,8 M0,8 8,0" Stroke="Red" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+					</Button>
+				</StackPanel>
+			</Border>
+		</Popup>
+
 		<Grid Grid.Row="2" Background="{DynamicResource BackgroundHighlighted}" x:Name="gFooter">
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="48"/>
@@ -76,6 +89,10 @@
 
 					<Button Grid.Column="1" Height="20" Width="20" Margin="3,2,3,2" ToolTip="Load assemler list file" Command="{Binding LoadAssemblerListCommand}">
 						<Path Stroke="White" Data="M0,0 L12,0 12,12 0,12 z M2,2 L10,2 M2,4 L8,4 M2,6 L9,6 M2,8 L8,8 M2,10 L10,10"/>
+					</Button>
+
+					<Button Grid.Column="1" Height="20" Width="20" Margin="3,2,3,2" ToolTip="Add breakpoint Ctrl-B" Command="{Binding AddBreakpointCommand}">
+						<Path Stroke="White" Fill="Red" Data="M0,5 A 5,5 180 0 0 10,5 A 5,5 180 0 0 0,5"/>
 					</Button>
 
 					<Button Grid.Column="1" Height="20" Width="20" Margin="3,2,3,2" ToolTip="GoTo address Ctrl-G" Command="{Binding GotoAddressCommand}">
