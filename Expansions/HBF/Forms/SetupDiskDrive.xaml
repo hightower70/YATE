@@ -1,0 +1,76 @@
+﻿<UserControl x:Class="HBF.Forms.SetupDiskDrive"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:HBF.Forms"
+             mc:Ignorable="d" 
+						 xmlns:cc="clr-namespace:CustomControls;assembly=CustomControls"
+						 xmlns:sp="clr-namespace:YATECommon.SetupPage;assembly=YATECommon"
+             d:DesignHeight="450" d:DesignWidth="800">
+	<UserControl.Resources>
+			<cc:IsEqualToVisibilityConverter x:Key="convVisibility"/>
+	</UserControl.Resources>
+	<Grid Background="{DynamicResource Background}">
+		<Grid Margin="5">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="35"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="30"/>
+				<RowDefinition Height="49*"/>
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="120"/>
+				<ColumnDefinition Width="1*"/>
+			</Grid.ColumnDefinitions>
+
+			<!-- Disk Driver settings -->
+			<TextBlock Grid.Row="0" Grid.Column="0" Text="Emulation mode:" VerticalAlignment="Center"/>
+			<ComboBox x:Name="cbEmulationMode" Grid.Row="0" Grid.Column="1" Margin="5,3,5,3" VerticalContentAlignment="Center" SelectedIndex="{Binding EmulationMode}" ItemsSource="{Binding DiskEmulationModes}"/>
+
+			<Grid Grid.Row="1" Grid.ColumnSpan="2" Visibility="{Binding ElementName=cbEmulationMode, Path=SelectedIndex, Converter={StaticResource convVisibility}, ConverterParameter=1}" >
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="30"/>
+				</Grid.ColumnDefinitions>
+				
+				<TextBlock Grid.Column="0" Text="Image File:" VerticalAlignment="Center"/>
+				<TextBox x:Name="tbIMageFileName" Grid.Column="1"  Margin="5,3,5,3" VerticalContentAlignment="Center" Text="{Binding DiskImageFile}" />
+				<Button x:Name="bImageFileBrowser" Grid.Column="2" Margin="3" Content="..." Width="22" Click="bImageFileBrowser_Click"/>
+			</Grid>
+
+			<!-- UPM files root fodler -->
+			<Grid Grid.Row="1" Grid.ColumnSpan="2" Visibility="{Binding ElementName=cbEmulationMode, Path=SelectedIndex, Converter={StaticResource convVisibility}, ConverterParameter=2}" >
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="30"/>
+				</Grid.ColumnDefinitions>
+
+				<TextBlock Grid.Column="0" Text="UPM Root Folder:" VerticalAlignment="Center"/>
+				<TextBox  Grid.Column="1"  Margin="5,3,5,3" VerticalContentAlignment="Center" Text="{Binding UPMFolder}"/>
+				<Button x:Name="bUPMFoderBrowse" Grid.Column="2" Margin="3" Content="..." Width="22" Click="bUPMFoderBrowse_Click" />
+			</Grid>
+
+			<!-- FAT root folder settings -->
+			<Grid Grid.Row="1" Grid.ColumnSpan="2" Visibility="{Binding ElementName=cbEmulationMode, Path=SelectedIndex, Converter={StaticResource convVisibility}, ConverterParameter=3}" >
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="30"/>
+				</Grid.ColumnDefinitions>
+
+				<TextBlock Grid.Column="0" Text="VTDOS Root Folder:" VerticalAlignment="Center"/>
+				<TextBox  Grid.Column="1"  Margin="5,3,5,3" VerticalContentAlignment="Center" Text="{Binding FATFolder}" />
+				<Button x:Name="bFATFolderBrowser" Grid.Column="2" Margin="3" Content="..." Width="22" Click="bFATFolderBrowser_Click"/>
+			</Grid>
+
+			<cc:Title Grid.Row="2" Grid.ColumnSpan="2" Text="Disk Drive Settings"/>
+
+		</Grid>
+	</Grid>
+</UserControl>

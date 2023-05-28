@@ -150,7 +150,8 @@ namespace YATE.Managers
     /// </summary>
     public void Stop()
     {
-      m_wave_out.Stop();
+      if (m_wave_out != null)
+        m_wave_out.Stop();
     }
 
     /// <summary>

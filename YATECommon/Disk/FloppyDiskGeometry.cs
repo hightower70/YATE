@@ -26,6 +26,7 @@ namespace YATECommon.Disk
   public class FloppyDiskGeometry
   {
     #region · Properties ·
+
     /// <summary>
     /// Number of tracks in the disk
     /// </summary>
@@ -96,6 +97,66 @@ namespace YATECommon.Disk
       NumberOfTracks = 80;
       SectorPerTrack = 9;
       NumberOfSides = 2;
+      SectorLength = 512;
+    }
+
+    /// <summary>
+    /// Creates disk geometry from media descriptor byte 
+    /// </summary>
+    /// <param name="in_media_descriptor"></param>
+    public FloppyDiskGeometry(byte in_media_descriptor)
+    {
+      switch(in_media_descriptor) 
+      {
+        case 0xf8:
+          NumberOfTracks = 80;
+          SectorPerTrack = 9;
+          NumberOfSides = 1;
+          break;
+
+        case 0xf9:
+          NumberOfTracks = 80;
+          SectorPerTrack = 9;
+          NumberOfSides = 2;
+          break;
+
+        case 0xfa:
+          NumberOfTracks = 80;
+          SectorPerTrack = 8;
+          NumberOfSides = 1;
+          break;
+
+        case 0xfb:
+          NumberOfTracks = 80;
+          SectorPerTrack = 8;
+          NumberOfSides = 2;
+          break;
+
+        case 0xfc:
+          NumberOfTracks = 40;
+          SectorPerTrack = 9;
+          NumberOfSides = 1;
+          break;
+
+        case 0xfd:
+          NumberOfTracks = 40;
+          SectorPerTrack = 9;
+          NumberOfSides = 2;
+          break;
+
+        case 0xfe:
+          NumberOfTracks = 40;
+          SectorPerTrack = 8;
+          NumberOfSides = 1;
+          break;
+
+        case 0xff:
+          NumberOfTracks = 40;
+          SectorPerTrack = 8;
+          NumberOfSides = 2;
+          break;
+      }
+
       SectorLength = 512;
     }
 

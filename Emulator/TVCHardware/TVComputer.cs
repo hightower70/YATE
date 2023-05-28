@@ -114,7 +114,7 @@ namespace YATE.Emulator.TVCHardware
 			Cards[in_slot_index] = in_card;
 
 			// set parent
-			Cards[in_slot_index].Install(this);
+			Cards[in_slot_index].Insert(this);
 
 			// set io callbacks
 			ushort port_address = GetCardIOAddress(in_slot_index);

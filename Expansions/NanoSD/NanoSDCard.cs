@@ -187,7 +187,7 @@ namespace NanoSD
     /// Installs card to the computer
     /// </summary>
     /// <param name="in_parent"></param>
-    public void Install(ITVComputer in_parent)
+    public void Insert(ITVComputer in_parent)
     {
       m_tvcomputer = in_parent;
 

@@ -1,18 +1,49 @@
-﻿using System;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2019-2023 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// Disk image file handler class
+///////////////////////////////////////////////////////////////////////////////
+using System;
 using System.IO;
 
 namespace YATECommon.Disk
 {
   public class FloppyDiskImage : IVirtualFloppyDisk
   {
+    #region · Data members ·
     private FileStream m_disk_image;
     private FloppyDiskGeometry m_disk_geometry;
+    #endregion
 
+    #region · Constructor ·
 
+    /// <summary>
+    /// Default constructor
+    /// </summary>
     public FloppyDiskImage()
     {
       m_disk_image = null;
     }
+    #endregion
+
+    #region · Properties ·
 
     /// <summary>
     /// Gets disk geometry
@@ -29,6 +60,10 @@ namespace YATECommon.Disk
     {
       get { return m_disk_image != null; }
     }
+
+    #endregion
+
+    #region · Public members ·
 
     /// <summary>
     /// Open disk image file
@@ -60,10 +95,26 @@ namespace YATECommon.Disk
         }
         else
         {
-          // create geometry
-          int length = (int)(new FileInfo(in_path).Length);
+          // determine if disk image is FAT12
+          byte[] boot_sector_buffer = new byte[FATBootSector.BootSectorSize];
 
-          m_disk_geometry = new FloppyDiskGeometry(length);
+          m_disk_image.Read(boot_sector_buffer, 0, boot_sector_buffer.Length);
+          m_disk_image.Seek(0, SeekOrigin.Begin);
+
+          FATBootSector boot_sector = new FATBootSector(boot_sector_buffer);
+
+          if (boot_sector.IsValid())
+          {
+            // Disk image is FAT12 -> determine disk format from the Media Type byte
+            m_disk_geometry = new FloppyDiskGeometry(boot_sector.MediaType);
+          }
+          else
+          {
+            // create geometry from image size
+            int length = (int)(new FileInfo(in_path).Length);
+
+            m_disk_geometry = new FloppyDiskGeometry(length);
+          }
         }
       }
       catch
@@ -89,10 +140,13 @@ namespace YATECommon.Disk
         m_disk_image = null;
       }
     }
-
+    #endregion
 
     #region · IVirtualFloppyDisk ·
 
+    /// <summary>
+    /// Number of all sectors omn the disk
+    /// </summary>
     public int TotalSectorCount
     {
       get
@@ -104,6 +158,11 @@ namespace YATECommon.Disk
       }
     }
 
+    /// <summary>
+    /// Reads one sector from the disk
+    /// </summary>
+    /// <param name="in_linear_sector_index">Linear sector address [0...TotalSectorCount]</param>
+    /// <param name="out_buffer">Buffer for receiveing sector data</param>                                            
     public void ReadSector(int in_linear_sector_index, byte[] out_buffer)
     {
       if(m_disk_image!=null)
@@ -113,6 +172,11 @@ namespace YATECommon.Disk
       }
     }
 
+    /// <summary>
+    /// Writes one sector
+    /// </summary>
+    /// <param name="in_linear_sector_index">Linear sector address [0...TotalSectorCount]</param>
+    /// <param name="in_buffer">Data buffer containing bytes to write into the sector</param>
     public void WriteSector(int in_linear_sector_index, byte[] in_buffer)
     {
       if (m_disk_image != null)

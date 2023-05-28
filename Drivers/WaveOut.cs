@@ -261,7 +261,7 @@ namespace YATE.Drivers
     /// </summary>
     public void Stop()
     {
-      if (m_wave_out_device_handle != IntPtr.Zero)
+      if (m_wave_out_device_handle != IntPtr.Zero && m_thread != null && m_thread_event != null)
       {
         m_thread_running = false;
         m_thread_event.Set();

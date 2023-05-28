@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2013-2023 Laszlo Arvai. All rights reserved.
+// Copyright (c) 2019-2023 Laszlo Arvai. All rights reserved.
 //
 // This library is free software; you can redistribute it and/or modify it 
 // under the terms of the GNU Lesser General Public License as published
@@ -18,34 +18,34 @@
 ///////////////////////////////////////////////////////////////////////////////
 // File description
 // ----------------
-// Floppy interface card configuration data provider
+// Extension methods for byte array handling
 ///////////////////////////////////////////////////////////////////////////////
-using YATECommon.Settings;
 
-namespace HBF
+namespace YATECommon.Helpers
 {
-  class SetupConfigurationDataProvider
+  public static class ByteArrayHelper
   {
-    public string[] ROMTypeList { get; private set; } = new string[] { "(custom)", "UPM", "VT-DOS 1.1", "VT-DOS 1.2" };
-
-    public HBFCardSettings Settings { get; private set; }
-
-    public ExpansionMain MainClass { get; private set; }
-
-    public SetupConfigurationDataProvider(ExpansionMain in_main_class)
+    /// <summary>
+    /// Converts byte array bytes to ushort
+    /// </summary>
+    /// <param name="in_array">Bytes to convert</param>
+    /// <param name="offset">Offset within the byte array of the data to be converted</param>
+    /// <returns></returns>
+    public static ushort ToUshort(this byte[] in_array, int offset)
     {
-      MainClass = in_main_class;
-      Load();
+      return (ushort)(in_array[offset] + (in_array[offset + 1] << 8));
     }
 
-    public void Load()
+    /// <summary>
+    /// Convert ushort to bytes
+    /// </summary>
+    /// <param name="in_array">Byte array to store bytes</param>
+    /// <param name="in_offset">Offset of the byte position to store</param>
+    /// <param name="in_value">Value to be converted</param>
+    public static void FromUshort(this byte[] in_array, int in_offset, ushort in_value )
     {
-      Settings = SettingsFile.Editing.GetSettings<HBFCardSettings>(MainClass.ExpansionIndex);
-    }
-
-    public void Save()
-    {
-      SettingsFile.Editing.SetSettings(Settings, MainClass.ExpansionIndex);
+      in_array[in_offset] = (byte)(in_value & 0xff);
+      in_array[in_offset] = (byte)(in_value >> 8);
     }
   }
 }

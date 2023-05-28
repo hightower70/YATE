@@ -39,7 +39,11 @@ namespace HBF
     {
       m_settings_page_info = new ExpansionSetupPageInfo[]
       {
-        new ExpansionSetupPageInfo("Config", typeof(SetupConfiguration)),
+        new ExpansionSetupPageInfo("Card Config", typeof(SetupConfiguration)),
+        new ExpansionSetupPageInfo("Drive Config #1", typeof(SetupDiskDrive1)),
+        new ExpansionSetupPageInfo("Drive Config #2", typeof(SetupDiskDrive2)),
+        new ExpansionSetupPageInfo("Drive Config #3", typeof(SetupDiskDrive3)),
+        new ExpansionSetupPageInfo("Drive Config #3", typeof(SetupDiskDrive4)),
         new ExpansionSetupPageInfo("Information", typeof( SetupInformation)),
         new ExpansionSetupPageInfo("About", typeof(SetupAbout))
       };

@@ -41,7 +41,7 @@ namespace YATECommon
 
     // card management
     //int SlotIndex { get; }
-    void Install(ITVComputer in_parent);
+    void Insert(ITVComputer in_parent);
     void Remove(ITVComputer in_parent);
   }
 }

@@ -1,29 +1,41 @@
-﻿using System;
+﻿///////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2019-2023 Laszlo Arvai. All rights reserved.
+//
+// This library is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation; either version 2.1 of the License, 
+// or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301  USA
+///////////////////////////////////////////////////////////////////////////////
+// File description
+// ----------------
+// Floppy interface card main emulation class
+///////////////////////////////////////////////////////////////////////////////
+using System;
 using System.Diagnostics;
-using System.IO;
-using System.Reflection;
 using YATECommon;
 using YATECommon.Helpers;
 
 namespace HBF
 {
-  public class HBFCard : ITVCCard
+  public class HBFCard : ITVCCard, IDebuggableMemory
   {
-    private struct TrackReadElements
-    {
-      public byte Count;
-      public byte Data;
 
-      public TrackReadElements(byte in_count, byte in_data)
-      {
-        Count = in_count;
-        Data = in_data;
-      }
-    }
+    #region · Constants ·
 
     private const int CardROMSize = 16384;
     private const int CardRAMSize = 4096;
     private const int CardROMPageSize = 4096;
+    private const int CardRomPageCount = 4;
 
     private const int NumberOfDrives = 4;
     private const int InvalidDriveIndex = -1;
@@ -35,8 +47,8 @@ namespace HBF
 
     private const int AddressLength = 6;
 
-    private const UInt32 TrackIDADDMark = 0xf5f5f5fe;   // Address mark for track write command
-    private const UInt32 TrackDATAMark = 0xf5f5f5fb;    // Data mark for track write command
+    private const uint TrackIDADDMark = 0xf5f5f5fe;   // Address mark for track write command
+    private const uint TrackDATAMark = 0xf5f5f5fb;    // Data mark for track write command
 
     // Register addresses
     private const int PORT_COMMAND = 0;
@@ -48,38 +60,20 @@ namespace HBF
     private const int PORT_PARAM = 4;
     private const int PORT_PAGE = 8;
 
-    private readonly int[] SteppingDelays = { 6, 12, 20, 30 };
+    #endregion
 
-    private readonly TrackReadElements[] m_track_read_elements =
+    #region · Types ·
+    private struct TrackReadElements
     {
-      new TrackReadElements(80, 0x4e), // GAP
-      new TrackReadElements(12, 0x00), // SYNC
-      new TrackReadElements( 3, 0xc2), // IAM
-      new TrackReadElements( 1, 0xfc), // IAM
-      new TrackReadElements(50, 0x4e), // GAP1
+      public byte Count;
+      public byte Data;
 
-      new TrackReadElements(12, 0x00), // SYNC
-      new TrackReadElements( 3, 0xa1), // IDAM
-      new TrackReadElements( 1, 0xfe), // IDAM
-      new TrackReadElements( 0, 0x01), // CYL
-      new TrackReadElements( 0, 0x02), // HD
-      new TrackReadElements( 0, 0x03), // SEC
-      new TrackReadElements( 0, 0x04), // LEN
-      new TrackReadElements( 0, 0x10), // CRC1
-      new TrackReadElements( 0, 0x11), // CRC2
-      new TrackReadElements(22, 0x4e), // GAP2
-      new TrackReadElements(12, 0x00), // SYNC
-      new TrackReadElements( 3, 0xa1), // DAM
-      new TrackReadElements( 1, 0xFB), // DAM
-      new TrackReadElements( 0, 0x20), // DATA
-      new TrackReadElements( 0, 0x10), // CRC1
-      new TrackReadElements( 0, 0x11), // CRC2
-      new TrackReadElements(80, 0x4e), // GAP
-
-      new TrackReadElements(0,0)
-    };
-
-    private readonly byte[] m_address_buffer = new byte[AddressLength];
+      public TrackReadElements(byte in_count, byte in_data)
+      {
+        Count = in_count;
+        Data = in_data;
+      }
+    }
 
     /// <summary>
     /// Internal operation status
@@ -104,7 +98,7 @@ namespace HBF
       TrackWriteData,
 
       // Sector write
-      WriteSector
+      SectorWrite
 
     }
 
@@ -137,7 +131,7 @@ namespace HBF
     /// Force interrupt command flags
     /// </summary>
     [Flags]
-    enum ForceInterruptFlags: byte
+    enum ForceInterruptFlags : byte
     {
       NOT_READY_TO_READY = 0x01,
       READY_TO_NOT_READY = 0x02,
@@ -193,6 +187,9 @@ namespace HBF
       DELETED = 0x20,       // Deleted data mark (when reading)
       WRFAULT = 0x20        // Write fault (when writing)
     }
+    #endregion
+
+    #region · Data members ·
 
     private ITVComputer m_tvcomputer;
 
@@ -252,6 +249,44 @@ namespace HBF
 
     private HBFCardSettings m_settings;
 
+    private readonly string[] m_rom_page_names;
+
+    private readonly int[] SteppingDelays = { 6, 12, 20, 30 };
+
+    private readonly TrackReadElements[] m_track_read_elements =
+    {
+      new TrackReadElements(80, 0x4e), // GAP
+      new TrackReadElements(12, 0x00), // SYNC
+      new TrackReadElements( 3, 0xc2), // IAM
+      new TrackReadElements( 1, 0xfc), // IAM
+      new TrackReadElements(50, 0x4e), // GAP1
+
+      new TrackReadElements(12, 0x00), // SYNC
+      new TrackReadElements( 3, 0xa1), // IDAM
+      new TrackReadElements( 1, 0xfe), // IDAM
+      new TrackReadElements( 0, 0x01), // CYL
+      new TrackReadElements( 0, 0x02), // HD
+      new TrackReadElements( 0, 0x03), // SEC
+      new TrackReadElements( 0, 0x04), // LEN
+      new TrackReadElements( 0, 0x10), // CRC1
+      new TrackReadElements( 0, 0x11), // CRC2
+      new TrackReadElements(22, 0x4e), // GAP2
+      new TrackReadElements(12, 0x00), // SYNC
+      new TrackReadElements( 3, 0xa1), // DAM
+      new TrackReadElements( 1, 0xFB), // DAM
+      new TrackReadElements( 0, 0x20), // DATA
+      new TrackReadElements( 0, 0x10), // CRC1
+      new TrackReadElements( 0, 0x11), // CRC2
+      new TrackReadElements(80, 0x4e), // GAP
+
+      new TrackReadElements(0,0)
+    };
+
+    private readonly byte[] m_address_buffer = new byte[AddressLength];
+
+
+    #endregion
+
     #region · Properties ·
     #endregion
 
@@ -275,35 +310,19 @@ namespace HBF
         m_disk_drives[i] = new DiskDrive();
       }
 
-      //m_disk_drives[0] = new DiskDrive();
-      m_disk_drives[0].Geometry.NumberOfTracks = 80;
-      m_disk_drives[0].Geometry.NumberOfSides = 2;
-      m_disk_drives[0].Geometry.SectorPerTrack = 9;
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\test.dsk");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_TEST.dsk");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_test1.xdi");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\nautilus.dsk");
-      m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\upmlemez.img");
-
-      //m_disk_drives[1] = new DiskDrive();
-      m_disk_drives[1].Geometry.NumberOfTracks = 40;
-      m_disk_drives[1].Geometry.NumberOfSides = 2;
-      m_disk_drives[1].Geometry.SectorPerTrack = 9;
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\mralex.dsk");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\IKPLUS_TVC.dsk");
-      m_disk_drives[1].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\test.dsk");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_TEST.dsk");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\UPM_test1.xdi");
-      //m_disk_drives[0].OpenDiskImageFile(@"d:\Projects\Retro\YATE\disk\nautilus.dsk");
+      m_rom_page_names = new string[] { "ROM[0]", "ROM[1]", "ROM[2]", "ROM[3]" };
     }
 
-
-
-    public void SetSettings(HBFCardSettings in_settings)
+    public bool SetSettings(HBFCardSettings in_settings)
     {
+      bool changed = false;
+
       m_settings = in_settings;
+
+      MemoryType = in_settings.GetCardMemoryType();
+
+      m_card_rom = new byte[CardROMSize];
+      ROMFile.FillMemory(m_card_rom);
 
       // load ROM content
       switch (m_settings.ROMType)
@@ -314,32 +333,42 @@ namespace HBF
 
         // UPM
         case 1:
-          LoadCardRomFromResource("HBF.Resources.UPM-DISK.ROM");
+          ROMFile.LoadMemoryFromResource("HBF.Resources.UPM-DISK.ROM", m_card_rom, ref changed);
           break;
 
         // VT-DOS 1.1
         case 2:
-          LoadCardRomFromResource("HBF.Resources.VT-DOS11-DISK.ROM");
+          ROMFile.LoadMemoryFromResource("HBF.Resources.VT-DOS11-DISK.ROM", m_card_rom, ref changed);
           break;
 
         // VT-DOS 1.2
         case 3:
-          LoadCardRomFromResource("HBF.Resources.VT-DOS12-DISK.ROM");
+          ROMFile.LoadMemoryFromResource("HBF.Resources.VT-DOS12-DISK.ROM", m_card_rom, ref changed);
           break;
       }
+
+      // update drives
+      m_disk_drives[0].BuildDiskDrive(m_settings.Drive1Settings);
+      m_disk_drives[1].BuildDiskDrive(m_settings.Drive2Settings);
+      m_disk_drives[2].BuildDiskDrive(m_settings.Drive3Settings);
+      m_disk_drives[3].BuildDiskDrive(m_settings.Drive4Settings);
+
+      return changed;
     }
 
     /// <summary>
     /// Installs HBF card to the system
     /// </summary>
     /// <param name="in_tvcomputer"></param>
-    public void Install(ITVComputer in_tvcomputer)
+    public void Insert(ITVComputer in_tvcomputer)
     {
       m_tvcomputer = in_tvcomputer;
 
       // set timing
       m_index_pulse_period = in_tvcomputer.MicrosecToCPUTicks(IndexPulsePeriod);
       m_index_pulse_width = in_tvcomputer.MicrosecToCPUTicks(IndexPulseWidth);
+
+      TVCManagers.Default.DebugManager.RegisterDebuggableMemory(this);
     }
 
     /// <summary>
@@ -347,44 +376,8 @@ namespace HBF
     /// </summary>
     public void Remove(ITVComputer in_parent)
     {
-      // no action needed
-    }
-
-    /// <summary>
-    /// Loads ROM content of the card from the given file
-    /// </summary>
-    /// <param name="in_file_name">File name containing the binary rom content</param>
-		public void LoadCardRom(string in_file_name)
-    {
-      byte[] data = File.ReadAllBytes(in_file_name);
-
-      Array.Copy(data, 0, m_card_rom, 0, data.Length);
-    }
-
-    /// <summary>
-    /// Loads card ROM content from the given resource file
-    /// </summary>
-    /// <param name="in_resource_name"></param>
-    public void LoadCardRomFromResource(string in_resource_name)
-    {
-      // load default key mapping
-      Assembly assembly = Assembly.GetExecutingAssembly();
-
-      using (Stream stream = assembly.GetManifestResourceStream(in_resource_name))
-      {
-        using (BinaryReader binary_reader = new BinaryReader(stream))
-        {
-          byte[] data = binary_reader.ReadBytes((int)stream.Length);
-
-          int byte_to_copy = data.Length;
-
-          if (byte_to_copy > m_card_rom.Length)
-            byte_to_copy = m_card_rom.Length;
-
-          Array.Copy(data, 0, m_card_rom, 0, byte_to_copy);
-        }
-      }
-    }
+      TVCManagers.Default.DebugManager.UnregisterDebuggableMemory(this);
+    }                                                           
 
     /// <summary>
     /// Memory read function for card memory
@@ -449,10 +442,11 @@ namespace HBF
       m_operation_state = OperationState.None;
     }
 
-    /** Read1793() ***********************************************/
-    /** Read value from a WD1793 register A. Returns read data  **/
-    /** on success or 0xFF on failure (bad register address).   **/
-    /*************************************************************/
+    /// <summary>
+    /// Read value from a WD1793 register
+    /// </summary>
+    /// <param name="in_address">Address of the register to read</param>
+    /// <param name="inout_data">Register value</param>
     public void PortRead(ushort in_address, ref byte inout_data)
     {
       switch (in_address & 0x0f)
@@ -490,7 +484,7 @@ namespace HBF
                 }
                 else
                 {
-                  if (m_disk_drives[m_current_drive_index].Track == 0)
+                  if (m_disk_drives[m_current_drive_index].PhysicalTrack == 0)
                     m_fdc_status |= StatusFlags.TRACK0;
                   else
                     m_fdc_status &= ~StatusFlags.TRACK0;
@@ -623,7 +617,7 @@ namespace HBF
               m_fdc_status &= ~StatusFlags.BUSY;
             else
             {
-              m_fdc_status = m_disk_drives[m_current_drive_index].Track == 0 ? StatusFlags.TRACK0 : 0;
+              m_fdc_status = m_disk_drives[m_current_drive_index].PhysicalTrack == 0 ? StatusFlags.TRACK0 : 0;
               m_fdc_status_mode = 1;
             }
 
@@ -654,12 +648,12 @@ namespace HBF
               m_fdc_status_mode = 1;
 
               // set head load
-              m_head_loaded = ((in_value & (byte)CommandFlags.LOADHEAD) != 0);
+              m_head_loaded = (in_value & (byte)CommandFlags.LOADHEAD) != 0;
 
               m_fdc_last_step_direction = 0;
 
               // if already at track zero
-              if (m_disk_drives[m_current_drive_index].Track == 0)
+              if (m_disk_drives[m_current_drive_index].PhysicalTrack == 0)
               {
                 m_fdc_status |= StatusFlags.TRACK0;
                 m_reg_hw_status |= HardwareFlags.INT;
@@ -675,7 +669,7 @@ namespace HBF
 
             // SEEK command
             case 0x10:
-              Debug.WriteLine("Seek: {0:x2}", m_fdc_data);
+              Debug.WriteLine("Seek: {0}", m_fdc_data);
 
               // command group I
               m_fdc_status_mode = 1;
@@ -717,10 +711,10 @@ namespace HBF
                   in_value = (byte)((in_value & ~0x20) | m_fdc_last_step_direction);
 
                 // Step the head, update track register if requested 
-                byte target_track = m_disk_drives[m_current_drive_index].Track;
+                byte target_track = m_disk_drives[m_current_drive_index].PhysicalTrack;
                 if ((in_value & 0x20) != 0)
                 {
-                  if (m_disk_drives[m_current_drive_index].Track > 0)
+                  if (m_disk_drives[m_current_drive_index].PhysicalTrack > 0)
                     target_track--;
                 }
                 else
@@ -739,7 +733,7 @@ namespace HBF
                   if (target_track >= m_disk_drives[m_current_drive_index].Geometry.NumberOfTracks)
                     new_status = StatusFlags.SEEKERR;
 
-                  m_fdc_track = m_disk_drives[m_current_drive_index].Track;
+                  m_fdc_track = m_disk_drives[m_current_drive_index].PhysicalTrack;
                 }
 
                 StartOperation(SteppingDelays[in_value & (byte)CommandFlags.STEPRATE], new_status, HardwareFlags.INT, target_track);
@@ -774,7 +768,7 @@ namespace HBF
               else
               {
                 // check sector and track address
-                if (m_fdc_track != m_disk_drives[m_current_drive_index].Track || m_fdc_sector < 1 || m_fdc_sector > m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack)
+                if (m_fdc_track != m_disk_drives[m_current_drive_index].LogicalTrack || m_fdc_sector < 1 || m_fdc_sector > m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack)
                 {
                   m_fdc_status = StatusFlags.NOTFOUND;
                   m_reg_hw_status = HardwareFlags.INT;
@@ -784,8 +778,6 @@ namespace HBF
                 }
                 else
                 {
-                  m_disk_drives[m_current_drive_index].Track = m_fdc_track;
-
                   m_data_count = 0;
                   m_data_length = m_disk_drives[m_current_drive_index].Geometry.SectorLength * (((in_value & 0x10) != 0) ? m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack - m_fdc_sector + 1 : 1);
                   m_operation_start_tick = m_tvcomputer.GetCPUTicks();
@@ -798,38 +790,51 @@ namespace HBF
                 }
               }
               break;
-#if false
-						case 0xA0:
-						case 0xB0: /* WRITE-SECTORS */
-							if (D->Verbose) printf("WD1793: WRITE-SECTOR%s %c:%d:%d:%d (%02Xh)\n", V & 0x10 ? "S" : "", 'A' + D->Drive, D->Side, D->R[1], D->R[2], V);
-							/* Seek to the requested sector */
-							D->Ptr = SeekFDI(
-								D->Disk[D->Drive], D->Side, D->Track[D->Drive],
-								V & C_SIDECOMP ? !!(V & C_SIDE) : D->Side, D->R[1], D->R[2]
-							);
-							/* If seek successful, set up writing operation */
-							if (!D->Ptr)
-							{
-								if (D->Verbose) printf("WD1793: WRITE ERROR\n");
-								D->R[0] = (D->R[0] & ~F_ERRCODE) | F_NOTFOUND;
-								m_irq_pending = true;;
-							}
-							else
-							{
-								m_wr_length = D->Disk[D->Drive]->SecSize
-														* (V & 0x10 ? (D->Disk[D->Drive]->Sectors - D->R[2] + 1) : 1);
-								D->R[0] |= F_BUSY | F_DRQ;
-								D->IRQ = WD1793_DRQ;
-								D->Wait = 255;
-							}
-							break;
-#endif
+
+						case 0xA0: // singe sector write
+						case 0xB0: // single sector read
+              Debug.WriteLine("Sector write, T:{0:d}, S:{1:d}, H:{2:d}", m_fdc_track, m_fdc_sector, GetCurrentDriveSide());
+
+              // check drive
+              if (m_current_drive_index == InvalidDriveIndex || !m_disk_drives[m_current_drive_index].IsDiskPresent())
+              {
+                m_fdc_status = StatusFlags.NOTREADY;
+              }
+              else
+              {
+                // check sector and track address
+                if (m_fdc_track != m_disk_drives[m_current_drive_index].PhysicalTrack || m_fdc_sector < 1 || m_fdc_sector > m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack)
+                {
+                  m_fdc_status = StatusFlags.NOTFOUND;
+                  m_reg_hw_status = HardwareFlags.INT;
+                  m_operation_state = OperationState.None;
+                  m_fdc_status_mode = 2;
+                  m_data_length = 0;
+                }
+                else
+                {
+                  m_disk_drives[m_current_drive_index].PhysicalTrack = m_fdc_track;
+
+                  m_data_count = 0;
+                  m_data_length = m_disk_drives[m_current_drive_index].Geometry.SectorLength * (((in_value & 0x10) != 0) ? m_disk_drives[m_current_drive_index].Geometry.SectorPerTrack - m_fdc_sector + 1 : 1);
+                  m_operation_start_tick = m_tvcomputer.GetCPUTicks();
+                  m_operation_state = OperationState.SectorWrite;
+                  m_fdc_status = StatusFlags.BUSY;
+                  m_fdc_status_mode = 2;
+                  m_head_loaded = true;
+                  m_reg_hw_status |= HardwareFlags.DRQ;
+
+                  m_disk_drives[m_current_drive_index].SeekSector(m_fdc_sector, GetCurrentDriveSide());
+                }
+              }
+              break;
+
             // Read address
             case 0xC0:
               Debug.WriteLine("Read address", in_value);
 
               m_crc_generator.Reset();
-              m_address_buffer[0] = GetCurrentDriveTrack();
+              m_address_buffer[0] = GetCurrentDriveLogicalTrack();
               m_address_buffer[1] = GetCurrentDriveSide();
               m_address_buffer[2] = 1;
               m_address_buffer[3] = GetCurrentSectorLength();
@@ -838,7 +843,7 @@ namespace HBF
               m_address_buffer[5] = m_crc_generator.CRCHigh;
               m_data_count = 0;
               m_data_length = 6;
-              m_fdc_sector = GetCurrentDriveTrack();
+              m_fdc_sector = GetCurrentDriveLogicalTrack();
 
               m_prev_index_pulse_state = IsIndexPulse();
               m_operation_state = OperationState.IDReadWaitForIndex;
@@ -894,14 +899,14 @@ namespace HBF
 
         // track register
         case PORT_TRACK:
-          Debug.WriteLine("Track register set: {0:x2}", in_value);
+          Debug.WriteLine("Track register set: {0}", in_value);
           if ((m_fdc_status & StatusFlags.BUSY) == 0 && !m_fdc_reset_state)
             m_fdc_track = in_value;
           break;
 
         // sector register
         case PORT_SECTOR:
-          Debug.WriteLine("Sector register set: {0:x2}", in_value);
+          Debug.WriteLine("Sector register set: {0}", in_value);
           if ((m_fdc_status & StatusFlags.BUSY) == 0 && !m_fdc_reset_state)
             m_fdc_sector = in_value;
           break;
@@ -913,6 +918,11 @@ namespace HBF
           {
             case OperationState.TrackWriteGap:
               m_track_write_id_buffer = (m_track_write_id_buffer << 8) | in_value;
+              break;
+
+            case OperationState.SectorWrite:
+              m_fdc_data = in_value;
+              m_reg_hw_status &= ~HardwareFlags.DRQ;
               break;
           }
 
@@ -1059,7 +1069,7 @@ namespace HBF
             m_reg_hw_status = m_pending_hw_status;
             m_fdc_track = m_pending_track;
 
-            m_disk_drives[m_current_drive_index].Track = m_pending_track;
+            m_disk_drives[m_current_drive_index].PhysicalTrack = m_pending_track;
 
             m_operation_state = OperationState.None;
           }
@@ -1163,18 +1173,49 @@ namespace HBF
 
             if (byte_index > m_data_count)
             {
-              m_fdc_data = m_disk_drives[m_current_drive_index].ReadByte();
-              m_data_count++;
-              m_reg_hw_status |= HardwareFlags.DRQ;
-
-              if (m_data_count > m_data_length)
+              if (m_data_count < m_data_length)
               {
+                // read data byte
+                m_fdc_data = m_disk_drives[m_current_drive_index].ReadByte();
+                m_data_count++;
+                m_reg_hw_status |= HardwareFlags.DRQ;
+              }
+              else
+              { 
                 // stop operation
                 m_data_length = 0;
                 m_operation_state = OperationState.None;
                 m_fdc_status &= ~StatusFlags.BUSY;
                 m_reg_hw_status |= HardwareFlags.INT;
                 //m_fdc_status_mode = 1;
+              }
+
+            }
+          }
+          break;
+
+        case OperationState.SectorWrite:
+          {
+            int byte_index = TickToByteIndex(m_tvcomputer.GetTicksSince(m_operation_start_tick));
+
+            if (byte_index > m_data_count)
+            {
+              if ((m_reg_hw_status & HardwareFlags.DRQ) == 0)
+              {
+                m_disk_drives[m_current_drive_index].WriteByte(m_fdc_data);
+                m_data_count++;
+
+                if (m_data_count >= m_data_length)
+                {
+                  // stop operation
+                  m_data_length = 0;
+                  m_operation_state = OperationState.None;
+                  m_fdc_status &= ~StatusFlags.BUSY;
+                  m_reg_hw_status |= HardwareFlags.INT;
+                  //m_fdc_status_mode = 1;
+                }
+                else
+                  m_reg_hw_status |= HardwareFlags.DRQ;
               }
             }
           }
@@ -1221,6 +1262,7 @@ namespace HBF
     {
       // stop operation at the next index pulse 
       bool index_pulse_state = IsIndexPulse();
+
       if (index_pulse_state != m_prev_index_pulse_state && index_pulse_state)
       {
         m_operation_state = OperationState.None;
@@ -1267,12 +1309,12 @@ namespace HBF
     /// Gets the head position (track) of the currently selected drive
     /// </summary>
     /// <returns>Track number</returns>
-		private byte GetCurrentDriveTrack()
+		private byte GetCurrentDriveLogicalTrack()
     {
-      if (m_current_drive_index == InvalidDriveIndex)
+      if (m_current_drive_index == InvalidDriveIndex || !m_disk_drives[m_current_drive_index].IsDiskPresent())
         return 0;
       else
-        return m_disk_drives[m_current_drive_index].Track;
+        return m_disk_drives[m_current_drive_index].LogicalTrack;
     }
 
     /// <summary>
@@ -1304,5 +1346,36 @@ namespace HBF
           return 0;
       }
     }
+
+    #region · IDebuggableMemory implementation ·
+    public TVCMemoryType MemoryType { get; private set; }
+
+    public int AddressOffset { get { return 0xe000; } }
+
+    public int MemorySize { get { return CardROMPageSize + CardRAMSize; } }
+
+    public int PageCount { get { return CardRomPageCount; } }
+
+    public int PageIndex { get { return (m_reg_page >> 4) & 0x03; } }
+
+    public string[] PageNames { get { return m_rom_page_names; } }
+    public byte DebugReadMemory(int in_page_index, int in_address)
+    {
+      if (in_address < CardROMPageSize)
+        return m_card_rom[in_address + in_page_index * CardROMPageSize];
+      else
+        return m_card_ram[in_address - CardROMPageSize];
+     
+    }
+
+    public void DebugWriteMemory(int in_page_index, int in_address, byte in_data)
+    {
+      if (in_address < CardROMPageSize)
+        m_card_rom[in_address + in_page_index * CardROMPageSize] = in_data;
+      else
+        m_card_ram[in_address - CardROMPageSize] = in_data;
+    }
+
+    #endregion
   }
 }

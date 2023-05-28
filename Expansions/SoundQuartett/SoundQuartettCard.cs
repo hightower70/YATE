@@ -121,7 +121,7 @@ namespace SoundQuartett
       return 0x03; // no ID
     }
 
-    public void Install(ITVComputer in_parent)
+    public void Insert(ITVComputer in_parent)
     {
       m_tvcomputer = in_parent;
 
