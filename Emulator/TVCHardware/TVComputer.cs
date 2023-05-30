@@ -28,6 +28,8 @@ namespace YATE.Emulator.TVCHardware
     public ITVCCard MemoryExpansion { get; private set; }
     public TVCSound Sound { get; private set; }
 
+		public TVCPrinter Printer { get;private set; }
+
 		public void Initialize()
 		{
 			Ports = new TVCPorts();
@@ -39,6 +41,8 @@ namespace YATE.Emulator.TVCHardware
       Keyboard = new TVCKeyboard(this);
       Interrupt = new TVCInterrupt(this);
       Sound = new TVCSound(this);
+			Printer = new TVCPrinter(this);
+			Printer.PrinterFileName = @"d:\test.txt";
 
       Cards = new ITVCCard[TVComputerConstants.ExpansionCardCount];
 

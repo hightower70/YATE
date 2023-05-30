@@ -3,5 +3,6 @@
 										xmlns:system="clr-namespace:System;assembly=mscorlib">
 	<system:String x:Key="srError">Error</system:String>
 	<system:String x:Key="srFileLoadError">File can't be loaded</system:String>
-
+	<system:String x:Key="srClosePrinterMenu">Close Printer</system:String>
+	<system:String x:Key="srClosePrinterMenuParam">Close {0}</system:String>
 </ResourceDictionary>

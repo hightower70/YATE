@@ -20,11 +20,6 @@
 // ----------------
 // Videoton TV Computer Tape Interface Emulation
 ///////////////////////////////////////////////////////////////////////////////
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace YATE.Emulator.TVCHardware
 {
@@ -33,9 +28,15 @@ namespace YATE.Emulator.TVCHardware
   /// </summary>
   public class TVCTape
   {
+    private TVComputer m_tvc;
 
+    /// <summary>
+    /// Default constructor
+    /// </summary>
+    /// <param name="in_tvc"></param>
     public TVCTape(TVComputer in_tvc)
     {
+      m_tvc = in_tvc;
     }
 
 
@@ -61,6 +62,19 @@ namespace YATE.Emulator.TVCHardware
     // |   -   |   -   |   -   |   -   |   -   |   -   |   -   |   -   |
     // +-------+-------+-------+-------+-------+-------+-------+-------+
     private void PortWrite50H(ushort in_address, byte in_data)
+    {
+
+    }
+
+    // PORT 59H
+    // ========
+    //
+    // +-------+-------+-------+-------+-------+-------+-------+-------+
+    // |         P R I N T E R  A N D  T A P E  I N                    |
+    // +---7---+---6---+---5---+---4---+---3---+---2---+---1---+---0---+
+    // |   +   |   +   | ECIN  |   +   |   +   |   +   |   +   |   +   |
+    // +-------+-------+-------+-------+-------+-------+-------+-------+
+    private void PortRead59H(ushort in_address, ref byte inout_data)
     {
 
     }

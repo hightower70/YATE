@@ -20,13 +20,14 @@
 // ----------------
 // Windows WAV file reader/writer class
 ///////////////////////////////////////////////////////////////////////////////
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using YATECommon.Helpers;
 
 namespace YATECommon.Files
 {
-  class WavFile
+  class WavFile : IDisposable
   {
     #region · Constants ·
     const int WAVE_BLOCK_LENGTH = 65536;
@@ -34,6 +35,7 @@ namespace YATECommon.Files
     const int RIFF_HEADER_FORMAT_ID = 0x45564157; /* 'WAVE' */
     const int CHUNK_ID_FORMAT = 0x20746d66; /* 'fmt ' */
     const int CHUNK_ID_DATA = 0x61746164; /* 'data' */
+    const byte BYTE_SAMPLE_ZERO_VALUE = 0x80;
     #endregion
 
     #region · Types ·
@@ -65,7 +67,23 @@ namespace YATECommon.Files
 
     #endregion
 
+    #region · Properties ·
+
+    public int SampleRate { get; set; }
+    public int ChannelNumber { get; set; }
+    public int BitsPerSample { get; set; }
+
+    public long SampleCount { get; set; }
+
+    #endregion
+
     #region · Data members ·
+
+    private FileStream m_input_wav_stream;
+    private BinaryReader m_input_wav_reader;
+    private long m_input_sample_index;
+    private int m_input_sample_bit_pos;
+    private byte m_input_sample_buffer;
 
     private FileStream m_output_wav_stream;
     private BinaryWriter m_output_wav_writer;
@@ -75,6 +93,188 @@ namespace YATECommon.Files
     private byte m_output_wav_file_sample_bit_pos = 0;
 
     #endregion
+
+    #region · Wave file read functions ·
+
+    /// <summary>
+    /// Opens wavefile for input
+    /// </summary>
+    /// <param name="in_file_name">Name of the file</param>
+    /// <returns>True if file was opened successfully</returns>
+    public bool OpenInput(string in_file_name)
+    {
+      bool success;
+      RIFFHeaderType riff_header = new RIFFHeaderType();
+      ChunkHeaderType chunk_header = new ChunkHeaderType();
+      FormatChunkType format_chunk = new FormatChunkType();
+      long pos;
+      bool data_chunk_found;
+
+      // open wave file
+      data_chunk_found = false;
+      success = true;
+
+      m_input_wav_stream = new FileStream(in_file_name, FileMode.Open, FileAccess.Read, FileShare.Read);
+      m_input_wav_reader = new BinaryReader(m_input_wav_stream);
+
+      // read RIFF header
+      m_input_wav_reader.Read(riff_header);
+      if ((riff_header.ChunkID != RIFF_HEADER_CHUNK_ID) || (riff_header.Format != RIFF_HEADER_FORMAT_ID))
+      {
+        success = false;
+      }
+
+      // process chunks
+      while (success && m_input_wav_stream.Position != m_input_wav_stream.Length && !data_chunk_found)
+      {
+        // read chunk header
+        m_input_wav_reader.Read(chunk_header);
+
+        pos = m_input_wav_stream.Position;
+
+        switch (chunk_header.ChunkID)
+        {
+          // Format 'fmt ' chunk
+          case CHUNK_ID_FORMAT:
+            m_input_wav_reader.Read(format_chunk);
+
+            SampleRate = (int)format_chunk.SampleRate;
+            ChannelNumber = format_chunk.NumChannels;
+            BitsPerSample = format_chunk.BitsPerSample;
+
+            if (format_chunk.AudioFormat != 1)
+            {
+              success = false;
+            }
+
+            if ((format_chunk.NumChannels != 1) && (format_chunk.NumChannels != 2))
+            {
+              success = false;
+            }
+
+            if ((format_chunk.BitsPerSample != 1) && (format_chunk.BitsPerSample != 8) && (format_chunk.BitsPerSample != 16))
+            {
+              success = false;
+            }
+
+            break;
+
+          // Data 'data' chunk
+          case CHUNK_ID_DATA:
+            data_chunk_found = true;
+            SampleCount = chunk_header.ChunkSize * 8 / BitsPerSample / ChannelNumber;
+            break;
+        }
+
+        // move to the next chunk
+        if (!data_chunk_found)
+          m_input_wav_stream.Seek(pos + chunk_header.ChunkSize, SeekOrigin.Begin);
+      }
+
+
+      m_input_sample_bit_pos = 0;
+
+      return success;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    // Reads sample
+    public void ReadSample(out short out_left_sample, out short out_right_sample)
+    {
+      // read sample
+      switch (BitsPerSample)
+      {
+        case 1:
+          if (m_input_sample_bit_pos == 0)
+          {
+            m_input_sample_buffer = m_input_wav_reader.ReadByte();
+          }
+          // get sample
+          out_left_sample = out_right_sample = ((m_input_sample_buffer >> (7 - m_input_sample_bit_pos) & 0x01) != 0) ? short.MaxValue : short.MinValue;
+          // next bit
+          m_input_sample_bit_pos++;
+          if (m_input_sample_bit_pos == 8)
+            m_input_sample_bit_pos = 0;
+
+          if (ChannelNumber == 2)
+          {
+            // get sample
+            out_right_sample = out_right_sample = ((m_input_sample_buffer >> (7 - m_input_sample_bit_pos) & 0x01) != 0) ? short.MaxValue : short.MinValue;
+            // next bit
+            m_input_sample_bit_pos++;
+            if (m_input_sample_bit_pos == 8)
+              m_input_sample_bit_pos = 0;
+          }
+          else
+          {
+            out_right_sample = out_left_sample;
+          }
+
+          break;
+
+        case 8:
+          {
+            byte buffer;
+
+            buffer = m_input_wav_reader.ReadByte();
+            out_left_sample = (short)(((buffer & 255) - BYTE_SAMPLE_ZERO_VALUE) * 256u);
+
+            if (ChannelNumber == 2)
+            {
+              // read sample in stereo mode
+              buffer = m_input_wav_reader.ReadByte();
+              out_right_sample = (short)(((buffer & 255) - BYTE_SAMPLE_ZERO_VALUE) * 256u);
+            }
+            else
+            {
+              out_right_sample = out_left_sample;
+            }
+
+          }
+          break;
+
+        case 16:
+          {
+            // read sample
+            out_left_sample = m_input_wav_reader.ReadInt16();
+
+            if (ChannelNumber == 2)
+            {
+              // read sample in stereo mode
+              out_right_sample = m_input_wav_reader.ReadInt16();
+            }
+            else
+            {
+              out_right_sample = out_left_sample;
+            }
+
+          }
+          break;
+
+        default:
+          out_left_sample = out_right_sample = 0;
+          break;
+      }
+
+      m_input_sample_index++;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    // Closes wave input
+    public void CloseInput()
+    {
+      // close wave file
+      m_input_wav_reader.Close();
+      m_input_wav_reader.Dispose();
+      m_input_wav_reader = null;
+
+      m_input_wav_stream.Close();
+      m_input_wav_stream.Dispose();
+      m_input_wav_stream = null; 
+    }
+
+    #endregion
+
 
     #region · Wave file write functions ·
 
@@ -200,6 +400,37 @@ namespace YATECommon.Files
       riff_header.ChunkSize = (uint)chunk_size;
 
       m_output_wav_writer.Write(riff_header);
+    }
+
+    public void Dispose()
+    {
+      if (m_input_wav_reader != null)
+      {
+        m_input_wav_reader.Dispose();
+        m_input_wav_reader = null;
+      }
+
+      if (m_input_wav_stream != null)
+      {
+        m_input_wav_stream.Dispose();
+        m_input_wav_stream = null;
+      }
+
+      if (m_output_wav_writer != null)
+      {
+        m_output_wav_writer.Dispose();
+        m_output_wav_writer = null;
+      }
+
+      if (m_output_wav_stream!= null) 
+      {
+        m_output_wav_stream.Dispose();
+        m_output_wav_stream = null;
+      }
+    }
+    ~WavFile()
+    {
+      Dispose();
     }
 
     #endregion

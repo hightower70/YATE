@@ -32,6 +32,8 @@ namespace YATE.Forms
     public BreakpointManager BreakpointControl { get { return (BreakpointManager)TVCManagers.Default.BreakpointManager; } }
     public TVCCartridgeManager CartridgeControl { get { return (TVCCartridgeManager)TVCManagers.Default.CartridgeManager; } }
 
+    public PrinterManager PrinterControl { get { return (PrinterManager)TVCManagers.Default.PrinterManager; } }
+
     private KeyboardHook m_keyboard_hook;
 
     public IndexedWindowManager m_hex_edit_window_manager = new IndexedWindowManager();
@@ -79,6 +81,9 @@ namespace YATE.Forms
       TVCManagers.Default.ExecutionManager.Initialize();
       ((ExecutionManager)TVCManagers.Default.ExecutionManager).TVC.Video.FrameReady += FrameReady;
 
+      // Printer Manager
+      TVCManagers.Default.SetPrinterManager(new PrinterManager());
+
     }
 
 
@@ -93,6 +98,9 @@ namespace YATE.Forms
 
       // setup cartridge control
       CartridgeControl.Initialize(this, ExecutionControl);
+
+      // setup printer control
+      PrinterControl.Initialize(this, ExecutionControl);
 
       // load modules
       TVCManagers.Default.SetExpansionManager(new ExpansionManager(SettingsFile.Default));
@@ -413,6 +421,16 @@ namespace YATE.Forms
       // commands are the same if they're defined in the same class and have the same name
       return keyBindingCommandBinding.ResolvedSource == menuItemCommandBinding.ResolvedSource
           && keyBindingCommandBinding.ResolvedSourcePropertyName == menuItemCommandBinding.ResolvedSourcePropertyName;
+    }
+
+    private void MiPrinterFile_Click(object sender, RoutedEventArgs e)
+    {
+      PrinterControl.OnPrinterCaptureEnabled();
+    }
+
+    private void MiPrinterFileClose_Click(object sender, RoutedEventArgs e)
+    {
+      PrinterControl.OnPrinterCaptureDisabled();
     }
   }
 }

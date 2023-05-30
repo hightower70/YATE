@@ -74,6 +74,7 @@
     <Compile Include="Helpers\ShortFilename.cs" />
     <Compile Include="IBreakpointManager.cs" />
     <Compile Include="IDebuggableMemory.cs" />
+    <Compile Include="IPrinterManager.cs" />
     <Compile Include="ITVCDebugger.cs" />
     <Compile Include="ITVCMemory.cs" />
     <Compile Include="ITVCPorts.cs" />

@@ -76,6 +76,12 @@
 				<MenuItem x:Name="miCartridgeMemoryLoad" Header="Cartridge Load..." Click="MiCartridgeMemoryLoad_Click"  />
 				<MenuItem x:Name="miCartridgeMemoryClear" Header="Cartridge remove" Click="MiCartridgeMemoryClear_Click"  />
 				<Separator />
+				<MenuItem x:Name="miTapeFile" Header="Tape File..." Click="MiCartridgeMemoryLoad_Click" />
+				<MenuItem x:Name="miTapeFileRemove" Header="Remove Tape File" Click="MiCartridgeMemoryLoad_Click" />
+				<Separator />
+				<MenuItem x:Name="miPrinterFile" Header="Printer File..." Click="MiPrinterFile_Click" />
+				<MenuItem x:Name="miPrinterFileClose" Header="{Binding PrinterControl.DisableMenuItemText}" Click="MiPrinterFileClose_Click" />
+				<Separator />				
 				<MenuItem Header="_Exit" />
 			</MenuItem>
 

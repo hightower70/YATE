@@ -111,6 +111,7 @@
     </Compile>
     <Compile Include="Disassembler\SJASMListParser.cs" />
     <Compile Include="Emulator\TVCHardware\TVCDebuggableMemory.cs" />
+    <Compile Include="Emulator\TVCHardware\TVCPrinter.cs" />
     <Compile Include="Forms\BreakpointSetForm.xaml.cs">
       <DependentUpon>BreakpointSetForm.xaml</DependentUpon>
     </Compile>
@@ -136,6 +137,7 @@
     <Compile Include="Managers\ExecutionHistoryCollection.cs" />
     <Compile Include="Managers\ExecutionHistoryEntry.cs" />
     <Compile Include="Managers\IndexedWindowManager.cs" />
+    <Compile Include="Managers\PrinterManager.cs" />
     <Compile Include="Managers\TVCCartridgeManager.cs" />
     <Compile Include="Dialogs\AddExpansionDialog.xaml.cs">
       <DependentUpon>AddExpansionDialog.xaml</DependentUpon>
@@ -165,6 +167,7 @@
     <Compile Include="Drivers\WaveOut.cs" />
     <Compile Include="Settings\DisassemblyListViewSettings.cs" />
     <Compile Include="Settings\HexViewSettings.cs" />
+    <Compile Include="Settings\PrinterSettings.cs" />
     <Compile Include="Settings\TVCJoystick2Settings.cs" />
     <Compile Include="Settings\TVCJoystick1Settings.cs" />
     <Compile Include="Settings\TVCMemorySelectorSettings.cs" />

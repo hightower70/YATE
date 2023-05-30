@@ -33,9 +33,9 @@ namespace YATECommon
     public IExecutionManager ExecutionManager { get; private set; }
     public ICartridgeManager CartridgeManager { get; private set; }
     public IDebugManager DebugManager { get; private set; }
-
     public IBreakpointManager BreakpointManager { get; private set; }
 
+    public IPrinterManager PrinterManager { get; private set; }
 
     public void SetMainWindow(Window in_window)
     {
@@ -70,6 +70,11 @@ namespace YATECommon
     public void SetBreakpointManager(IBreakpointManager in_breakpoint_manager)
     {
       BreakpointManager = in_breakpoint_manager;
+    }
+
+    public void SetPrinterManager(IPrinterManager in_printer_manager)
+    {
+      PrinterManager = in_printer_manager;
     }
 
     #region · Singleton members ·
